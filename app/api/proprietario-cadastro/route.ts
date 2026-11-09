@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       .eq("company_id", companyId)
       .eq("id", existingAccount.contact_id);
     if (updateContactError) return NextResponse.json({ error: updateContactError.message }, { status: 400 });
-    return NextResponse.json({ userId: ownerUserId, contactId: existingAccount.contact_id });
+    return NextResponse.json({ userId: ownerUserId, contactId: existingAccount.contact_id, sent: false });
   }
 
   const { data: contact, error: contactError } = await admin
@@ -120,5 +120,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Não foi possível vincular a conta do proprietário: " + accountError.message, userId: ownerUserId }, { status: 400 });
   }
 
-  return NextResponse.json({ userId: ownerUserId, contactId: contact.id });
+  return NextResponse.json({ userId: ownerUserId, contactId: contact.id, sent: !inviteError });
 }
