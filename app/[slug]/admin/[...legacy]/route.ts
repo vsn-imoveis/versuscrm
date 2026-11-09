@@ -71,6 +71,9 @@ export async function GET(request: NextRequest, context: Context) {
     .maybeSingle();
 
   const isOwnerPortal = ["proprietario.html", "painel-cadastro.html"].includes(requestedFile) && !!ownerAccount;
+  if (requestedFile === "proprietario.html" && !ownerAccount) {
+    return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/login?erro=proprietario`, request.url));
+  }
   if ((membershipError || !membership) && !isOwnerPortal) {
     return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/login?erro=acesso`, request.url));
   }
