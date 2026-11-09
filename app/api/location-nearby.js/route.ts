@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       .slice(0, 40)
       .map(({ lat, lon, straight, ...place }) => place);
 
-    return NextResponse.json({ source: "openstreetmap_osrm", radius_meters: 800, distance_mode: "walking_route", places, coordinates: geo });
+    return NextResponse.json({ source: "openstreetmap_osrm", radius_meters: 800, distance_mode: "driving_route", places, coordinates: geo });
   } catch {
     return NextResponse.json({ error: "Falha ao consultar a localização." }, { status: 500 });
   }
