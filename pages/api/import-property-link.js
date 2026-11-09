@@ -58,36 +58,47 @@ async function importImages(req,res){
  const {data:{user},error:authError}=await auth.auth.getUser();
  if(authError||!user)return send(res,401,{error:"Sessão expirada. Entre novamente."});
  const companyId=String(req.body?.companyId||"").trim(),propertyId=String(req.body?.propertyId||"").trim();
- const urls=Array.isArray(req.body?.photos)?req.body.photos:[];
+ const urls=Array.isArray(req.body?.photos)?[...new Set(req.body.photos.filter(x=>typeof x==="string"))]:[];
  if(!/^[0-9a-f-]{36}$/i.test(companyId)||!/^[0-9a-f-]{36}$/i.test(propertyId)||!urls.length||urls.length>35)return send(res,400,{error:"Imóvel, imobiliária ou lista de fotos inválida."});
  const admin=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
- const [{data:membership,error:memberError},{data:property,error:propertyError}]=await Promise.all([
+ const [{data:membership,error:memberError},{data:owner,error:ownerError},{data:property,error:propertyError},{data:company,error:companyError}]=await Promise.all([
   admin.from("crm_memberships").select("role").eq("company_id",companyId).eq("user_id",user.id).maybeSingle(),
-  admin.from("properties").select("id").eq("id",propertyId).eq("company_id",companyId).maybeSingle()
+  admin.from("crm_owner_accounts").select("contact_id").eq("company_id",companyId).eq("user_id",user.id).eq("status","active").maybeSingle(),
+  admin.from("properties").select("id,owner_contact_id,photos").eq("id",propertyId).eq("company_id",companyId).maybeSingle(),
+  admin.from("crm_companies").select("status,max_photos_per_property").eq("id",companyId).maybeSingle()
  ]);
- if(memberError||!membership||propertyError||!property)return send(res,403,{error:"Você não tem permissão para importar fotos neste imóvel."});
- const uploaded=[];
+ if(memberError||ownerError||propertyError||companyError)return send(res,503,{error:"Não foi possível validar as permissões e os limites do imóvel."});
+ if(!property)return send(res,404,{error:"Imóvel não encontrado nesta imobiliária."});
+ if(!membership&&(!owner||owner.contact_id!==property.owner_contact_id))return send(res,403,{error:"Você não tem permissão para importar fotos neste imóvel."});
+ if(!company||company.status!=="active")return send(res,403,{error:"Imobiliária inativa ou não encontrada."});
+ const photoLimit=Math.max(0,Number(company.max_photos_per_property??35));
+ const currentPhotos=Array.isArray(property.photos)?property.photos:[];
+ const externalPhotoCount=currentPhotos.filter(x=>!String(x).includes("/storage/v1/object/public/crm-property-photos/")).length;
+ const folder=companyId+"/"+propertyId;
+ const {data:stored,error:listError}=await admin.storage.from("crm-property-photos").list(folder,{limit:100});
+ if(listError)return send(res,503,{error:"Não foi possível validar o limite de fotos."});
+ if(externalPhotoCount+(stored?.length||0)+urls.length>photoLimit)return send(res,403,{error:"O plano desta imobiliária permite no máximo "+photoLimit+" fotos por imóvel."});
+ const uploadedPaths=[],uploadedUrls=[];let totalBytes=0;
  try{
   for(let i=0;i<urls.length;i++){
    const raw=String(urls[i]||"");let target;
-   try{target=new URL(raw)}catch(_){throw new Error("Uma das URLs de foto é inválida.")}
+   try{target=new URL(raw);}catch(_){throw new Error("Uma das URLs de foto é inválida.");}
    if(!["http:","https:"].includes(target.protocol))throw new Error("URL de foto não permitida.");
    const file=await downloadImage(target);
-   const path=companyId+"/"+propertyId+"/import_"+Date.now()+"_"+i+"."+file.ext;
+   totalBytes+=file.buffer.length;
+   if(totalBytes>30*1024*1024)throw new Error("O conjunto de fotos excede 30 MB.");
+   const path=folder+"/import_"+Date.now()+"_"+i+"_"+require("node:crypto").randomUUID()+"."+file.ext;
    const result=await admin.storage.from("crm-property-photos").upload(path,file.buffer,{contentType:file.mime,upsert:false,cacheControl:"31536000"});
    if(result.error)throw result.error;
-   uploaded.push(admin.storage.from("crm-property-photos").getPublicUrl(path).data.publicUrl);
+   uploadedPaths.push(path);
+   uploadedUrls.push(admin.storage.from("crm-property-photos").getPublicUrl(path).data.publicUrl);
   }
-  return send(res,200,{photos:uploaded});
+  return send(res,200,{photos:uploadedUrls});
  }catch(error){
-  if(uploaded.length){
-   const paths=uploaded.map(publicUrl=>{const part=publicUrl.split("/crm-property-photos/")[1];return part?decodeURIComponent(part.split("?")[0]):null}).filter(Boolean);
-   if(paths.length)await admin.storage.from("crm-property-photos").remove(paths);
-  }
+  if(uploadedPaths.length)await admin.storage.from("crm-property-photos").remove(uploadedPaths);
   return send(res,422,{error:error.message||"Não foi possível importar as fotos."});
  }
 }
-
 function send(res,status,data){res.statusCode=status;res.setHeader("Content-Type","application/json; charset=utf-8");res.setHeader("Cache-Control","no-store");return res.end(JSON.stringify(data));}
 function decode(s){return String(s||"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(Number(n))).trim();}
 function plain(s){return decode(String(s||"").replace(/<script[\s\S]*?<\/script>/gi," ").replace(/<style[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/\s+/g," "));}
