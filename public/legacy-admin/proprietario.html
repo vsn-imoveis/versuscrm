@@ -224,7 +224,7 @@ async function loadOwnerProperties(){
   const companyId=window.__VERSUS_CONFIG.companyId,contactId=window.__VERSUS_CONFIG.ownerContactId;
   const [{data:rows,error},{data:profile},{data:contact,error:contactError}]=await Promise.all([
     S.from('properties').select('id,code,title,property_type,for_sale,for_rent,published,price,rent_price,area,bedrooms,suites,parking,condominium_name,address,neighborhood,city,state,photos').eq('company_id',companyId).eq('owner_contact_id',contactId).order('created_at',{ascending:false}),
-    S.from('profiles').select('full_name,email,phone,avatar_url').eq('id',ownerSession.user.id).maybeSingle(),
+    S.from('profiles').select('full_name,avatar_url').eq('id',ownerSession.user.id).maybeSingle(),
     S.from('crm_contacts').select('id,name,email,phone,extra_contacts').eq('company_id',companyId).eq('id',contactId).maybeSingle()
   ]);
   if(error||contactError){document.getElementById('ownerProperties').innerHTML='<div class="empty-owner">Não foi possível carregar seus imóveis.</div>';console.error(error||contactError);return;}
@@ -285,7 +285,7 @@ async function saveOwnerProfile(){
   try{
     const name=document.getElementById('ownerName').value.trim(),phone=document.getElementById('ownerPrimaryPhone').value.trim();
     if(!name){status.textContent='Informe seu nome.';return;}
-    const up=await S.from('profiles').update({full_name:name,phone,updated_at:new Date().toISOString()}).eq('id',ownerSession.user.id);
+    const up=await S.from('profiles').update({full_name:name,updated_at:new Date().toISOString()}).eq('id',ownerSession.user.id);
     if(up.error)throw up.error;
     const extra=ownerContactRows.filter(x=>String(x.value||'').trim()).map(x=>({id:x.id||crypto.randomUUID(),type:x.type,value:String(x.value).trim()}));
     const contact=await S.from('crm_contacts').update({name,email:document.getElementById('ownerPrimaryEmail').value.trim(),phone,extra_contacts:extra,updated_at:new Date().toISOString()}).eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',window.__VERSUS_CONFIG.ownerContactId);
