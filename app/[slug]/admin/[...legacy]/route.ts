@@ -22,15 +22,6 @@ const allowedScreens = new Set([
   "proprietario.html",
   "solicitacoes-proprietario.html",
   "vendedor.html",
-  "painel-2colunas-v3.html",
-  "painel-2colunas.html",
-  "painel-v11.html",
-  "painel-v2.html",
-  "painel-v4.html",
-  "painel-v5.html",
-  "painel-v6.html",
-  "painel-v7.html",
-  "painel-v8.html",
 ]);
 
 export async function GET(request: NextRequest, context: Context) {
