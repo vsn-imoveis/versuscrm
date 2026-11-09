@@ -18,9 +18,85 @@ Deno.serve(async req => {
   const {data:u,error:ue}=await auth.auth.getUser(token);
   if(ue||!u.user) return out({error:"Sessão inválida."},401);
   const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+  const b=await req.json().catch(()=>null), action=String(b?.action||"");
+
+  // Tenant team operations are authorized by the caller's membership, never by user_metadata.
+  if(["team-list","team-invite","team-role","team-remove"].includes(action)) {
+   const companyId=String(b?.companyId||"").trim();
+   if(!companyId) return out({error:"Imobiliária não informada."},400);
+   const {data:company,error:companyError}=await db.from("crm_companies").select("id,name,status").eq("id",companyId).maybeSingle();
+   if(companyError||!company||company.status!=="active") return out({error:"Imobiliária não encontrada ou inativa."},404);
+   const {data:callerMembership,error:callerError}=await db.from("crm_memberships").select("role").eq("company_id",companyId).eq("user_id",u.user.id).maybeSingle();
+   if(callerError||!callerMembership||!["owner","admin"].includes(callerMembership.role)) return out({error:"Somente o proprietário ou administrador desta imobiliária pode gerenciar a equipe."},403);
+   const isOwner=callerMembership.role==="owner";
+   if(action==="team-list") {
+    const {data:members,error}=await db.from("crm_memberships").select("user_id,role,created_at").eq("company_id",companyId).order("created_at",{ascending:true});
+    if(error) return out({error:"Não foi possível carregar a equipe."},500);
+    const allUsers:any[]=[];
+    for(let page=1;page<=10;page++){const {data,error}=await db.auth.admin.listUsers({page,perPage:1000});if(error)return out({error:"Não foi possível consultar os e-mails da equipe."},500);allUsers.push(...data.users);if(data.users.length<1000)break;}
+    const ids=(members||[]).map(x=>x.user_id);
+    const {data:profiles,error:profileError}=await db.from("profiles").select("id,full_name,phone,avatar_url").in("id",ids.length?ids:["00000000-0000-0000-0000-000000000000"]);
+    if(profileError)return out({error:"Não foi possível carregar os perfis da equipe."},500);
+    const {data:leads,error:leadError}=await db.from("crm_leads").select("assigned_to").eq("company_id",companyId).not("assigned_to","is",null);
+    if(leadError)return out({error:"Não foi possível consultar os leads atribuídos."},500);
+    const rows=(members||[]).map(m=>{const profile=(profiles||[]).find(p=>p.id===m.user_id);const authUser=allUsers.find(x=>x.id===m.user_id);return {...m,...(profile||{}),email:authUser?.email||"",assigned_leads:(leads||[]).filter(x=>x.assigned_to===m.user_id).length};});
+    return out({ok:true,company:{id:company.id,name:company.name},members:rows,canManageAdmins:isOwner,currentUserId:u.user.id});
+   }
+   const targetId=String(b?.userId||"").trim();
+   if(action==="team-invite") {
+    const email=String(b?.email||"").trim().toLowerCase(),name=String(b?.fullName||"").trim(),role=String(b?.role||"agent");
+    if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||!name) return out({error:"Informe nome e e-mail válidos."},400);
+    if(!["admin","manager","agent","member"].includes(role)||(!isOwner&&role==="admin")) return out({error:"Você não tem permissão para conceder essa função."},403);
+    let found:any;
+    for(let page=1;page<=10&&!found;page++){const {data,error}=await db.auth.admin.listUsers({page,perPage:1000});if(error)return out({error:"Não foi possível verificar o e-mail informado."},500);found=data.users.find(x=>String(x.email||"").trim().toLowerCase()===email);if(data.users.length<1000)break;}
+    let userId:string,invitationSent=false;
+    if(found){userId=found.id;const {data:existing,error}=await db.from("crm_memberships").select("user_id").eq("company_id",companyId).eq("user_id",userId).maybeSingle();if(error)return out({error:"Não foi possível verificar o vínculo existente."},500);if(existing)return out({error:"Este usuário já faz parte desta imobiliária."},409);}
+    else {
+      const redirectTo=String(b?.redirectTo||"").trim();
+      const inviteOptions:any={data:{full_name:name,invited_company_id:companyId,invited_company_name:company.name}};
+      if(redirectTo&&/^https:\/\//i.test(redirectTo))inviteOptions.redirectTo=redirectTo;
+      const {data,error}=await db.auth.admin.inviteUserByEmail(email,{...inviteOptions});
+      if(error||!data.user)return out({error:"Não foi possível enviar o convite: "+(error?.message||"usuário não retornado")},400);
+      userId=data.user.id;invitationSent=true;
+    }
+    const {error:profileError}=await db.from("profiles").upsert({id:userId,full_name:name,role:"user"},{onConflict:"id"});
+    if(profileError)return out({error:"Convite enviado, mas não foi possível preparar o perfil: "+profileError.message},500);
+    const {error:membershipError}=await db.from("crm_memberships").insert({company_id:companyId,user_id:userId,role});
+    if(membershipError)return out({error:"Não foi possível vincular o usuário: "+membershipError.message},500);
+    return out({ok:true,email,role,invitationSent,message:invitationSent?"Convite enviado por e-mail.":"Usuário existente vinculado à imobiliária."});
+   }
+   if(!targetId||targetId===u.user.id)return out({error:"Selecione um membro diferente de você."},400);
+   const {data:target,error:targetError}=await db.from("crm_memberships").select("user_id,role").eq("company_id",companyId).eq("user_id",targetId).maybeSingle();
+   if(targetError||!target)return out({error:"Membro não encontrado nesta imobiliária."},404);
+   if(target.role==="owner")return out({error:"O proprietário principal não pode ser alterado ou removido por esta tela."},403);
+   if(!isOwner&&target.role==="admin")return out({error:"Somente o proprietário pode gerenciar outro administrador."},403);
+   if(action==="team-role") {
+    const role=String(b?.role||"");
+    if(!["admin","manager","agent","member"].includes(role)||(!isOwner&&role==="admin"))return out({error:"Função inválida ou sem permissão."},403);
+    const {error}=await db.from("crm_memberships").update({role}).eq("company_id",companyId).eq("user_id",targetId);
+    if(error)return out({error:"Não foi possível alterar a função: "+error.message},400);
+    return out({ok:true,role});
+   }
+   if(action==="team-remove") {
+    const transferTo=String(b?.transferTo||"").trim();
+    const {data:assigned,error:assignedError}=await db.from("crm_leads").select("id").eq("company_id",companyId).eq("assigned_to",targetId);
+    if(assignedError)return out({error:"Não foi possível verificar os leads do corretor."},500);
+    if((assigned||[]).length&&!transferTo)return out({error:"Este membro possui "+assigned.length+" lead(s). Escolha outro responsável para transferi-los antes da remoção."},409);
+    if(transferTo){
+      if(transferTo===targetId)return out({error:"O novo responsável deve ser outro membro."},400);
+      const {data:recipient,error:recipientError}=await db.from("crm_memberships").select("user_id").eq("company_id",companyId).eq("user_id",transferTo).maybeSingle();
+      if(recipientError||!recipient)return out({error:"O novo responsável não pertence a esta imobiliária."},400);
+      const {error:transferError}=await db.from("crm_leads").update({assigned_to:transferTo,updated_at:new Date().toISOString()}).eq("company_id",companyId).eq("assigned_to",targetId);
+      if(transferError)return out({error:"A transferência dos leads falhou; o membro continua na equipe. "+transferError.message},500);
+    }
+    const {error:removeError}=await db.from("crm_memberships").delete().eq("company_id",companyId).eq("user_id",targetId);
+    if(removeError)return out({error:"Os leads foram transferidos, mas não foi possível remover o vínculo: "+removeError.message},500);
+    return out({ok:true,transferredLeads:(assigned||[]).length,removed:true});
+   }
+  }
+
   const {data:p,error:pe}=await db.from("profiles").select("role").eq("id",u.user.id).maybeSingle();
   if(pe||p?.role!=="admin") return out({error:"Somente o administrador do VersusCRM pode executar esta operação."},403);
-  const b=await req.json().catch(()=>null), action=String(b?.action||"");
   if(action==="provision") {
    const companyId=String(b.companyId||""),email=String(b.email||"").trim().toLowerCase(),companyName=String(b.companyName||"").trim();
    if(!companyId||!companyName||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return out({error:"Empresa, nome e e-mail válidos são obrigatórios."},400);
