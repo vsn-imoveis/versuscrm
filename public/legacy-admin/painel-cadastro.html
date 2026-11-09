@@ -1,0 +1,785 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VSN Imóveis — Novo imóvel</title><!-- area-input-fix-2026-09-21 --><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>:root{--red:#d3aa62;--dark:#061d2d;--text:#0b2940;--muted:#6c7881;--line:#e1e6e9;--bg:#f8f9fa;--card:#fff;--soft:#f8fafb;--green:#168044;--blue:#b78d48;--shadow:0 8px 28px rgba(23,29,36,.07)}*{box-sizing:border-box}body{margin:0;font-family:Manrope,Arial,sans-serif;background:var(--bg);color:var(--text)}.top{height:72px;background:var(--dark);color:#fff;padding:0 4.7%;display:flex;align-items:center;justify-content:space-between}.brand{font-family:Georgia,"Times New Roman",serif;font-size:34px;font-weight:400;letter-spacing:-1px;color:var(--red);line-height:1}.admin-brand{width:270px;height:64px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;color:#d3aa62;text-decoration:none;line-height:1}.admin-brand span{font-family:Georgia,"Times New Roman",serif;font-size:40px;letter-spacing:-1px;color:#d3aa62}.admin-brand small{font-family:Manrope,Arial,sans-serif;font-size:7px;letter-spacing:4px;color:#fff;margin-top:8px}.user{font-size:13px;opacity:.8}.wrap{max-width:1450px;margin:auto;padding:26px 20px 110px}.head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}.head h1{margin:0 0 5px;font-size:30px}.head p{margin:0;color:var(--muted)}.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:var(--shadow);margin-bottom:18px}.section{padding-bottom:22px;margin-bottom:22px;border-bottom:1px solid #edf0f2}.section:last-child{border:0;margin:0;padding:0}.section-head{display:flex;gap:11px;margin-bottom:18px}.icon{width:34px;height:34px;border-radius:10px;background:#eef4ff;color:var(--blue);display:grid;place-items:center;font-weight:900}.title{font-size:17px;font-weight:850;margin:0 0 3px}.help{font-size:13px;color:var(--muted);margin:0;line-height:1.45}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:15px}.field{grid-column:span 6}.field.third{grid-column:span 4}.field.full{grid-column:1/-1}label{display:block;font-size:13px;font-weight:750;margin:0 0 7px;color:#33404b}.req{color:var(--red)}input,select,textarea{width:100%;border:1px solid #cbd3da;border-radius:10px;background:#fff;color:var(--text);font:inherit;font-size:14px;padding:12px 13px;outline:0;transition:.15s}input,select{height:46px}textarea{min-height:130px;resize:vertical;line-height:1.5}input:focus,select:focus,textarea:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(211,170,98,.16)}input::placeholder,textarea::placeholder{color:#9aa3ab}.money{position:relative}.money span{position:absolute;left:13px;top:0;height:46px;display:flex;align-items:center;font-weight:750;color:#68737d}.money input{padding-left:40px}.segment{display:grid;grid-template-columns:1fr 1fr;gap:4px;border:1px solid var(--line);border-radius:10px;padding:4px;background:var(--soft)}.segment input{display:none}.segment label{margin:0;padding:10px;text-align:center;border-radius:7px;cursor:pointer;color:#56616b}.segment input:checked+label{background:#fff;color:var(--dark);box-shadow:0 2px 7px rgba(0,0,0,.08)}.counter{display:grid;grid-template-columns:58px 1fr 58px;height:62px;border:1px solid #cbd3da;border-radius:12px;overflow:hidden;background:#fff}.characteristics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.characteristics-grid>div{min-width:0}.characteristics-grid .counter{width:100%}.counter button{height:62px;width:58px;border:0;background:#eef1f4;color:#4e5a65;font-size:34px;cursor:pointer}.counter button.plus{background:var(--blue);color:#fff}.counter input{height:62px!important;width:100%;min-width:0;border:0!important;border-radius:0!important;text-align:center;font-size:22px;font-weight:800;padding:0 4px;box-shadow:none!important;appearance:textfield}.counter input::-webkit-outer-spin-button,.counter input::-webkit-inner-spin-button{appearance:none;margin:0}.counter-unit{display:none}.features{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;height:140px;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;padding-right:6px;box-sizing:border-box}.feature-search{margin-bottom:10px}.feature-search input{height:42px!important}.feature.feature-hidden{display:none}.feature input{width:18px;height:18px;accent-color:var(--red)}.address-note{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);margin-top:7px}.loading{display:none;color:var(--blue)}.upload{border:2px dashed #c8d0d7;border-radius:14px;padding:23px;text-align:center;background:linear-gradient(180deg,#fbfcfd,#f7f9fa)}.upload.drag{border-color:var(--red);background:#fbf6ed}.upload strong{display:block;font-size:15px;margin-bottom:5px}.upload p{margin:0 0 13px;color:var(--muted);font-size:13px}.upload-btn{display:inline-flex;background:var(--red);color:#061d2d;padding:11px 20px;border-radius:23px;font-weight:800;cursor:pointer}.upload input{display:none}.photos{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}.photo{position:relative;aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#eee;border:1px solid var(--line)}.photo img{width:100%;height:100%;object-fit:cover}.photo button{position:absolute;right:6px;top:6px;width:30px;height:30px;border:0;border-radius:50%;background:#fff;color:#a92828;font-size:19px;cursor:pointer}.photo.primary:after{content:"CAPA";position:absolute;bottom:6px;left:6px;background:var(--red);color:#061d2d;font-size:10px;font-weight:850;padding:4px 6px;border-radius:5px}.ai{margin-top:12px;border:1px solid #d7e3fb;background:#f6f9ff;border-radius:12px;padding:13px}.ai b{font-size:13px;color:#174b9c}.ai p{font-size:12px;color:#657384;margin:4px 0 10px}.ai button{border:0;background:var(--blue);color:#fff;padding:9px 13px;border-radius:8px;font-weight:800;cursor:pointer}.ai button:disabled{opacity:.6}.checks{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}.check{display:flex;gap:9px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer}.check input{width:18px;height:18px;accent-color:var(--red)}.check small{display:block;color:var(--muted);font-size:11px}.actions{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:12px max(20px,calc((100% - 1410px)/2));display:flex;justify-content:flex-end;gap:9px}.btn{border:0;border-radius:23px;padding:12px 21px;font-weight:800;font-size:13px;cursor:pointer;transition:.2s}.btn.gray{background:#fff;color:#0b2940;border:1px solid #dfe5e8}.btn.red{background:var(--red);color:#061d2d}.btn:disabled{opacity:.55}.toast{position:fixed;right:20px;bottom:75px;z-index:60;padding:13px 16px;border-radius:10px;color:#fff;background:var(--dark);display:none;box-shadow:var(--shadow);font-size:13px}.toast.show{display:block}.toast.ok{background:var(--green)}.toast.err{background:#a92828}.photo-upload-overlay{display:none;position:fixed;inset:0;z-index:3000;background:rgba(6,29,45,.68);align-items:center;justify-content:center;padding:20px}.photo-upload-overlay.show{display:flex}.photo-upload-box{width:min(460px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.28);text-align:center}.photo-upload-icon{width:58px;height:58px;border-radius:50%;margin:0 auto 14px;background:#f7efe2;color:var(--blue);display:grid;place-items:center;font-size:27px}.photo-upload-box h2{margin:0 0 7px;font-size:20px;color:var(--dark)}.photo-upload-box p{margin:0;color:var(--muted);font-size:13px}.photo-upload-progress{height:9px;background:#edf1f3;border-radius:999px;overflow:hidden;margin:20px 0 10px}.photo-upload-progress>span{display:block;width:0;height:100%;background:var(--red);border-radius:999px;transition:width .2s ease}.photo-upload-count{font-size:12px;color:var(--muted);font-weight:700}.login{max-width:430px;margin:70px auto}@media(max-width:900px){.layout{grid-template-columns:1fr}.photos{grid-template-columns:repeat(4,1fr)}}@media(max-width:600px){.wrap{padding:18px 12px 100px}.head{display:block}.head h1{font-size:24px}.card{padding:18px}.field,.field.third{grid-column:1/-1}.counter{grid-template-columns:64px 1fr 64px}.counter button{width:64px}.characteristics-grid{grid-template-columns:1fr 1fr}.features{grid-template-columns:1fr 1fr}.photos{grid-template-columns:repeat(2,1fr)}.checks{grid-template-columns:1fr}.actions{padding:11px 12px}.btn{flex:1}}.form-tabs{display:flex;gap:8px;grid-column:1/-1;border-bottom:1px solid var(--line);padding:0 0 12px;margin-bottom:2px}.form-tab{border:1px solid var(--line);background:#fff;color:var(--text);padding:11px 24px;border-radius:10px;font:800 14px Manrope,Arial;cursor:pointer}.form-tab.active{background:var(--dark);border-color:var(--dark);color:#fff}.drag-hint{position:absolute;left:6px;bottom:6px;background:rgba(6,29,45,.78);color:#fff;padding:4px 7px;border-radius:6px;font-size:10px;font-weight:700;pointer-events:none}.photo{cursor:grab}.photo.dragging{opacity:.45}.photo.drag-over{outline:3px solid var(--red);outline-offset:2px}.admin-sidebar{position:fixed;inset:0 auto 0 0;width:230px;background:#061d2d;color:#e8eef2;z-index:100;display:flex;flex-direction:column;box-shadow:4px 0 18px #061d2d12}.sidebar-brand{height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;border-bottom:1px solid #23394a;color:#d3aa62}.sidebar-brand strong{font:700 31px Georgia,serif;letter-spacing:-1px}.sidebar-brand small{font:7px Manrope,Arial,sans-serif;letter-spacing:4px;color:#fff;margin-top:4px}.sidebar-menu{padding:14px 8px;overflow:auto}.sidebar-link,.sidebar-sub a{display:flex;align-items:center;gap:10px;min-height:36px;padding:9px 11px;border-radius:7px;color:#d4dde4;text-decoration:none;font-size:12px;font-weight:600}.sidebar-link:hover,.sidebar-sub a:hover{background:#142f43;color:#fff}.sidebar-link.active,.sidebar-sub a.active{background:#d3aa62;color:#061d2d}.sidebar-ico{width:16px;text-align:center;font-size:14px;opacity:.9}.sidebar-group{margin:2px 0}.sidebar-sub{padding:3px 0 5px 28px}.sidebar-sub a{min-height:29px;font-size:11px;padding:7px 9px}.sidebar-divider{height:1px;background:#23394a;margin:10px 8px}.admin-main{margin-left:230px;min-width:0}.admin-main .top{padding-left:28px;padding-right:28px}.admin-main .wrap{max-width:1450px}@media(max-width:760px){.admin-sidebar{width:100%;height:auto;inset:0 0 auto;position:relative}.sidebar-brand{height:62px;align-items:flex-start;padding-left:18px}.sidebar-brand strong{font-size:24px}.sidebar-brand small{margin-top:2px}.sidebar-menu{display:flex;gap:5px;padding:7px;overflow-x:auto}.sidebar-link{white-space:nowrap;min-height:34px}.sidebar-group{display:flex;align-items:center}.sidebar-sub{display:flex;padding:0;gap:4px}.sidebar-sub a{white-space:nowrap}.sidebar-divider{display:none}.admin-main{margin-left:0}.admin-main .top{padding:0 14px}.sidebar-link .sidebar-ico{display:none}}</style><style id="mobile-responsive-v2">@media(max-width:600px){body{overflow-x:hidden}.top{height:auto;min-height:58px;padding:10px 14px}.brand{font-size:15px}.user{font-size:11px;max-width:55%;overflow:hidden;text-overflow:ellipsis}.wrap{padding:16px 10px 90px}.head h1{font-size:23px}.head p{font-size:12px}.card{padding:15px;border-radius:12px}.layout{grid-template-columns:1fr}.field,.field.third,.field.full{grid-column:1/-1}.features{grid-template-columns:1fr}.photos{grid-template-columns:repeat(2,1fr)}.counter{grid-template-columns:54px 1fr 54px}.counter button{width:54px}.characteristics-grid{grid-template-columns:1fr}.btn{width:100%}.actions{flex-direction:column;align-items:stretch}.upload{padding:18px 10px}.upload-btn{width:100%}}</style><style id="vsn-sidebar-layout-v2">
+:root{--vsn-sidebar-width:240px;--vsn-sidebar-top:72px}
+.admin-sidebar{position:fixed!important;top:var(--vsn-sidebar-top)!important;left:0!important;bottom:0!important;width:var(--vsn-sidebar-width)!important;height:auto!important;background:#061d2d!important;color:#e8eef2;z-index:900;display:flex;flex-direction:column;box-shadow:4px 0 18px #061d2d12;overflow-y:auto;transition:width .2s ease}
+.admin-sidebar .sidebar-brand{display:none!important}
+.sidebar-menu{padding:14px 8px;overflow:auto;flex:1}
+.vsn-sidebar-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:38px;height:38px;border:1px solid #b8c4ce;border-radius:9px;background:#fff;color:#09263a;font-size:23px;line-height:1;cursor:pointer;margin-right:12px}
+.vsn-sidebar-toggle:hover{background:#f0f3f5}
+body.vsn-sidebar-collapsed{--vsn-sidebar-width:68px}
+body.vsn-sidebar-collapsed .sidebar-link{justify-content:center;padding:10px 4px}
+body.vsn-sidebar-collapsed .sidebar-link span:not(.sidebar-ico){display:none}
+body.vsn-sidebar-collapsed .sidebar-link .sidebar-ico{width:auto}
+body.vsn-sidebar-collapsed .sidebar-sub{padding:3px 0}
+body.vsn-sidebar-collapsed .sidebar-sub a{font-size:0;text-align:center;padding:8px 2px}
+body.vsn-sidebar-collapsed .sidebar-sub a:before{content:'↳';font-size:14px}
+body.vsn-sidebar-collapsed .sidebar-divider{margin:10px 4px}
+body{padding-left:0!important}
+.admin-main{margin-left:0!important;min-width:0}
+.admin-main>.wrap{margin-left:var(--vsn-sidebar-width)!important;transition:margin-left .2s ease}
+.admin-main>.wrap{max-width:none}
+@media(max-width:760px){
+ :root{--vsn-sidebar-width:210px}
+ body.vsn-sidebar-collapsed{--vsn-sidebar-width:58px}
+ .admin-sidebar{z-index:950}
+ .vsn-sidebar-toggle{width:34px;height:34px;margin-right:8px}
+ .admin-main>.wrap{padding-left:14px!important;padding-right:14px!important}
+}
+</style><style id="vsn-sidebar-scroll-flow-v1">
+/* Menu acompanha a rolagem da página, em vez de ficar preso à janela. */
+.admin-sidebar{position:absolute!important;top:var(--vsn-sidebar-top)!important;left:0!important;bottom:auto!important;height:auto!important;min-height:calc(100vh - var(--vsn-sidebar-top))!important;overflow:visible!important}
+.admin-sidebar .sidebar-menu{overflow:visible!important}
+#vsnSidebarToggle{position:absolute!important;left:calc(var(--vsn-sidebar-width) - 20px)!important;top:calc(var(--vsn-sidebar-top) + 50vh)!important;transform:translateY(-50%)!important;z-index:1200!important;display:flex!important;align-items:center!important;justify-content:center!important;box-shadow:0 2px 8px rgba(0,0,0,.16)!important}
+</style><style id="vsn-standard-admin-header-v1">.top{height:112px!important;justify-content:flex-start!important;padding:0 4.7%!important;gap:18px!important;box-sizing:border-box}.admin-brand{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-decoration:none!important;color:#d3aa62!important;line-height:1!important;flex:0 0 112px!important}.admin-brand span{font:40px Georgia,"Times New Roman",serif!important;letter-spacing:-1px!important;color:#d3aa62!important}.admin-brand small{font:7px Arial,sans-serif!important;letter-spacing:4px!important;color:#fff!important;margin-top:8px!important}.admin-header-actions{margin-left:auto!important;display:flex!important;align-items:center!important;gap:14px!important}.profile-btn{display:flex!important;align-items:center!important;gap:10px!important;border:0!important;border-radius:28px!important;background:#fff!important;color:#102b40!important;padding:8px 16px 8px 8px!important;font:600 14px Arial,sans-serif!important}.profile-avatar-wrap{width:38px;height:38px;flex:0 0 38px;position:relative;display:grid;place-items:center}.profile-avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#e8eaf0}.profile-avatar-fallback{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#e8eaf0;color:#102b40;font-weight:800}@media(max-width:760px){.profile-avatar-wrap,.profile-avatar,.profile-avatar-fallback{width:30px;height:30px;flex-basis:30px}}.updates-bell{width:46px;height:46px;border:1px solid #365163;border-radius:50%;display:grid;place-items:center;text-decoration:none;font-size:20px}.header-logout{border:1px solid #365163!important;background:transparent!important;color:#fff!important;border-radius:10px!important;padding:11px 16px!important;font:inherit!important;cursor:pointer}@media(max-width:760px){.top{height:86px!important;padding:0 12px!important;gap:8px!important}.admin-brand{flex-basis:72px!important}.admin-brand span{font-size:32px!important}.admin-brand small{font-size:6px!important;letter-spacing:3px!important}.admin-header-actions{gap:6px!important}.profile-btn{padding:5px 9px 5px 5px!important;gap:6px!important;font-size:12px!important}.profile-avatar{width:30px;height:30px}.updates-bell{width:36px;height:36px}.header-logout{padding:9px 10px!important;font-size:12px!important}}</style><style id="vsn-admin-header-unified-height-v2">.top{height:100px!important;min-height:100px!important;box-sizing:border-box!important;padding-top:0!important;padding-bottom:0!important;align-items:center!important}@media(max-width:760px){.top{height:72px!important;min-height:72px!important;padding-top:0!important;padding-bottom:0!important}}</style><style id="vsn-sidebar-icons-correction-v1">
+.sidebar-ico{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 20px!important;width:20px!important;height:20px!important;line-height:1!important;font-size:0!important;opacity:1!important}
+.sidebar-ico svg{display:block;width:17px;height:17px;stroke:currentColor}
+body.vsn-sidebar-collapsed .sidebar-ico{flex-basis:24px!important;width:24px!important;height:24px!important}
+body.vsn-sidebar-collapsed .sidebar-ico svg{width:20px;height:20px}
+body.vsn-sidebar-collapsed .sidebar-sub{display:none!important}
+body.vsn-sidebar-collapsed .sidebar-sub a:before{content:none!important}
+</style><style id="vsn-sidebar-toggle-color-fixed-v1">#vsnSidebarToggle{background:#fff!important;color:#09263a!important;border-color:#b8c4ce!important}#vsnSidebarToggle:hover,#vsnSidebarToggle:focus-visible{background:#fff!important;color:#09263a!important;border-color:#b8c4ce!important}</style><style id="vsn-sidebar-page-height-and-toggle-fix">
+/* Sidebar ocupa a altura completa do documento, não apenas a janela visível. */
+.admin-sidebar{position:absolute!important;top:var(--vsn-sidebar-top,98px)!important;left:0!important;bottom:auto!important;height:var(--vsn-sidebar-document-height,calc(100vh - var(--vsn-sidebar-top,98px)))!important;min-height:var(--vsn-sidebar-document-height,calc(100vh - var(--vsn-sidebar-top,98px)))!important;max-height:none!important;overflow:visible!important}
+.admin-sidebar .sidebar-menu{overflow:visible!important;flex:1 0 auto!important}
+#vsnSidebarToggle{position:absolute!important;left:calc(var(--vsn-sidebar-width,240px) - 18px)!important;top:calc(var(--vsn-sidebar-top,98px) + 50vh)!important;transform:translateY(-50%)!important;z-index:1300!important;margin:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;box-shadow:0 2px 8px rgba(0,0,0,.16)!important}
+</style><style id="vsn-characteristics-counter-fix-v1">
+/* Corrige os contadores de características quando quatro campos ficam na mesma linha. */
+.characteristics-grid .counter{grid-template-columns:48px minmax(0,1fr) 48px!important}
+.characteristics-grid .counter button{width:48px!important;min-width:0!important;padding:0!important;font-size:30px!important}
+.characteristics-grid .counter input{min-width:0!important;width:100%!important;padding:0 2px!important;font-size:18px!important;line-height:1!important;text-align:center!important;overflow:hidden!important}
+@media(max-width:600px){
+.characteristics-grid .counter{grid-template-columns:54px minmax(0,1fr) 54px!important}
+.characteristics-grid .counter button{width:54px!important}
+}
+</style><style id="vsn-sidebar-brand-standard-v1">
+/* Identidade visual padrão: VSN + IMÓVEIS */
+.admin-sidebar .sidebar-brand{
+  display:flex!important;
+  height:72px!important;
+  flex:0 0 72px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-direction:column!important;
+  padding:0!important;
+  margin:0!important;
+  text-decoration:none!important;
+  border-bottom:1px solid #23394a!important;
+  color:#d3aa62!important;
+}
+.admin-sidebar .sidebar-brand strong{
+  display:block!important;
+  font:700 31px Georgia,serif!important;
+  letter-spacing:-1px!important;
+  line-height:1!important;
+}
+.admin-sidebar .sidebar-brand small{
+  display:block!important;
+  margin-top:5px!important;
+  color:#fff!important;
+  font:700 7px Manrope,Arial,sans-serif!important;
+  letter-spacing:4px!important;
+  line-height:1!important;
+}
+</style><style id="vsn-header-sidebar-final-fix-v1">
+/* Cabeçalho único: logo somente no topo; sidebar começa abaixo do header. */
+.admin-sidebar .sidebar-brand{display:none!important}
+.admin-sidebar{top:100px!important}
+@media(max-width:760px){
+  .admin-sidebar{top:72px!important}
+}
+</style><style id="owner-edit-preload-v2">
+/* Evita o flash do painel enquanto o papel do usuário é carregado. */
+body:not(.admin-ui-ready) .admin-sidebar{visibility:hidden!important}
+body:not(.admin-ui-ready) #vsnSidebarToggle{visibility:hidden!important}
+</style><style id="owner-edit-mode-v1">
+body.owner-edit-mode .admin-sidebar{display:none!important}
+body.owner-edit-mode .admin-main{margin-left:0!important}
+body.owner-edit-mode .vsn-sidebar-toggle{display:none!important}
+body.owner-edit-mode #vsnSidebarToggle{display:none!important}
+body.owner-edit-mode .top .updates-bell{display:none!important}
+body.owner-edit-mode .top{padding-left:4.7%!important}
+body.owner-edit-mode .wrap{max-width:1180px;margin-left:auto!important;margin-right:auto!important}
+</style><style id="compact-header-v1">
+@media(min-width:901px){
+  .wrap{padding-top:10px!important}
+  .head{margin-bottom:8px!important}
+  .head h1{font-size:26px!important;margin-bottom:2px!important}
+  .head p{font-size:12px!important}
+  .form-tabs{padding-bottom:8px!important;margin-bottom:0!important}
+  .form-tab{padding:8px 20px!important;font-size:13px!important}
+}
+</style></head><body><div class="admin-main"><header class="top"><button type="button" class="vsn-sidebar-toggle" id="vsnSidebarToggle" aria-label="Recolher menu lateral" aria-expanded="true" title="Recolher/expandir menu">☰</button><a class="admin-brand" id="adminBrand" href="painel-login.html" aria-label="VSN Imóveis"><span id="adminBrandText">VSN</span><small id="adminBrandSub">IMÓVEIS</small></a><div class="admin-header-actions"><div class="profile-btn"><span class="profile-avatar-wrap"><img class="profile-avatar" id="userPhoto" alt="Foto do usuário" style="display:none"><span class="profile-avatar-fallback" id="userInitial">U</span></span><span class="user" id="user">Usuário</span></div><a class="updates-bell" href="solicitacoes-proprietario.html" title="Solicitações" aria-label="Solicitações">🔔</a><button id="topLogout" type="button" onclick="S.auth.signOut()" class="header-logout">Sair</button></div></header><aside class="admin-sidebar"><a class="sidebar-brand" href="painel-login.html" aria-label="VSN Imóveis"><strong>VSN</strong><small>IMÓVEIS</small></a><nav class="sidebar-menu" aria-label="Menu administrativo">
+<a class="sidebar-link " href="painel-login.html"><span class="sidebar-ico"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-7h6v7"/></svg></span><span>Painel de Imóveis</span></a>
+<div class="sidebar-sub"><a class="active" href="painel-cadastro.html">Cadastrar imóvel</a></div>
+<div class="sidebar-group"><a class="sidebar-link " href="listar-lancamentos.html"><span class="sidebar-ico"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M9 7h1m4 0h1M9 11h1m4 0h1M9 15h1m4 0h1M10 21v-3h4v3"/></svg></span><span>Lançamentos</span></a><div class="sidebar-sub"><a class="" href="lancamentos.html">Cadastrar Lançamento</a><a href="construtoras.html">Cadastrar Construtora</a></div></div>
+<div class="sidebar-group"><a class="sidebar-link" href="condominios.html"><span class="sidebar-ico"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V5l7-3 7 3v16"/><path d="M9 8h1m4 0h1M9 12h1m4 0h1M10 21v-5h4v5"/></svg></span><span>Condomínio</span></a><div class="sidebar-sub"><a href="cadastrar-condominio.html">Cadastrar Condomínio</a></div></div>
+<div class="sidebar-divider"></div>
+<a class="sidebar-link" href="painel-login.html#clientes"><span class="sidebar-ico"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span>Clientes</span></a>
+<a class="sidebar-link " href="proprietario.html"><span class="sidebar-ico"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2z"/></svg></span><span>Usuários</span></a>
+<a class="sidebar-link " href="solicitacoes-proprietario.html"><span class="sidebar-ico"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span><span>Solicitações</span></a>
+<a class="sidebar-link" href="painel-login.html#configuracoes"><span class="sidebar-ico"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2z"/></svg></span><span>Configurações</span></a>
+</nav></aside><main class="wrap" id="app"><div class="card"><h1>Carregando painel...</h1><p class="help">Inicializando o acesso administrativo.</p></div></main></div><div id="toast" class="toast"></div><div id="photoUploadOverlay" class="photo-upload-overlay" aria-live="polite" aria-busy="true"><div class="photo-upload-box"><div class="photo-upload-icon">↑</div><h2>Enviando fotos</h2><p id="photoUploadMessage">Preparando as fotos do imóvel...</p><div class="photo-upload-progress"><span id="photoUploadBar"></span></div><div class="photo-upload-count" id="photoUploadCount">0 de 0 fotos</div></div></div><div id="ownerRequestModal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(6,29,45,.55);align-items:center;justify-content:center;padding:20px"><div style="width:min(520px,100%);background:#fff;border-radius:16px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.22)"><h2 id="ownerRequestModalTitle" style="margin:0 0 10px;font-size:21px;color:#061d2d">Solicitação enviada</h2><p id="ownerRequestModalMessage" style="margin:0;color:#53606b;line-height:1.55"></p><div style="display:flex;justify-content:flex-end;margin-top:22px"><button type="button" class="btn red" onclick="closeOwnerRequestModal()">OK</button></div></div></div><script src="/js/photo-optimizer.js"></script><script>
+const U=window.__VERSUS_CONFIG.supabaseUrl,K=window.__VERSUS_CONFIG.supabaseAnonKey,A=document.getElementById('app');let S=null;let canDeleteProperties=false;let currentUserRole='';let editOwnerId='';let editOriginalData=null;let items=[],selectedFiles=[],editingPhotos=[],editingPhotoThumbs=[],editId='';const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function toast(t,c=''){const e=document.getElementById('toast');e.textContent=t;e.className='toast show '+c;clearTimeout(window.__t);window.__t=setTimeout(()=>e.className='toast',3500)}
+function showOwnerRequestModal(message,title='Solicitação enviada'){
+  const m=document.getElementById('ownerRequestModal'),mt=document.getElementById('ownerRequestModalMessage'),tt=document.getElementById('ownerRequestModalTitle');
+  if(!m||!mt||!tt)return;
+  tt.textContent=title;mt.textContent=message;m.style.display='flex';
+}
+function closeOwnerRequestModal(){
+  const m=document.getElementById('ownerRequestModal');
+  if(m)m.style.display='none';
+  window.location.href='proprietario.html';
+}function showBootError(e){console.error('[VSN] boot',e);A.innerHTML='<div class="card login"><h1>Erro ao carregar o painel</h1><p class="help">O painel não conseguiu inicializar. Atualize a página (Ctrl+F5). Se continuar, o erro abaixo ajuda no diagnóstico:</p><div style="margin-top:14px;padding:12px;background:#fff5f5;border:1px solid #f0caca;border-radius:10px;color:#8a1c1c;font:12px monospace;white-space:pre-wrap">'+esc(e?.message||e||'Erro desconhecido')+'</div></div>'}
+async function boot(){try{if(!window.supabase?.createClient)throw new Error('Biblioteca Supabase não carregou.');S=window.supabase.createClient(U,K);const sessionPromise=S.auth.getSession();const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('O Supabase não respondeu a tempo.')),8000));const{data:{session}}=await Promise.race([sessionPromise,timeout]);if(session)await panel(session);else login();const{data:{subscription}}=S.auth.onAuthStateChange((event,s)=>{if(event==='SIGNED_OUT'){currentUserRole='';editOwnerId='';editOriginalData=null;login();return}if(s&&s.user?.id&&s.user.id!==window.__vsnPanelUserId){void panel(s)}});window.__vsnAuthSubscription=subscription}catch(e){console.error('[VSN] boot',e);if(String(e?.message||'').includes('não respondeu')){login('A sessão demorou para carregar. Entre novamente.')}else showBootError(e)}}function login(msg=''){A.innerHTML='<div class="card login"><h1>Área administrativa</h1><p class="help">Entre com o e-mail e a senha do administrador.</p><br><label>E-mail</label><input id="email" type="email" value="wm.vinicius@hotmail.com" autocomplete="username"><label>Senha</label><input id="password" type="password" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')enter()"><br><br><button class="btn red" onclick="enter()">Entrar</button><div id="msg" class="help" style="margin-top:12px">'+esc(msg)+'</div></div>'}async function enter(){const e=document.getElementById('email').value.trim(),p=document.getElementById('password').value,m=document.getElementById('msg');m.textContent='Entrando...';const{error}=await S.auth.signInWithPassword({email:e,password:p});if(error){m.style.color='#b42318';m.textContent='Não foi possível entrar: '+error.message;return}m.textContent='Carregando painel...'}async function panel(session){if(!session?.user?.id)return;if(window.__vsnPanelUserId===session.user.id&&document.getElementById('propertyForm'))return;window.__vsnPanelUserId=session.user.id;
+const tenantSlug=window.__VERSUS_CONFIG.slug;
+const tenantResult=await S.rpc('get_public_tenant_by_slug',{p_slug:tenantSlug});
+const tenant=Array.isArray(tenantResult.data)?tenantResult.data[0]:tenantResult.data;
+if(tenantResult.error||!tenant||tenant.status!=='active')throw new Error('Imobiliária não encontrada ou inativa.');
+const membershipResult=await S.from('crm_memberships').select('company_id,user_id,role').eq('company_id',tenant.id).eq('user_id',session.user.id).maybeSingle();
+if(membershipResult.error||!membershipResult.data)throw new Error('Este usuário não possui acesso a esta imobiliária.');
+window.__vsnCompanyId=tenant.id;window.__vsnCompanySlug=tenantSlug;window.__vsnMembershipRole=membershipResult.data.role;const headerProfile=await S.from('profiles').select('full_name,avatar_url').eq('id',session.user.id).maybeSingle();const headerName=(headerProfile.data?.full_name||session.user.user_metadata?.full_name||session.user.email||'Usuário').trim();document.getElementById('user').textContent=headerName.split(/\s+/)[0]||'Usuário';const avatarUrl=headerProfile.data?.avatar_url||'';const userPhoto=document.getElementById('userPhoto');const userInitial=document.getElementById('userInitial');if(avatarUrl){userPhoto.src=avatarUrl;userPhoto.style.display='block';userInitial.style.display='none';}else{userInitial.textContent=(document.getElementById('user').textContent||'U').charAt(0).toUpperCase();userInitial.style.display='grid';}canDeleteProperties=false;try{const [pr,override]=await Promise.all([S.from('profiles').select('role').eq('id',session.user.id).maybeSingle(),S.from('user_permissions').select('allowed').eq('user_id',session.user.id).eq('permission_key','properties.delete').maybeSingle()]);const role=pr.data?.role||'';currentUserRole=role;if(role==='proprietario'){document.body.classList.add('owner-edit-mode');}document.body.classList.add('admin-ui-ready');canDeleteProperties=role==='admin';if(override.data)canDeleteProperties=override.data.allowed===true}catch(err){console.warn('Não foi possível verificar permissão de exclusão:',err);canDeleteProperties=false}if(document.getElementById('propertyForm'))return;const requestedId=new URLSearchParams(location.search).get('id');if(requestedId){const {data,error}=await S.from('properties').select('*').eq('id',requestedId).single();if(error||!data){A.innerHTML='<div class="card"><h1>Imóvel não encontrado</h1><p class="help">Não foi possível carregar o imóvel para edição.</p><button class="btn gray" onclick="window.location.href=\'painel-cadastro.html\'">Voltar</button></div>';return}A.innerHTML='<div class="head"><div><h1>Editar imóvel</h1><p>Atualize os dados do imóvel cadastrado.</p></div><button type="button" class="btn gray" onclick="window.location.href=\'painel-login.html\'">← Voltar ao painel</button></div><div id="form"></div>';newProp(data);configureOwnerAccessUI(true);if(data.owner_id)loadOwnerData(data.owner_id);return}A.innerHTML='<div class="head"><div><h1>Novo imóvel</h1><p>Preencha os dados e deixe o sistema automatizar o restante.</p></div><button type="button" class="btn gray" onclick="window.location.href=\'painel-login.html\'">← Voltar ao painel</button></div><div id="form"></div>';newProp();configureOwnerAccessUI(false)}function configureOwnerAccessUI(isEditing){const b=document.getElementById('ownerAccessBtn'),h=document.getElementById('ownerAccessHelp');if(!b)return;if(currentUserRole!=='admin'||isEditing){b.style.display='none';if(h)h.textContent=isEditing?'O proprietário já possui acesso. A edição do imóvel não envia novamente os dados de acesso.':'Somente um administrador pode enviar os dados de acesso.'}}
+async function loadOwnerData(ownerId){
+  if(!ownerId)return;
+  const form=document.getElementById('propertyForm');
+  if(!form)return;
+  try{
+    const {data,error}=await S.from('profiles')
+      .select('full_name,email,phone')
+      .eq('id',ownerId)
+      .maybeSingle();
+    if(error)throw error;
+    if(!data){
+      toast('O imóvel tem um proprietário vinculado, mas o perfil não foi encontrado.','err');
+      return;
+    }
+    const name=form.elements.namedItem('owner_name');
+    const email=form.elements.namedItem('owner_email');
+    const phone=form.elements.namedItem('owner_phone');
+    if(name)name.value=data.full_name||'';
+    if(email)email.value=data.email||'';
+    if(phone)phone.value=data.phone||'';
+  }catch(error){
+    console.error('[VSN] loadOwnerData',error);
+    toast('Não foi possível carregar os dados do proprietário: '+(error.message||'erro desconhecido'),'err');
+  }
+}
+async function load(){const{data,error}=await S.from('properties').select('*').order('created_at',{ascending:false});if(error){const list=document.getElementById('list');if(list)list.innerHTML='<div class="card" style="color:#b42318">'+esc(error.message)+'</div>';return}items=data||[];document.getElementById('list').innerHTML='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><b>Imóveis cadastrados</b><div class="help">'+items.length+' imóvel(is)</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn red" onclick="newProp()">+ Novo imóvel</button><button class="btn gray" onclick="load()">Atualizar</button><button class="btn gray" onclick="S.auth.signOut()">Sair</button></div></div><div style="margin-top:16px">'+(items.length?items.map(x=>'<div style="padding:13px 0;border-top:1px solid var(--line)"><b>'+esc(x.title)+'</b><br><span class="help">'+esc(x.neighborhood||'Sem bairro')+' · '+(x.transaction_type==='rent'?'Locação':'Venda')+' · R$ '+Number(x.price||0).toLocaleString('pt-BR')+' · '+(x.published?'Publicado':'Rascunho')+'</span><div style="margin-top:8px"><button class="btn gray" onclick="edit(\''+x.id+'\')">Editar</button> <button class="btn gray" onclick="toggle(\''+x.id+'\')">'+(x.published?'Despublicar':'Publicar')+'</button></div></div>').join(''):'<span class="help">Nenhum imóvel cadastrado.</span>')+'</div></div>'}
+function autoCode(){return 'VSN'+Date.now().toString()+Math.random().toString(36).slice(2,6).toUpperCase()}function counter(name,v,unit){return '<div class="counter"><button type="button" onclick="adjust(\''+name+'\',-1)" aria-label="Diminuir">−</button><input id="counter-'+name+'" name="'+name+'" type="number" min="0" step="1" value="'+(v||0)+'"><button type="button" class="plus" onclick="adjust(\''+name+'\',1)" aria-label="Aumentar">+</button></div><div class="counter-unit">'+unit+'</div>'}function adjust(n,d){const i=document.getElementById('counter-'+n);if(i)i.value=Math.max(0,(Number(i.value)||0)+d)}
+function forceAreaTextField(){const form=document.getElementById('propertyForm');if(!form)return;const area=form.elements.area;if(!area)return;const wrap=area.closest('.counter')||area.parentElement;if(wrap&&wrap.classList.contains('counter')){const holder=wrap.parentElement;const value=area.value||'';wrap.outerHTML='<div class="money"><span>m²</span><input name="area" type="text" inputmode="decimal" autocomplete="off" placeholder="Ex.: 85" value="'+esc(value)+'" oninput="formatAreaField(this)"></div>';}}async function importPropertyFromLink(){
+ const input=document.getElementById('propertySourceUrl'),status=document.getElementById('linkImportStatus'),btn=document.getElementById('importLinkBtn');
+ const url=String(input?.value||'').trim();
+ if(!url){toast('Cole o link do anúncio.','err');return}
+ try{const parsed=new URL(url);if(!['http:','https:'].includes(parsed.protocol))throw new Error('Informe um link HTTP ou HTTPS válido.')}catch(e){toast(e.message||'Link inválido.','err');return}
+ const form=document.getElementById('propertyForm');
+ btn.disabled=true;btn.textContent='Buscando...';status.textContent='Lendo os dados públicos do anúncio...';
+ const mappings={title:'title',description:'description',property_type:'property_type',price:'price',rent_price:'rent_price',area:'area',bedrooms:'bedrooms',suites:'suites',bathrooms:'bathrooms',parking:'parking',cep:'cep',address:'address',number:'number',neighborhood:'neighborhood',city:'city',state:'state',condo_fee:'condo_fee',iptu:'iptu',unit_number:'unit_number'};
+ try{
+  const response=await fetch('/api/import-property-link',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+  const rawResponse=await response.text();
+  let result={};try{result=JSON.parse(rawResponse)}catch(_){}
+  if(!response.ok){
+   const detail=result.error||result.message;
+   if(detail)throw new Error(detail);
+   if(response.status>=500)throw new Error('O servidor de importação apresentou erro (HTTP '+response.status+'). Tente novamente em instantes.');
+   throw new Error('O portal não pôde ser lido (HTTP '+response.status+'). Confira o link e tente novamente.');
+  }
+  if(!result||typeof result!=='object'||!Object.values(result).some(v=>v!==null&&v!==undefined&&v!==''&&!(Array.isArray(v)&&!v.length)))throw new Error(result.error||'O portal respondeu, mas não retornou dados reconhecíveis do imóvel.');
+  Object.keys(mappings).forEach(name=>{const el=form?.elements.namedItem(name);if(el)el.value='';});
+  const set=(name,value)=>{const el=form?.elements.namedItem(name);if(!el||value===null||value===undefined||value==='')return;if(el.type==='checkbox')el.checked=!!value;else el.value=String(value);};
+  let imported=0;
+  Object.entries(mappings).forEach(([field,key])=>{const value=result[key];if(value!==null&&value!==undefined&&value!==''){set(field,value);imported++;}});
+  // Match pelo nome-base: normalized_name da base pode incluir endereço/número após o nome.
+  const condoName=String(result.condominium_name||'').trim();
+  if(condoName&&S){
+   try{
+    const normalizeName=v=>String(v||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+    const coreName=v=>normalizeName(v).replace(/^(condominio|edificio|ed|residencial|residencial|conjunto|empreendimento|torre)/,'');
+    const normalized=normalizeName(condoName),core=coreName(condoName);
+    let candidates=[];
+    // Primeiro tenta o nome-base dentro da chave normalizada, que pode conter rua e número.
+    if(core.length>=6){
+     const q=await S.from('condominiums').select('id,name,normalized_name,address,number,cep,neighborhood,city,state').ilike('normalized_name','%'+core+'%').limit(20);
+     if(q.error)throw q.error;
+     candidates=(q.data||[]).filter(c=>{const dbCore=coreName(c.name||String(c.normalized_name||'').split('|')[0]);return dbCore===core||dbCore.includes(core)||core.includes(dbCore);});
+    }
+    // Fallback por nome visível, ignorando prefixos como "Edifício" e "Condomínio".
+    if(!candidates.length){
+     const tokens=String(condoName).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().split(/[^a-z0-9]+/).filter(t=>t.length>2&&!['edificio','condominio','residencial','conjunto','empreendimento'].includes(t));
+     if(tokens.length){
+      let query=S.from('condominiums').select('id,name,normalized_name,address,number,cep,neighborhood,city,state').ilike('name','%'+tokens[tokens.length-1]+'%').limit(50);
+      const q=await query;
+      if(q.error)throw q.error;
+      candidates=(q.data||[]).filter(c=>{const dbCore=coreName(c.name);return tokens.every(t=>normalizeName(dbCore).includes(t))&&(dbCore===core||dbCore.includes(core)||core.includes(dbCore));});
+     }
+    }
+    // Remove duplicatas por id e não escolhe endereço arbitrariamente.
+    candidates=[...new Map(candidates.map(c=>[c.id,c])).values()];
+    if(candidates.length===1){
+     const condo=candidates[0];
+     const fillIfBlank=(field,value)=>{const el=form.elements.namedItem(field);if(el&&value!==null&&value!==undefined&&String(value).trim()!==''&&!String(el.value||'').trim()){el.value=String(value);return true;}return false;};
+     fillIfBlank('address',condo.address);fillIfBlank('number',condo.number);fillIfBlank('cep',condo.cep);fillIfBlank('neighborhood',condo.neighborhood);fillIfBlank('city',condo.city);fillIfBlank('state',condo.state);
+     const msg=document.getElementById('condomsg');
+     if(msg)msg.innerHTML='<span class="help" style="color:var(--blue)">Condomínio encontrado na base VSN. Localização completada com o cadastro existente.</span>';
+    }else if(candidates.length>1){
+     const msg=document.getElementById('condomsg');
+     if(msg)msg.innerHTML='<span class="help">Há mais de um cadastro compatível com esse nome. A localização não foi preenchida para evitar usar o endereço errado.</span>';
+    }else{
+     const msg=document.getElementById('condomsg');
+     if(msg)msg.innerHTML='<span class="help">O condomínio não foi localizado automaticamente na base VSN pelo nome importado.</span>';
+    }
+   }catch(condoLookupError){console.warn('[VSN] consulta do endereço pelo nome do condomínio:',condoLookupError);}
+  }
+  if(Array.isArray(result.features)){const checks=[...form.querySelectorAll('input[name="feat"]')];const norm=v=>String(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim().toLocaleLowerCase('pt-BR');const incoming=new Set(result.features.map(norm));checks.forEach(el=>{el.checked=incoming.has(norm(el.value));});}
+  if(Array.isArray(result.photos)&&typeof photoOrder!=='undefined'){const existing=new Set(photoOrder.filter(x=>x.kind==='existing').map(x=>x.value));result.photos.filter(u=>typeof u==='string'&&(u.startsWith('https://')||u.startsWith('http://'))&&!existing.has(u)).slice(0,35-photoOrder.length).forEach(url=>photoOrder.push({kind:'existing',value:url,thumb:''}));if(typeof syncPhotoArrays==='function')syncPhotoArrays();if(typeof renderPhotos==='function')renderPhotos();}
+  if(result.transaction_type==='rent'||result.transaction_type==='sale'||result.transaction_type==='both'){
+   const sale=form?.elements.namedItem('for_sale'),rent=form?.elements.namedItem('for_rent');
+   if(sale)sale.checked=result.transaction_type==='sale'||result.transaction_type==='both';
+   if(rent)rent.checked=result.transaction_type==='rent'||result.transaction_type==='both';
+  }
+  status.textContent='Importei '+imported+' campo(s) encontrado(s) no anúncio. Confira os dados antes de salvar; campos não encontrados ficam em branco.';
+  switchPropertyTab('property');if(typeof syncPurposeAndTitle==='function')syncPurposeAndTitle();if(typeof autoCondo==='function')autoCondo();toast('Dados do anúncio importados para revisão.','ok');
+ }catch(e){status.textContent=e.message||'Falha ao importar link.';toast(status.textContent,'err')}
+ finally{btn.disabled=false;btn.textContent='Buscar dados do anúncio'}
+}
+function switchPropertyTab(tab){const owner=tab==='owner',link=tab==='link';const ownerPane=document.getElementById('ownerTabContent'),propertyPane=document.getElementById('propertyTabContent'),linkPane=document.getElementById('linkTabContent');if(ownerPane)ownerPane.style.display=owner?'block':'none';if(propertyPane)propertyPane.style.display=(!owner&&!link)?'grid':'none';if(linkPane)linkPane.style.display=link?'block':'none';document.getElementById('tabOwner')?.classList.toggle('active',owner);document.getElementById('tabProperty')?.classList.toggle('active',!owner&&!link);document.getElementById('tabLink')?.classList.toggle('active',link);}
+async function resolvePropertyLocation(){
+  const form=document.getElementById('propertyForm');if(!form||!S)return;
+  const neighborhood=String(form.elements.neighborhood?.value||'').trim();
+  const city=String(form.elements.city?.value||'São Paulo').trim();
+  const state=String(form.elements.state?.value||'SP').trim().toUpperCase();
+  const regionInput=form.elements.region,subInput=form.elements.sub_neighborhood;
+  if(!neighborhood){if(regionInput)regionInput.value='';if(subInput)subInput.value='';return;}
+  try{
+    const {data,error}=await S.from('location_catalog').select('region,neighborhood').eq('city',city).eq('state',state).ilike('neighborhood',neighborhood).limit(2);
+    if(error)throw error;
+    const match=(data||[]).find(x=>String(x.neighborhood||'').trim().toLowerCase()===neighborhood.toLowerCase());
+    if(match){if(regionInput)regionInput.value=match.region||'';if(subInput)subInput.value=match.neighborhood||'';}
+    else {if(regionInput)regionInput.value='';if(subInput)subInput.value='';}
+  }catch(e){console.warn('[VSN] classificação automática de região/bairro',e);}
+}
+function ensureLocationHiddenFields(x={}){
+ const form=document.getElementById('propertyForm');if(!form)return;
+ [['region',x.region||''],['sub_neighborhood',x.sub_neighborhood||'']].forEach(([name,value])=>{
+  if(!form.elements.namedItem(name)){const input=document.createElement('input');input.type='hidden';input.name=name;input.value=value;form.appendChild(input);}
+ });
+ const n=form.elements.neighborhood,c=form.elements.city,st=form.elements.state;
+ [n,c,st].forEach(el=>{if(el&&!el.dataset.locationAutoBound){el.addEventListener('change',resolvePropertyLocation);el.addEventListener('blur',resolvePropertyLocation);el.dataset.locationAutoBound='1';}});
+ if(!String(x.region||'').trim()&&!String(x.sub_neighborhood||'').trim())resolvePropertyLocation();
+}
+async function loadTowerOptions(x={}){
+ const select=document.getElementById('tower');
+ if(!select)return;
+ try{
+  const {data,error}=await S.from('tower').select('id,code,name,sort_order').eq('active',true).order('sort_order',{ascending:true});
+  if(error)throw error;
+  const savedId=String(x.tower_id||'').trim();
+  const savedLabel=String(x.tower||'').trim();
+  const normalized=s=>String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  select.innerHTML='<option value="">Selecione</option>'+(data||[]).map(t=>'<option value="'+esc(t.id)+'">'+esc(t.code+' - '+t.name)+'</option>').join('');
+  let selected=(data||[]).find(t=>String(t.id)===savedId);
+  if(!selected&&savedLabel){selected=(data||[]).find(t=>normalized(t.code+' - '+t.name)===normalized(savedLabel));}
+  select.value=selected?selected.id:'';
+ }catch(error){
+  console.error('[VSN] loadTowerOptions',error);
+  select.innerHTML='<option value="">Não foi possível carregar</option>';
+ }
+}
+function newProp(x={}){
+  const pageY=window.scrollY;
+  newPropOriginal(x);
+  loadTowerOptions(x);
+  ensureLocationHiddenFields(x);
+  forceAreaTextField();
+  setTimeout(()=>{
+    forceAreaTextField();
+    const form=document.getElementById('propertyForm');
+    if(!form)return;
+    const propertyPane=document.getElementById('propertyTabContent');
+    if(!propertyPane)return;
+    const cols=[...propertyPane.children];
+    if(cols.length<2)return;
+    const leftCard=cols[0].querySelector('.card');
+    const rightCard=cols[1].querySelector('.card');
+    if(!leftCard||!rightCard)return;
+    const sections=[...form.querySelectorAll('.section')];
+    const byTitle=t=>sections.find(sec=>sec.querySelector('.title')?.textContent.trim()===t);
+    const location=byTitle('Localização');
+    const condo=byTitle('Condomínio');
+    const data=byTitle('Dados do imóvel');
+    const values=byTitle('Valores');
+    const characteristics=byTitle('Características');
+    const description=byTitle('Descrição');
+    const photos=byTitle('Fotos e vídeo');
+    if(location)leftCard.appendChild(location);
+    if(condo)leftCard.appendChild(condo);
+    if(data)rightCard.appendChild(data);
+    if(values)rightCard.appendChild(values);
+    if(characteristics)rightCard.appendChild(characteristics);
+    if(description)rightCard.appendChild(description);
+    if(photos)rightCard.appendChild(photos);
+  },0);
+  setTimeout(()=>{
+    const cep=document.getElementById('cep');
+    if(cep){cep.focus({preventScroll:true});if(typeof cep.select==='function'&&!cep.value){} }
+    window.scrollTo({top:pageY,left:0,behavior:'instant'});
+  },120);
+}
+function newPropOriginal(x={}){editId=x.id||'';editOwnerId=x.owner_id||'';editOriginalData=x.id?JSON.parse(JSON.stringify(x)):null;editingPhotos=[...(x.photos||[])];editingPhotoThumbs=(x.photos||[]).map((_,i)=>(x.photo_thumbnails||[])[i]||'');selectedFiles=[];photoOrder=[];document.getElementById('form').innerHTML='<form class="layout" id="propertyForm" onsubmit="event.preventDefault();save(this)"><div class="form-tabs" style="grid-column:1/-1"><button type="button" class="form-tab active" id="tabProperty" onclick="switchPropertyTab(\'property\')">Imóvel</button><button type="button" class="form-tab" id="tabOwner" onclick="switchPropertyTab(\'owner\')">Proprietário</button>'+(!editId?'<button type="button" class="form-tab" id="tabLink" onclick="switchPropertyTab(\'link\')">Cadastrar por link</button>':'')+'</div>'+(!editId?'<div id="linkTabContent" style="grid-column:1/-1;display:none"><div class="card"><div class="section" style="border-bottom:0;margin-bottom:0"><div class="section-head"><div class="icon">↗</div><div><h2 class="title">Cadastrar imóvel por link</h2><p class="help">Cole o link de um anúncio para importar os dados disponíveis e revisar antes de salvar.</p></div></div><div class="field"><label for="propertySourceUrl">Link do anúncio</label><input id="propertySourceUrl" type="url" placeholder="https://..." autocomplete="url"><p class="help">Funciona conforme as informações públicas que o site de origem permitir acessar.</p></div><button type="button" class="btn red" id="importLinkBtn" onclick="importPropertyFromLink()">Buscar dados do anúncio</button><div id="linkImportStatus" class="help" style="margin-top:12px"></div></div></div></div>':'')+'<div id="ownerTabContent" style="grid-column:1/-1;display:none"><div class="card"><div class="section"><div class="section-head"><div class="icon">👤</div><div><h2 class="title">Dados do proprietário</h2><p class="help">Informe os dados para criar o acesso e vincular o imóvel.</p></div></div><div class="grid"><div class="field"><label>Nome completo do proprietário *</label><input name="owner_name" placeholder="Nome completo"></div><div class="field"><label>E-mail do proprietário</label><input name="owner_email" type="email" placeholder="nome@email.com"></div><div class="field"><label>Celular do proprietário</label><input name="owner_phone" type="tel" placeholder="(11) 99999-9999"></div></div><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px"><button type="button" class="btn red" id="ownerAccessBtn" onclick="sendOwnerAccess()">Enviar login e senha</button><p class="help" id="ownerAccessHelp">Envia o acesso para o e-mail informado. Senha inicial: VSN + os 4 últimos dígitos do celular.</p></div></div></div></div><div id="propertyTabContent" class="layout" style="grid-column:1/-1"><div><div class="card"><div class="section"><div class="section-head"><div class="icon">1</div><div><h2 class="title">Dados do imóvel</h2><p class="help">Informações básicas do anúncio.</p></div></div><div class="grid"><div class="field"><label>Título do anúncio</label><input name="title" required placeholder="Gerado automaticamente na primeira vez" value="'+esc(x.title)+'" style="color:#0b2940;font-weight:800"><p class="help" style="margin-top:6px">Gerado automaticamente na primeira vez, mas você pode editar livremente.</p></div><div class="field"><label>Código</label><input name="code" value="'+esc(x.code||'Gerado ao salvar')+'" readonly aria-readonly="true" style="background:#f3f5f6;color:#68737d;cursor:not-allowed"></div><div class="field"><label>Finalidade <span class="req">*</span></label><div class="checks" style="margin-top:0"><label class="check"><input type="checkbox" name="for_sale" onchange="syncPurposeAndTitle()" '+((x.for_sale||x.transaction_type==='sale'||x.transaction_type==='both')?'checked':'')+'><span><b>Venda</b><small>Disponível para venda.</small></span></label><label class="check"><input type="checkbox" name="for_rent" onchange="syncPurposeAndTitle()" '+((x.for_rent||x.transaction_type==='rent'||x.transaction_type==='both')?'checked':'')+'><span><b>Locação</b><small>Disponível para locação.</small></span></label></div></div><div class="field"><label>Tipo do imóvel <span class="req">*</span></label><select name="property_type" onchange="syncPurposeAndTitle()"><option>Apartamento</option><option>Casa</option><option>Casa de condomínio</option><option>Studio</option><option>Cobertura</option><option>Terreno</option><option>Sala comercial</option><option>Outro</option></select></div></div></div><div class="section"><div class="section-head"><div class="icon">R$</div><div><h2 class="title">Valores</h2><p class="help">Preço, condomínio e IPTU.</p></div></div><div class="grid"><div class="field third" id="salePriceField"><label>Valor de venda <span class="req">*</span></label><div class="money"><span>R$</span><input id="salePrice" name="price" type="text" inputmode="decimal" autocomplete="off" value="'+formatMoney(x.price)+'" oninput="formatMoneyField(this)"></div></div><div class="field third" id="rentPriceField"><label>Valor de locação <span class="req">*</span></label><div class="money"><span>R$</span><input id="rentPrice" name="rent_price" type="text" inputmode="decimal" autocomplete="off" value="'+formatMoney(x.rent_price)+'" oninput="formatMoneyField(this)"></div></div><div class="field third"><label>Condomínio</label><div class="money"><span>R$</span><input name="condo_fee" type="text" inputmode="decimal" autocomplete="off" value="'+formatMoney(x.condo_fee)+'" oninput="formatMoneyField(this)"></div></div><div class="field third"><label>IPTU</label><div class="money"><span>R$</span><input name="iptu" type="text" inputmode="decimal" autocomplete="off" value="'+formatMoney(x.iptu)+'" oninput="formatMoneyField(this)"></div></div></div></div><div class="section"><div class="section-head"><div class="icon">⌂</div><div><h2 class="title">Características</h2><p class="help">Área, dormitórios, banheiros, suítes e vagas.</p></div></div><div class="characteristics-grid"><div><label>Área útil</label><div class="money"><span>m²</span><input name="area" type="text" inputmode="decimal" autocomplete="off" placeholder="Ex.: 85" value="'+formatArea(x.area)+'" oninput="formatAreaField(this)"></div></div><div><label>Dormitórios</label>'+counter('bedrooms',x.bedrooms,'dormitórios')+'</div><div><label>Suítes</label>'+counter('suites',x.suites,'suítes')+'</div><div><label>Banheiros</label>'+counter('bathrooms',x.bathrooms,'banheiros')+'</div><div><label>Vagas</label>'+counter('parking',x.parking,'vagas')+'</div></div><div style="margin-top:17px"><label>Características do Imóvel</label><div class="feature-search"><input type="search" id="featureSearch" placeholder="Pesquisar característica..." autocomplete="off" oninput="filterFeatures(this.value)"></div><div class="features" id="propertyFeaturesList">'+['Acabamento em alto padrão','Adega','Ambientes integrados','Aquecimento a gás','Ar Condicionado','Área de serviço','Banheira','Blackout nas janelas','Box no banheiro','Churrasqueira','Closet','Copa','Cozinha planejada','Dependência para funcionários','Depósito','Despensa','Dormitório para hóspedes','Eletrodomésticos','Elevador privativo','Escritório','Espaço gourmet','Fechadura digital','Garden','Hall de entrada','Hidromassagem','Infraestrutura de ar condicionado','Isolamento acústico','Lareira','Lavabo','Lavanderia','Metais de alto padrão','Mobiliado','Móveis planejados','Pé direito alto','Piscina','Piso aquecido','Piso de cerâmica','Piso de granito','Piso de madeira','Piso de mármore','Piso laminado','Piso porcelanato','Quarto(s) com armário(s)','Quarto(s) com sacada','Reformado','Sacada','Sacada com churrasqueira','Sauna','Tanque de lavar roupa','Teto em gesso','Varanda','Varanda gourmet','Aceita pets'].map(v=>'<label class="feature"><input type="checkbox" name="feat" value="'+v+'" '+((x.features||[]).includes(v)?'checked':'')+'>'+v+'</label>').join('')+'</div></div></div></div></div><div><div class="card"><div class="section"><div class="section-head"><div class="icon">⌖</div><div><h2 class="title">Localização</h2><p class="help">Preencha o endereço e o número. O sistema consulta a base VSN automaticamente.</p></div></div><div class="grid"><div class="field third"><label>CEP</label><input id="cep" name="cep" value="'+esc(x.cep)+'"></div><div class="field full"><label>Endereço</label><input id="address" name="address" placeholder="Ex.: Rua dos Pinheiros, 100" value="'+esc(x.address)+'"><div class="address-note"><span id="addrLoading" class="loading">Consultando endereço...</span><span id="addrHint">Digite o CEP para localizar.</span></div></div><div class="field"><label>Número</label><input id="number" name="number" value="'+esc(x.number||x.condominium_number)+'" onblur="autoCondo()"></div><div class="field"><label>Bairro <span class="req">*</span></label><input id="neighborhood" name="neighborhood" required value="'+esc(x.neighborhood)+'"></div><div class="field"><label>Cidade</label><input id="city" name="city" value="'+esc(x.city||'São Paulo')+'"></div><div class="field third"><label>Estado</label><input id="state" name="state" maxlength="2" value="'+esc(x.state||'SP')+'"></div><div class="field third"><label>Torre</label><select id="tower" name="tower"><option value="">Carregando...</option></select></div><div class="field third"><label>N. da unidade</label><input id="unit_number" name="unit_number" value="'+esc(x.unit_number||'')+'"></div></div></div><div class="section"><div class="section-head"><div class="icon">⌂</div><div><h2 class="title">Condomínio</h2><p class="help">Nome e características de lazer do condomínio.</p></div></div><div class="grid"><div class="field full"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><label style="margin:0">Nome do condomínio</label><button type="button" class="btn red" style="padding:9px 13px;font-size:12px" onclick="identifyCondo(true)">Identificar condomínio</button></div><div style="display:flex;gap:8px;align-items:center"><input id="condominium_name" name="condominium_name" placeholder="Será preenchido automaticamente" value="'+esc(x.condominium_name)+'" style="flex:1"><button type="button" class="btn gray" style="padding:9px 13px;font-size:12px;white-space:nowrap" onclick="clearCondoSelection()">Trocar</button></div><div id="condomsg" class="address-note"></div></div></div><div style="margin-top:17px"><label>Características de lazer do condomínio</label><div class="features"><label class="feature"><input type="checkbox" name="condo_feat" value="Piscina">Piscina</label><label class="feature"><input type="checkbox" name="condo_feat" value="Academia">Academia</label><label class="feature"><input type="checkbox" name="condo_feat" value="Churrasqueira">Churrasqueira</label><label class="feature"><input type="checkbox" name="condo_feat" value="Salão de festas">Salão de festas</label><label class="feature"><input type="checkbox" name="condo_feat" value="Playground">Playground</label><label class="feature"><input type="checkbox" name="condo_feat" value="Quadra esportiva">Quadra esportiva</label><label class="feature"><input type="checkbox" name="condo_feat" value="Brinquedoteca">Brinquedoteca</label><label class="feature"><input type="checkbox" name="condo_feat" value="Sauna">Sauna</label><label class="feature"><input type="checkbox" name="condo_feat" value="Espaço gourmet">Espaço gourmet</label><label class="feature"><input type="checkbox" name="condo_feat" value="Coworking">Coworking</label><label class="feature"><input type="checkbox" name="condo_feat" value="Pet place">Pet place</label><label class="feature"><input type="checkbox" name="condo_feat" value="Área verde">Área verde</label><label class="feature"><input type="checkbox" name="condo_feat" value="Bicicletário">Bicicletário</label><label class="feature"><input type="checkbox" name="condo_feat" value="Piscina infantil">Piscina infantil</label><label class="feature"><input type="checkbox" name="condo_feat" value="Solarium">Solarium</label><label class="feature"><input type="checkbox" name="condo_feat" value="Jardim">Jardim</label><label class="feature"><input type="checkbox" name="condo_feat" value="Portaria 24h">Portaria 24h</label><label class="feature"><input type="checkbox" name="condo_feat" value="Elevador">Elevador</label><label class="feature"><input type="checkbox" name="condo_feat" value="Vaga de visitante">Vaga de visitante</label><label class="feature"><input type="checkbox" name="condo_feat" value="Carregador para carro elétrico">Carregador para carro elétrico</label></div></div></div><div class="section"><div class="section-head"><div class="icon">✎</div><div><h2 class="title">Descrição</h2><p class="help">Adicione as informações do imóvel e gere uma descrição automática, sem preencher campos extras.</p></div></div><textarea id="description" name="description" maxlength="2000" placeholder="A descrição será criada automaticamente após as fotos...">'+esc(x.description)+'</textarea><div class="help" style="text-align:right"><span id="descCount">0</span>/2000</div><div class="ai"><b>✨ Descrição inteligente</b><p>A O sistema combina os dados do imóvel, os diferenciais, o condomínio e a localização para criar uma descrição comercial e objetiva.</p><button type="button" id="aiBtn" onclick="generateDescription()">Gerar descrição automaticamente</button></div></div><div class="section"><div class="section-head"><div class="icon">▧</div><div><h2 class="title">Fotos e vídeo</h2><p class="help">A primeira foto será a capa.</p></div></div><div class="upload" id="drop"><strong>Arraste e solte as fotos aqui</strong><p>ou escolha vários arquivos · até 35 fotos · JPG, PNG ou WEBP · até 10 MB por arquivo</p><label class="upload-btn" for="files">Escolher fotos</label><input id="files" type="file" accept="image/jpeg,image/png,image/webp" multiple onchange="pick(event)"></div><div id="photos" class="photos"></div><div style="margin-top:14px"><label>Link do vídeo <span style="font-weight:400;color:var(--muted)">(opcional)</span></label><input name="video_url" type="url" placeholder="https://..." value="'+esc(x.video_url)+'"></div></div><div class="checks"><label class="check"><input type="checkbox" name="featured" '+(x.featured?'checked':'')+'><span><b>Destacar imóvel</b><small>Aparece na área de destaque.</small></span></label><label class="check"><input type="checkbox" name="published" '+(x.id?(x.published?'checked':''):'checked')+'><span><b>Publicar no site</b><small>Desmarque para salvar como rascunho.</small></span></label></div></div></div></form>';document.querySelector('[name=property_type]').value=x.property_type||'Apartamento';setupAutoTitle();document.getElementById('description').addEventListener('input',()=>document.getElementById('descCount').textContent=document.getElementById('description').value.length);document.getElementById('descCount').textContent=(x.description||'').length;setupAddress();setupCondo();restoreCondoFeatures(x);setupDrop();renderPhotos();document.getElementById('form').insertAdjacentHTML('beforeend','<div class="actions">'+(editId&&canDeleteProperties?'<button type="button" class="btn gray" style="color:#b42318;border-color:#f0caca" onclick="deleteCurrentProperty()">Excluir imóvel</button>':'')+'<button type="button" class="btn gray" onclick="cancelForm()">Cancelar</button><button type="button" class="btn red" id="saveBtn" onclick="save(document.getElementById(\'propertyForm\'))">Salvar imóvel</button></div>')}
+function restoreCondoFeatures(property){
+  const boxes=[...document.querySelectorAll('input[name="condo_feat"]')];
+  if(!boxes.length)return;
+  const saved=Array.isArray(property?.condo_features)?property.condo_features:[];
+  const values=new Set(saved.map(v=>String(v).trim().toLowerCase()));
+  boxes.forEach(el=>el.checked=values.has(el.value.trim().toLowerCase()));
+}
+function formatArea(v){
+  if(v===null||v===undefined||v==='')return '';
+  const n=Number(v);
+  return Number.isFinite(n)?n.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2}):'';
+}
+function parseArea(v){
+  if(v===null||v===undefined||v==='')return 0;
+  let s=String(v).trim().replace(/\./g,'').replace(',','.');
+  const n=Number(s.replace(/[^0-9.-]/g,''));
+  return Number.isFinite(n)?n:0;
+}
+function formatAreaField(el){
+  let s=String(el.value||'').replace(/[^0-9,\.]/g,'');
+  if(s.includes(','))s=s.replace(/\./g,'');
+  else s=s.replace(/\./g,'');
+  el.value=s.replace(',',',');
+}
+function formatMoney(v){
+  if(v===null||v===undefined||v==='')return '';
+  const n=Number(v);
+  if(!Number.isFinite(n))return '';
+  return n.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2});
+}
+function parseMoney(v){
+  if(v===null||v===undefined||v==='')return 0;
+  let s=String(v).replace(/R\$\s?/g,'').trim();
+  if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');
+  else s=s.replace(/\./g,'');
+  s=s.replace(/[^0-9.-]/g,'');
+  const n=Number(s);
+  return Number.isFinite(n)?n:0;
+}
+function formatMoneyField(el){
+  const digits=String(el.value||'').replace(/\D/g,'');
+  if(!digits){el.value='';return;}
+  const n=Number(digits)/100;
+  el.value=n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function syncPurposeAndTitle(){
+  const f=document.getElementById('propertyForm');if(!f)return;
+  const sale=!!f.querySelector('[name="for_sale"]:checked'),rent=!!f.querySelector('[name="for_rent"]:checked');
+  const type=f.elements.property_type?.value||'Imóvel',bairro=(f.elements.neighborhood?.value||'').trim();
+  const finalidade=sale&&rent?'à venda e para locação':sale?'à venda':rent?'à locação':'';
+  const title=f.elements.title;
+  const generated=finalidade&&bairro?('Excelente '+type+' no bairro '+bairro+', '+finalidade+'.'):(finalidade?'Excelente '+type+', '+finalidade+'.':'');
+  if(title && !title.dataset.userEdited && (!editId || !title.value.trim())) title.value=generated;
+  syncPurposePrices();
+}
+function syncPurposePrices(){
+  const f=document.getElementById('propertyForm');if(!f)return;
+  const sale=!!f.querySelector('[name="for_sale"]:checked'),rent=!!f.querySelector('[name="for_rent"]:checked');
+  const sp=document.getElementById('salePriceField'),rp=document.getElementById('rentPriceField'),si=document.getElementById('salePrice'),ri=document.getElementById('rentPrice');
+  if(sp)sp.style.display=sale?'':'none';
+  if(rp)rp.style.display=rent?'':'none';
+  if(si){si.required=sale;si.disabled=!sale;}
+  if(ri){ri.required=rent;ri.disabled=!rent;}
+}
+function setupAutoTitle(){
+  const f=document.getElementById('propertyForm');if(!f)return;
+  const title=f.elements.title;
+  if(title)title.addEventListener('input',()=>{title.dataset.userEdited='1'});
+  const n=f.elements.neighborhood;if(n)n.addEventListener('input',syncPurposeAndTitle);
+  const t=f.elements.property_type;if(t)t.addEventListener('change',syncPurposeAndTitle);
+  f.querySelectorAll('[name="for_sale"],[name="for_rent"]').forEach(e=>e.addEventListener('change',syncPurposeAndTitle));
+  syncPurposeAndTitle();
+}
+function clearDraft(){}function addressData(){const f=document.getElementById("propertyForm");return{cep:f.elements.cep?.value.trim()||"",address:f.elements.address?.value.trim()||"",number:f.elements.number?.value.trim()||"",neighborhood:f.elements.neighborhood?.value.trim()||"",city:f.elements.city?.value.trim()||"",state:f.elements.state?.value.trim()||""}}async function lookupCondoBase(){
+ const d=addressData(),msg=document.getElementById("condomsg"),field=document.getElementById("condominium_name");
+ if(!d.number||!S)return false;
+ const clean=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g," ").replace(/\\s+/g," ").trim();
+ const digits=s=>String(s||"").replace(/\\D/g,"");
+ const addr=clean(d.address),number=String(d.number).trim(),city=clean(d.city||"São Paulo"),state=clean(d.state||"SP"),neigh=clean(d.neighborhood),cep=digits(d.cep);
+ const seq=(window.__condoLookupSeq||0)+1;window.__condoLookupSeq=seq;
+ if(msg)msg.innerHTML='<span style="color:var(--blue)">Consultando a base VSN pelo CEP e número...</span>';
+ try{
+   // Consulta somente a tabela principal. Não depende de tabela auxiliar nem de serviço externo.
+   const q=await S.from("condominiums").select("*").eq("number",number).eq("city",d.city||"São Paulo").eq("state",d.state||"SP").limit(1000);
+   if(seq!==window.__condoLookupSeq)return false;
+   if(q.error)throw q.error;
+   const rows=q.data||[];
+   let matches=[];
+   // Prioridade máxima: CEP + número exatos, ignorando hífen/pontuação no CEP.
+   if(cep)matches=rows.filter(x=>digits(x.cep)===cep&&digits(x.number)===digits(number));
+   // Se CEP não estiver cadastrado no condomínio, usar rua + número e validar cidade/UF.
+   if(!matches.length&&addr)matches=rows.filter(x=>clean(x.address)===addr&&digits(x.number)===digits(number));
+   // Se houver mais de um resultado plausível, não escolher arbitrariamente.
+   if(matches.length>1&&neigh){
+     const byNeighborhood=matches.filter(x=>clean(x.neighborhood)===neigh);
+     if(byNeighborhood.length)matches=byNeighborhood;
+   }
+   if(matches.length!==1){
+     window.__condoEnrichment={};
+     if(field)field.value="";
+     document.querySelectorAll('input[name="condo_feat"]').forEach(el=>el.checked=false);
+     if(msg)msg.innerHTML=matches.length>1
+       ?'<span class="help">Encontrei mais de um condomínio para esse CEP e número. Confira o bairro/endereço para evitar selecionar o registro errado.</span>'
+       :'<span class="help">Não encontrei condomínio com esse CEP e número na base VSN. Nenhuma pesquisa externa foi realizada.</span>';
+     return false;
+   }
+   const row=matches[0];
+   if(field)field.value=row.name||"";
+   if(row.address&&document.getElementById("address")&&!d.address)document.getElementById("address").value=row.address;
+   if(row.neighborhood&&!d.neighborhood)document.getElementById("neighborhood").value=row.neighborhood;
+   if(row.city)document.getElementById("city").value=row.city;
+   if(row.state)document.getElementById("state").value=row.state;
+   if(row.cep&&!d.cep)document.getElementById("cep").value=row.cep;
+   applyCondoEnrichment({
+     ...row,
+     condominium_name:row.name,
+     condominium_features:row.features||[],
+     condominium_construction_year:row.construction_year,
+     condominium_delivery_year:row.delivery_year,
+     condominium_units:row.units,
+     condominium_builder:row.builder
+   });
+   if(msg)msg.innerHTML='<span style="color:var(--green);font-weight:700">✓ Condomínio e características carregados da base VSN.</span>';
+   return true;
+ }catch(e){
+   if(seq!==window.__condoLookupSeq)return false;
+   console.error("[VSN] lookupCondoBase",e);
+   if(msg)msg.innerHTML='<span class="help">Erro ao consultar a base de condomínios VSN.</span>';
+   return false;
+ }
+}function clearCondoSelection(){const field=document.getElementById("condominium_name"),msg=document.getElementById("condomsg");if(field){field.value="";field.focus();}window.__condoEnrichment={};window.__pendingCondo=null;if(msg)msg.innerHTML="<span class=\"help\">Digite o novo condomínio e salve o imóvel. A identificação automática continua desativada na edição.</span>";}function autoCondo(){if(editId)return;clearTimeout(window.__condoTimer);window.__condoTimer=setTimeout(lookupCondoBase,450)}function setupCondo(){const f=document.getElementById("propertyForm");const a=f.elements.address,n=f.elements.number,c=f.elements.cep;if(a)a.addEventListener("input",autoCondo);if(c){c.addEventListener("input",autoCondo);c.addEventListener("blur",autoCondo)}if(n){n.addEventListener("input",autoCondo);n.addEventListener("blur",autoCondo)}}function applyCondoEnrichment(data){window.__condoEnrichment=data||{};const values=new Set(Array.isArray(data?.features)?data.features:[]);document.querySelectorAll('input[name="condo_feat"]').forEach(el=>{el.checked=values.has(el.value)});const parts=[];if(data?.condominium_delivery_year)parts.push("Entrega: "+data.condominium_delivery_year);if(data?.condominium_construction_year)parts.push("Construção: "+data.condominium_construction_year);if(data?.condominium_units)parts.push("Unidades: "+data.condominium_units);if(data?.towers)parts.push("Torres: "+data.towers);if(data?.floors)parts.push("Andares: "+data.floors);if(data?.condominium_builder)parts.push("Construtora: "+data.condominium_builder);const msg=document.getElementById("condomsg");if(msg&&parts.length){msg.insertAdjacentHTML("beforeend",'<div style="margin-top:10px;padding:10px;border:1px solid #d8e1e7;background:#f7fafc;border-radius:10px"><b>Dados encontrados do condomínio:</b><br><span style="font-size:12px;color:#5f6b73">'+esc(parts.join(" · "))+'</span></div>')}}async function identifyCondo(force=false){
+ const d=addressData(),msg=document.getElementById("condomsg"),field=document.getElementById("condominium_name");
+ if(!d.address||!d.number){if(force)toast("Preencha Endereço e Número para consultar a base VSN.","err");return}
+ window.__pendingCondo=null;
+ if(msg)msg.innerHTML='<span style="color:var(--blue)">Buscando exclusivamente na base de condomínios VSN...</span>';
+ try{
+   const found=await lookupCondoBase();
+   if(found){toast("Condomínio encontrado na base VSN.","ok");return}
+   if(msg)msg.innerHTML='<span class="help">Nenhum condomínio com correspondência segura de endereço e número foi encontrado na base VSN. Nenhuma pesquisa externa foi realizada.</span>';
+   if(force)toast("Condomínio não encontrado na base VSN. Confira o endereço e o número.","err");
+ }catch(e){
+   console.error("[VSN] identifyCondo",e);
+   if(msg)msg.innerHTML='<span class="help">Não foi possível consultar a base VSN. Tente novamente.</span>';
+   if(force)toast(e.message||"Falha ao consultar a base VSN.","err");
+ }
+}
+function selectCondoCandidate(i){
+  const c=window.__condoCandidates?.[i],field=document.getElementById("condominium_name"),msg=document.getElementById("condomsg");
+  if(!c||!field)return;
+  field.value=c.nome;
+  window.__pendingCondo={addressKey:(()=>{const d=addressData(),clean=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim();return clean(d.address)+"|"+String(d.number).trim()+"|"+clean(d.city||"São Paulo")+"|"+clean(d.state||"SP")})(),name:c.nome,source:c.fonte};
+  const old=msg.querySelector('[data-confirm-condo]');
+  if(old)old.remove();
+  msg.insertAdjacentHTML("beforeend",'<div data-confirm-condo style="margin-top:10px;padding:11px;border:1px solid #b9d8c0;background:#f3fbf5;border-radius:10px"><b>Selecionado:</b> '+esc(c.nome)+'<br><span style="font-size:12px;color:#6c7881">Ainda NÃO está na base VSN.</span><br><button type="button" class="btn red" style="margin-top:9px;padding:9px 13px;font-size:12px" onclick="saveCondoCandidate()">✓ Confirmar e adicionar à base</button></div>');
+}
+async function saveCondoCandidate(){
+  const p=window.__pendingCondo,d=addressData(),field=document.getElementById("condominium_name"),msg=document.getElementById("condomsg");
+  if(!p?.name||!field){toast("Nenhum condomínio selecionado para confirmar.","err");return}
+  try{
+    const e=window.__condoEnrichment||{};
+    const cleanNoSpace=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");
+    const condoRow={normalized_name:cleanNoSpace(p.name),name:p.name,address:d.address,number:d.number,neighborhood:d.neighborhood||null,city:d.city||"São Paulo",state:d.state||"SP",cep:d.cep||null,features:Array.isArray(e.features)?e.features:[],delivery_year:e.condominium_delivery_year||e.delivery_year||null,construction_year:e.condominium_construction_year||e.construction_year||null,units:e.condominium_units||e.units||null,towers:e.towers||null,floors:e.floors||null,builder:e.condominium_builder||e.builder||null,source_urls:Array.isArray(e.sources)?e.sources:[],evidence:e.evidence||null,confidence:e.confidence||"manual",last_enriched_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+    const cr=await S.from("condominiums").upsert(condoRow,{onConflict:"normalized_name"}).select().single();
+    if(cr.error)throw cr.error;
+    const r=await S.from("condominium_address_map").upsert({address_key:p.addressKey,address:d.address,number:d.number,neighborhood:d.neighborhood||null,city:d.city||"São Paulo",state:d.state||"SP",cep:d.cep||null,condominium_name:p.name,condominium_id:cr.data.id,source:p.source||"confirmação manual",updated_at:new Date().toISOString()},{onConflict:"address_key"}).select().maybeSingle();
+    if(r.error)throw r.error;
+    const data={ok:true,condominium_id:cr.data.id,features:condoRow.features};
+    window.__pendingCondo=null;
+    msg.innerHTML='<div style="margin-top:10px;padding:11px;border:1px solid #b9d8c0;background:#f3fbf5;border-radius:10px"><b>✓ Condomínio confirmado:</b> '+esc(p.name)+'</div>';
+    const debugEl=document.getElementById("condoDebug");if(debugEl){let arr=[];try{arr=JSON.parse(debugEl.textContent||"[]")}catch(_){}arr.push({etapa:"7. SALVAMENTO NA BASE VSN",salvo:true,registro:data||null});debugEl.textContent=JSON.stringify(arr,null,2)}
+    toast("Condomínio confirmado e adicionado à base VSN.","ok");
+  }catch(e){toast("Não foi possível adicionar à base: "+e.message,"err")}
+}
+function setupAddress(){const e=document.getElementById('cep');let t;e.addEventListener('input',()=>{e.value=e.value.replace(/\D/g,'').slice(0,8);clearTimeout(t);if(e.value.length===8)t=setTimeout(lookupAddress,250)});e.addEventListener('blur',lookupAddress)}async function lookupAddress(){const cep=document.getElementById('cep').value.replace(/\D/g,'');if(cep.length!==8)return;const l=document.getElementById('addrLoading'),h=document.getElementById('addrHint');l.textContent='Consultando CEP...';l.style.display='inline';h.style.display='none';try{const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');if(!r.ok)throw new Error('Falha na consulta');const a=await r.json();if(a.erro)throw new Error('CEP não encontrado');document.getElementById('address').value=a.logradouro||'';document.getElementById('neighborhood').value=a.bairro||'';document.getElementById('city').value=a.localidade||'';document.getElementById('state').value=a.uf||'';h.textContent='✓ Endereço preenchido automaticamente pelo CEP';h.style.display='inline';autoCondo()}catch(e){h.textContent=e.message==='CEP não encontrado'?'CEP não encontrado. Confira o número.':'Não foi possível consultar o CEP. Preencha o endereço manualmente.';h.style.display='inline'}finally{l.style.display='none'}}function setupDrop(){const z=document.getElementById('drop');['dragenter','dragover'].forEach(v=>z.addEventListener(v,e=>{e.preventDefault();z.classList.add('drag')}));['dragleave','drop'].forEach(v=>z.addEventListener(v,e=>{e.preventDefault();z.classList.remove('drag')}));z.addEventListener('drop',e=>pick({target:{files:e.dataTransfer.files}}))}const MAX_PROPERTY_PHOTOS=35;
+function pick(e){
+ const files=[...e.target.files];
+ const valid=files.filter(f=>f.size<=10*1024*1024&&/^image\/(jpeg|png|webp)$/.test(f.type));
+ const available=Math.max(0,MAX_PROPERTY_PHOTOS-photoOrder.length);
+ const accepted=valid.slice(0,available);
+ const rejected=valid.length-accepted.length;
+ if(rejected>0)toast('O anúncio pode ter no máximo 35 fotos. '+rejected+' foto(s) não foram adicionadas.','err');
+ if(!available&&valid.length)toast('Este anúncio já atingiu o limite de 35 fotos.','err');
+ selectedFiles=[...selectedFiles,...accepted];
+ syncPhotoOrder();renderPhotos();
+}let photoOrder=[];
+function syncPhotoOrder(){photoOrder=[...editingPhotos.map((url,i)=>({kind:'existing',value:url,thumb:editingPhotoThumbs[i]||''})),...selectedFiles.map((file)=>({kind:'new',value:file}))]}
+function syncPhotoArrays(){editingPhotos=photoOrder.filter(x=>x.kind==='existing').map(x=>x.value);editingPhotoThumbs=photoOrder.filter(x=>x.kind==='existing').map(x=>x.thumb||'');selectedFiles=photoOrder.filter(x=>x.kind==='new').map(x=>x.value)}
+function renderPhotos(){
+ const p=document.getElementById('photos');if(!p)return;
+ if(!photoOrder.length)syncPhotoOrder();
+ p.innerHTML='';
+ photoOrder.forEach((item,i)=>{
+   const d=document.createElement('div');d.className='photo '+(i===0?'primary':'');d.draggable=true;d.dataset.photoIndex=i;
+   d.innerHTML='<img src="'+(item.kind==='existing'?esc(item.value):URL.createObjectURL(item.value))+'"><button type="button" onclick="removePhoto('+i+')">×</button><span class="drag-hint">↕ Arraste</span>';
+   d.addEventListener('dragstart',e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(i));d.classList.add('dragging')});
+   d.addEventListener('dragend',()=>d.classList.remove('dragging'));
+   d.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';d.classList.add('drag-over')});
+   d.addEventListener('dragleave',()=>d.classList.remove('drag-over'));
+   d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('drag-over');const from=Number(e.dataTransfer.getData('text/plain'));movePhoto(from,i)});
+   p.appendChild(d);
+ });
+}
+function movePhoto(from,to){if(from===to||from<0||to<0||from>=photoOrder.length||to>=photoOrder.length)return;const item=photoOrder.splice(from,1)[0];photoOrder.splice(to,0,item);syncPhotoArrays();renderPhotos()}
+function removePhoto(i){if(i<0||i>=photoOrder.length)return;photoOrder.splice(i,1);syncPhotoArrays();renderPhotos()}
+function removeSelected(i){const idx=photoOrder.findIndex(x=>x.kind==='new'&&selectedFiles[i]===x.value);if(idx>=0)removePhoto(idx)}
+function removeExisting(i){const idx=photoOrder.findIndex(x=>x.kind==='existing'&&editingPhotos[i]===x.value);if(idx>=0)removePhoto(idx)}
+async function resizeDataUrl(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,1200/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.72))};im.onerror=reject;im.src=r.result};r.onerror=reject;r.readAsDataURL(file)})}async function generateDescription(){
+  const b=document.getElementById('aiBtn');
+  if(!b)return;
+  b.disabled=true;b.textContent='Criando descrição...';
+  try{
+    const form=document.getElementById('propertyForm');
+    const f=new FormData(form);
+    const sale=!!form.querySelector('[name=for_sale]:checked');
+    const rent=!!form.querySelector('[name=for_rent]:checked');
+    const type=String(f.get('property_type')||'Imóvel').trim();
+    const purpose=sale&&rent?'à venda e para locação':rent?'para locação':sale?'à venda':'disponível para negociação';
+    const area=String(f.get('area')||'').trim();
+    const bedrooms=Number(f.get('bedrooms')||0),suites=Number(f.get('suites')||0),bathrooms=Number(f.get('bathrooms')||0),parking=Number(f.get('parking')||0);
+    const neighborhood=String(f.get('neighborhood')||'').trim(),city=String(f.get('city')||'São Paulo').trim();
+    const address=String(f.get('address')||'').trim();
+    const features=[...document.querySelectorAll('input[name=feat]:checked')].map(e=>String(e.value).toLowerCase());
+    let condoFeatures=[...document.querySelectorAll('input[name=condo_feat]:checked')].map(e=>String(e.value).toLowerCase());
+
+    // Puxa automaticamente os dados do condomínio encontrado na base VSN.
+    // A busca prioriza endereço/número/cidade/estado para evitar confundir condomínios com o mesmo nome.
+    let condoDbFeatures=[];
+    let condoProximity=[];
+    let condoMatched=null;
+    const condoName=String(f.get('condominium_name')||'').trim();
+    const condoAddress=String(f.get('condominium_address')||f.get('address')||'').trim();
+    const condoNumber=String(f.get('condominium_number')||f.get('number')||'').trim();
+    const condoCity=String(f.get('condominium_city')||city||'São Paulo').trim();
+    const condoState=String(f.get('condominium_state')||f.get('state')||'SP').trim();
+
+    if(condoName && S){
+      try{
+        let cq=S.from('condominiums')
+          .select('id,name,address,number,city,state,features')
+          .eq('name',condoName)
+          .eq('city',condoCity)
+          .eq('state',condoState)
+          .limit(20);
+        const {data:condos,error:condoErr}=await cq;
+        if(!condoErr && Array.isArray(condos) && condos.length){
+          condoMatched=condos.find(x=>String(x.address||'').trim().toLowerCase()===condoAddress.toLowerCase() && String(x.number||'').trim()===condoNumber)
+            || condos.find(x=>String(x.address||'').trim().toLowerCase()===condoAddress.toLowerCase())
+            || condos[0];
+          condoDbFeatures=Array.isArray(condoMatched?.features)?condoMatched.features.filter(Boolean):[];
+          if(condoMatched?.id){
+            const pr=await S.from('condominium_proximity')
+              .select('category,place_names,description')
+              .eq('condominium_id',condoMatched.id)
+              .order('category');
+            if(!pr.error)condoProximity=pr.data||[];
+          }
+        }
+      }catch(e){console.warn('[VSN] dados do condomínio na descrição',e)}
+    }
+
+    // Características vindas da base entram junto com as marcadas manualmente.
+    condoFeatures=[...new Set([...condoFeatures,...condoDbFeatures.map(x=>String(x).toLowerCase())])];
+
+    const n=type.toLowerCase();
+    const a=Number(String(area).replace(/\\./g,'').replace(',','.'))||0;
+    const ftxt=[...features,...condoFeatures].join(' ');
+    let audience='praticidade e conforto no dia a dia';
+    if(/cobertura|luxo|alto padrão/.test(n+' '+ftxt)||a>=150||suites>=3) audience='conforto, boa distribuição dos ambientes e mais espaço para a rotina';
+    else if(/studio/.test(n)||a<=35||bedrooms<=1) audience='praticidade, funcionalidade e uma localização conveniente';
+    else if(a>=80||bedrooms>=3||suites>=2) audience='mais espaço, conforto e funcionalidade para a rotina';
+    else if(/mobiliado/.test(ftxt)) audience='praticidade e facilidade para morar';
+
+    const isHouse=n.includes('casa');
+    const article=isHouse?'A':'O';
+    const noun=isHouse?n:type.toLowerCase();
+
+    const intro=type+(neighborhood?' no bairro '+neighborhood:'')+' '+purpose+'.';
+    const details=[];
+    if(area)details.push(area+' m² de área útil');
+    if(bedrooms)details.push(bedrooms+' '+(bedrooms===1?'dormitório':'dormitórios'));
+    if(suites)details.push(suites+' '+(suites===1?'suíte':'suítes'));if(bathrooms)details.push(bathrooms+' '+(bathrooms===1?'banheiro':'banheiros'));
+    if(parking)details.push(parking+' '+(parking===1?'vaga de garagem':'vagas de garagem'));
+
+    const p2=details.length
+      ?article+' '+noun+' possui '+descList(details)+'. A distribuição dos ambientes oferece '+audience+'.'
+      :article+' '+noun+' oferece uma proposta prática para quem busca '+audience+'.';
+
+    const p3=features.length?'Entre os diferenciais do imóvel estão '+descList(features)+'.':'';
+
+    const p4=condoFeatures.length
+      ?'O condomínio conta com '+descList(condoFeatures)+', oferecendo opções de lazer e conveniência para a rotina.'
+      :'';
+
+    let p5='';
+
+    // Quando a coleta do QuintoAndar já tiver terminado para este condomínio,
+    // as proximidades estruturadas entram diretamente na descrição.
+    if(condoProximity.length){
+      const proximityParts=[];
+      condoProximity.forEach(x=>{
+        const names=Array.isArray(x.place_names)?x.place_names.filter(Boolean):[];
+        if(names.length)proximityParts.push(names.length===1?names[0]:descList(names));
+      });
+      const uniqueProximity=[...new Set(proximityParts)];
+      if(uniqueProximity.length){
+        p5='A localização oferece praticidade no dia a dia, com proximidade a '+descList(uniqueProximity)+'.';
+      }
+    }
+
+    if(!p5 && address){
+      try{
+        const controller=new AbortController();
+        const timer=setTimeout(()=>controller.abort(),9000);
+        const lr=await fetch('/api/location-nearby.js',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          signal:controller.signal,
+          body:JSON.stringify({address,number:String(f.get('number')||''),neighborhood,city,state:String(f.get('state')||'SP'),cep:String(f.get('cep')||'')})
+        });
+        clearTimeout(timer);
+        const raw=await lr.text();
+        let lj={};try{lj=JSON.parse(raw)}catch(_){lj={}};
+        if(lr.ok&&Array.isArray(lj.places)&&lj.places.length){
+          const groups={};lj.places.forEach(x=>{(groups[x.category]??=[]).push(x)});
+          const parts=[];
+          if(groups.Transporte?.length)parts.push('transporte público');
+          if(groups.Supermercados?.length)parts.push('supermercados');
+          if(groups.Educação?.length)parts.push('escolas e instituições de ensino');
+          if(groups.Saúde?.length)parts.push('serviços de saúde');
+          if(groups.Farmácias?.length)parts.push('farmácias');
+          if(groups.Comércio?.length)parts.push('comércio e serviços');
+          if(groups.Lazer?.length)parts.push('opções de lazer');
+          if(parts.length)p5='A localização facilita a rotina, com '+descList(parts)+' nas proximidades.';
+        }
+      }catch(_){}
+    }
+    if(!p5&& (neighborhood||city))p5='Localizado'+(isHouse?'a':'')+(neighborhood?' no bairro '+neighborhood:'')+(city?', em '+city:'')+', o imóvel combina praticidade de acesso com a conveniência da região.';
+
+    const description=[intro,p2,p3,p4,p5].filter(Boolean).join('\n\n').trim();
+    document.getElementById('description').value=description;
+    document.getElementById('descCount').textContent=description.length;
+    toast('Descrição criada automaticamente.','ok');
+  }catch(e){
+    console.error('[VSN] generateDescription',e);
+    toast(e.message||'Falha ao gerar descrição','err');
+  }finally{
+    b.disabled=false;b.textContent='Gerar descrição automaticamente';
+  }
+}
+function descList(items){
+  const a=items.filter(Boolean);
+  if(a.length<=1)return a[0]||'';
+  if(a.length===2)return a[0]+' e '+a[1];
+  return a.slice(0,-1).join(', ')+' e '+a[a.length-1];
+}
+function showPhotoUploadProgress(total){const o=document.getElementById('photoUploadOverlay'),m=document.getElementById('photoUploadMessage'),bar=document.getElementById('photoUploadBar'),count=document.getElementById('photoUploadCount');if(!o)return;o.classList.add('show');if(bar)bar.style.width='0%';if(m)m.textContent='Preparando as fotos do imóvel...';if(count)count.textContent='0 de '+total+' fotos'}
+function updatePhotoUploadProgress(done,total){const m=document.getElementById('photoUploadMessage'),bar=document.getElementById('photoUploadBar'),count=document.getElementById('photoUploadCount');const pct=total?Math.round(done/total*100):100;if(bar)bar.style.width=pct+'%';if(m)m.textContent=done<total?'Enviando fotos...':'Fotos enviadas. Finalizando cadastro...';if(count)count.textContent=done+' de '+total+' fotos'}
+function hidePhotoUploadProgress(){const o=document.getElementById('photoUploadOverlay');if(o)o.classList.remove('show')}
+async function uploadPhotos(id,files,onProgress){
+ const list=Array.isArray(files)?files:[];if(!list.length)return[];
+ const results=new Array(list.length);let done=0;
+ const worker=async(index)=>{
+   const prepared=await VSNPhotoOptimizer.prepare(list[index]);
+   const stamp=Date.now()+'_'+index+'_'+Math.random().toString(36).slice(2,8);
+   const ext=(list[index].name.split('.').pop()||'jpg').toLowerCase();
+   const mainPath='properties/'+id+'/images/'+stamp+'.'+ext;
+   const thumbPath='properties/'+id+'/thumbs/'+stamp+'.webp';
+   const mainUp=await S.storage.from('property-photos').upload(mainPath,prepared.main,{contentType:prepared.main.type||'image/webp',upsert:false});
+   if(mainUp.error)throw mainUp.error;
+   const thumbUp=await S.storage.from('property-photos').upload(thumbPath,prepared.thumb,{contentType:'image/webp',upsert:false});
+   if(thumbUp.error)throw thumbUp.error;
+   results[index]={
+     url:S.storage.from('property-photos').getPublicUrl(mainPath).data.publicUrl,
+     thumb:S.storage.from('property-photos').getPublicUrl(thumbPath).data.publicUrl
+   };
+   done++;if(onProgress)onProgress(done,list.length);
+ };
+ const workers=[];const concurrency=Math.min(4,list.length);
+ for(let i=0;i<concurrency;i++)workers.push((async()=>{for(let j=i;j<list.length;j+=concurrency)await worker(j)})());
+ await Promise.all(workers);return results;
+}async function sendOwnerAccess(){if(currentUserRole!=='admin'){toast('Somente um administrador pode enviar os dados de acesso.','err');return}const b=document.getElementById('ownerAccessBtn');const form=document.getElementById('propertyForm');if(!form)return;const f=new FormData(form);const nome=String(f.get('owner_name')||'').trim(),email=String(f.get('owner_email')||'').trim(),celular=String(f.get('owner_phone')||'').trim();if(!nome||!email||!celular){toast('Preencha nome, e-mail e celular do proprietário.','err');return}const {data:{session}}=await S.auth.getSession();if(!session?.access_token){toast('Sua sessão expirou. Entre novamente.','err');return}b.disabled=true;b.textContent='Enviando...';try{const r=await fetch('/api/proprietario-cadastro',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({nome,email,celular,action:'send_access'})});const result=await r.json().catch(()=>({}));if(!r.ok)throw new Error(result.error||'Não foi possível enviar os dados de acesso.');toast(result.sent?'Login e senha enviados para '+email+'.':result.pendingEmail?'O cadastro está aguardando o envio. Tente novamente pelo botão.':'Proprietário já cadastrado. Nenhuma alteração foi feita e nenhum e-mail foi enviado.','ok')}catch(e){toast(e.message||'Falha ao enviar o e-mail.','err')}finally{b.disabled=false;b.textContent='Enviar login e senha'}}
+async function syncCondominiumFeatures(name,features){
+  const condoName=String(name||"").trim();
+  if(!condoName)return;
+  const normalized_name=String(condoName).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");
+  if(!normalized_name)return;
+  const saved=await S.from("condominiums").upsert({
+    normalized_name,
+    name:condoName,
+    features:Array.isArray(features)?features:[],
+    updated_at:new Date().toISOString()
+  },{onConflict:"normalized_name"}).select("id").single();
+  if(saved.error)throw saved.error;
+}
+async function save(form){if(!form.reportValidity())return;if(photoOrder.length>35){toast('O anúncio pode ter no máximo 35 fotos. Remova algumas fotos antes de salvar.','err');return;}if(!form.querySelector('[name=for_sale]:checked')&&!form.querySelector('[name=for_rent]:checked')){toast('Selecione Venda, Locação ou as duas opções.','err');return;}const b=document.getElementById('saveBtn');b.disabled=true;b.textContent='Salvando...';const f=new FormData(form),sale=f.has('for_sale'),rent=f.has('for_rent');syncPurposeAndTitle();let ownerId=editOwnerId||null;const ownerName=String(f.get('owner_name')||'').trim(),ownerEmail=String(f.get('owner_email')||'').trim(),ownerPhone=String(f.get('owner_phone')||'').trim();if(ownerName||ownerEmail||ownerPhone){if(editId){ownerId=editOwnerId||ownerId;}else{if(!ownerName||!ownerEmail||!ownerPhone){toast('Preencha nome, e-mail e celular do proprietário.','err');b.disabled=false;b.textContent='Salvar imóvel';return}if(currentUserRole!=='admin'){toast('Somente um administrador pode enviar os dados de acesso.','err');b.disabled=false;b.textContent='Salvar imóvel';return}try{const {data:{session:ownerSession}}=await S.auth.getSession();if(!ownerSession?.access_token)throw new Error('Sua sessão expirou. Entre novamente.');const ownerResponse=await fetch('/api/proprietario-cadastro',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ownerSession.access_token},body:JSON.stringify({nome:ownerName,email:ownerEmail,celular:ownerPhone})});const ownerResult=await ownerResponse.json().catch(()=>({}));if(!ownerResponse.ok)throw new Error(ownerResult.error||'Não foi possível cadastrar o proprietário.');ownerId=ownerResult.userId;if(!ownerId)throw new Error('O cadastro do proprietário não retornou o identificador da conta.');}catch(ownerError){toast(ownerError.message,'err');b.disabled=false;b.textContent='Salvar imóvel';return}}}else if(!editId){toast('Informe nome, e-mail e celular do proprietário.','err');b.disabled=false;b.textContent='Salvar imóvel';return}const title=f.get('title');const code=editId?(f.get('code')||null):null;const row={owner_id:ownerId,title,code,transaction_type:(sale&&rent?'both':rent?'rent':'sale'),for_sale:sale,for_rent:rent,property_type:f.get('property_type'),price:sale?parseMoney(f.get('price')):null,rent_price:rent?parseMoney(f.get('rent_price')):null,condo_fee:parseMoney(f.get('condo_fee')),iptu:parseMoney(f.get('iptu')),area:parseArea(f.get('area')),bedrooms:+(f.get('bedrooms')||0),suites:+(f.get('suites')||0),parking:+(f.get('parking')||0),bathrooms:+(f.get('bathrooms')||0),neighborhood:f.get('neighborhood'),region:f.get('region')||null,sub_neighborhood:f.get('sub_neighborhood')||null,city:f.get('city')||'São Paulo',state:f.get('state')||null,cep:f.get('cep')||null,address:f.get('address')||null,condominium_name:f.get('condominium_name')||null,condominium_address:f.get('condominium_address')||null,condominium_number:f.get('condominium_number')||null,condominium_complement:f.get('condominium_complement')||null,condominium_neighborhood:f.get('condominium_neighborhood')||null,condominium_city:f.get('condominium_city')||null,condominium_state:f.get('condominium_state')||null,condominium_cep:f.get('condominium_cep')||null,number:f.get('number')||f.get('condominium_number')||null,tower_id:(String(form.elements.namedItem('tower')?.value||'').trim()||null),tower:(()=>{const s=form.elements.namedItem('tower');const o=s?.selectedOptions?.[0];return o&&o.value?String(o.textContent||'').trim():null})(),unit_number:f.get('unit_number')||null,complement:f.get('complement')||f.get('condominium_complement')||null,description:f.get('description')||null,features:[...form.querySelectorAll('input[name=feat]:checked')].map(e=>e.value),condo_features:[...form.querySelectorAll('input[name=condo_feat]:checked')].map(e=>e.value),photos:editingPhotos,photo_thumbnails:editingPhotoThumbs,video_url:f.get('video_url')||null,featured:f.has('featured'),published:f.has('published')};if(editId&&currentUserRole==='proprietario'){
+  try{
+    const allowedRequestKeys=['title','transaction_type','for_sale','for_rent','property_type','price','rent_price','condo_fee','iptu','area','bedrooms','suites','bathrooms','parking','address','number','complement','neighborhood','city','state','cep','tower','unit_number','condominium_name','condominium_address','condominium_number','condominium_complement','condominium_neighborhood','condominium_city','condominium_state','condominium_cep','features','condo_features','description','photos','photo_thumbnails','video_url','published'];
+    const changes={};
+    for(const key of allowedRequestKeys){
+      const before=editOriginalData?.[key]??null;
+      const after=row[key]??null;
+      if(JSON.stringify(before)!==JSON.stringify(after))changes[key]=after;
+    }
+    const newPhotoFiles=photoOrder.filter(item=>item.kind==='new').map(item=>item.value);
+    if(newPhotoFiles.length){
+      showPhotoUploadProgress(newPhotoFiles.length);const urls=await uploadPhotos(editId,newPhotoFiles,updatePhotoUploadProgress);
+      const finalPhotos=[];const finalThumbs=[];let n=0;for(const item of photoOrder){if(item.kind==='existing'){finalPhotos.push(item.value);finalThumbs.push(item.thumb||'')}else{const u=urls[n++];if(u){finalPhotos.push(u.url);finalThumbs.push(u.thumb)}}}changes.photos=finalPhotos;changes.photo_thumbnails=finalThumbs;
+    }
+    if(!Object.keys(changes).length){
+      toast('Nenhuma alteração foi feita.','err');
+      b.disabled=false;b.textContent='Salvar imóvel';
+      return;
+    }
+    const {data:pendingRequest,error:findRequestError}=await S.from('property_owner_edit_requests')
+      .select('id')
+      .eq('property_id',editId)
+      .eq('owner_id',ownerId)
+      .eq('status','pending')
+      .maybeSingle();
+    if(findRequestError)throw findRequestError;
+
+    let reqError=null;
+    if(pendingRequest?.id){
+      const result=await S.from('property_owner_edit_requests')
+        .update({
+          changes,
+          owner_message:'Alteração atualizada pelo proprietário.',
+          updated_at:new Date().toISOString()
+        })
+        .eq('id',pendingRequest.id)
+        .eq('status','pending');
+      reqError=result.error;
+    }else{
+      const result=await S.from('property_owner_edit_requests').insert({
+        property_id:editId,
+        owner_id:ownerId,
+        changes,
+        status:'pending',
+        owner_message:'Alteração solicitada pelo proprietário.'
+      });
+      reqError=result.error;
+    }
+    if(reqError)throw reqError;
+    hidePhotoUploadProgress();
+    showOwnerRequestModal(
+      pendingRequest?.id
+        ? 'Sua solicitação pendente foi atualizada e continua aguardando a análise do administrador/corretor.'
+        : 'Sua alteração foi enviada para análise. O administrador/corretor será notificado.',
+      pendingRequest?.id ? 'Solicitação atualizada' : 'Alteração enviada para análise'
+    );
+  }catch(e){
+    hidePhotoUploadProgress();
+    console.error('[VSN] solicitação do proprietário',e);
+    toast('Não foi possível enviar a solicitação: '+(e.message||e),'err');
+    b.disabled=false;b.textContent='Salvar imóvel';
+  }
+  return;
+}
+try{row.company_id=window.__vsnCompanyId;let r=editId?await S.from('properties').update(row).eq('id',editId).eq('company_id',window.__vsnCompanyId).eq('company_id',window.__vsnCompanyId).select().single():await S.from('properties').insert(row).select().single();if(r.error)throw r.error;if(String(r.data?.tower||'')!==String(row.tower||'')){const towerFix=await S.from('properties').update({tower:row.tower}).eq('id',r.data.id).eq('company_id',window.__vsnCompanyId).select('id,tower').single();if(towerFix.error)throw towerFix.error;r.data=towerFix.data||r.data}const newPhotoFiles=photoOrder.filter(item=>item.kind==='new').map(item=>item.value);if(newPhotoFiles.length)showPhotoUploadProgress(newPhotoFiles.length);const urls=await uploadPhotos(r.data.id,newPhotoFiles,updatePhotoUploadProgress);let n=0;const finalPhotos=[];const finalThumbs=[];for(const item of photoOrder){if(item.kind==='existing'){finalPhotos.push(item.value);finalThumbs.push(item.thumb||'')}else{const u=urls[n++];if(u){finalPhotos.push(u.url);finalThumbs.push(u.thumb)}}}const up=await S.from('properties').update({photos:finalPhotos,photo_thumbnails:finalThumbs}).eq('id',r.data.id).eq('company_id',window.__vsnCompanyId);if(up.error)throw up.error;let condoSyncWarning='';try{await syncCondominiumFeatures(row.condominium_name,row.condo_features)}catch(condoErr){console.error('[VSN] atualização da base de condomínios',condoErr);condoSyncWarning=' O imóvel foi salvo, mas não foi possível atualizar a base do condomínio: '+condoErr.message}hidePhotoUploadProgress();toast(condoSyncWarning?'Imóvel salvo.'+condoSyncWarning:'Imóvel salvo com sucesso.','ok');setTimeout(()=>{window.location.href='/'+encodeURIComponent(window.__VERSUS_CONFIG.slug)+'/admin'},900)}catch(e){hidePhotoUploadProgress();console.error('[VSN] save',e);toast('Não foi possível salvar: '+e.message,'err');if(b){b.disabled=false;b.textContent='Salvar imóvel'}}}function filterFeatures(term){const q=String(term||"").trim().toLocaleLowerCase("pt-BR");document.querySelectorAll("#propertyFeaturesList .feature").forEach(el=>{const label=String(el.textContent||"").trim().toLocaleLowerCase("pt-BR");el.classList.toggle("feature-hidden",!!q&&!label.includes(q))})}function edit(id){newProp(items.find(x=>x.id===id))}function cancelForm(){if((selectedFiles.length||editId)&&!confirm('Descartar o preenchimento atual?'))return;selectedFiles=[];editingPhotos=[];editingPhotoThumbs=[];if(currentUserRole==='proprietario'){window.location.href='proprietario.html';return}editId='';document.getElementById('form').innerHTML=''}async function toggle(id){const x=items.find(x=>x.id===id),r=await S.from('properties').update({published:!x.published}).eq('id',id);if(r.error)toast(r.error.message,'err');else{toast(x.published?'Imóvel despublicado.':'Imóvel publicado.','ok');load()}}async function deleteCurrentProperty(){if(!editId||!canDeleteProperties){toast('Você não tem permissão para excluir este imóvel.','err');return}if(!confirm('Excluir definitivamente este imóvel? Esta ação não pode ser desfeita.'))return;const id=editId;try{const paths=[...(editingPhotos||[]),...(editingPhotoThumbs||[])].map(u=>{const part=String(u).split('/property-photos/')[1];return part?decodeURIComponent(part.split('?')[0]):null}).filter(Boolean);if(paths.length){const sr=await S.storage.from('property-photos').remove(paths);if(sr.error)console.warn('Falha ao remover algumas fotos:',sr.error.message)}const result=await S.from('properties').delete().eq('id',id);if(result.error)throw result.error;toast('Imóvel excluído.','ok');window.location.href='/'+encodeURIComponent(window.__VERSUS_CONFIG.slug)+'/admin'}catch(error){toast('Não foi possível excluir: '+(error.message||error),'err')}}async function del(id){if(!confirm('Excluir este imóvel?'))return;const x=items.find(x=>x.id===id);if(x?.photos?.length||x?.photo_thumbnails?.length){const paths=[...(x.photos||[]),...(x.photo_thumbnails||[])].map(u=>{const m=u.match(/\/property-photos\/([^?]+)/);return m?decodeURIComponent(m[1]):null}).filter(Boolean);if(paths.length)await S.storage.from('property-photos').remove(paths)}const r=await S.from('properties').delete().eq('id',id);if(r.error)toast(r.error.message,'err');else{toast('Imóvel excluído.','ok');load()}}boot();</script><script id="vsn-sidebar-controller">(function(){const b=document.getElementById('vsnSidebarToggle');if(!b)return;const key='vsnAdminSidebarCollapsed';function set(v){document.body.classList.toggle('vsn-sidebar-collapsed',v);b.setAttribute('aria-expanded',String(!v));b.setAttribute('aria-label',v?'Expandir menu lateral':'Recolher menu lateral');b.title=v?'Expandir menu':'Recolher menu';}let saved=false;try{saved=localStorage.getItem(key)==='1'}catch(e){}set(saved);b.addEventListener('click',()=>{const v=!document.body.classList.contains('vsn-sidebar-collapsed');set(v);try{localStorage.setItem(key,v?'1':'0')}catch(e){}});})();</script><script id="vsn-sidebar-page-height-fix">(function(){const side=document.querySelector('.admin-sidebar');if(!side)return;let raf=0;function fit(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const root=document.documentElement;const body=document.body;const top=parseFloat(getComputedStyle(root).getPropertyValue('--vsn-sidebar-top'))||98;const main=document.querySelector('main.wrap, main, #app, .wrap');const mainBottom=main?main.getBoundingClientRect().bottom+window.scrollY:0;const docBottom=Math.max(root.scrollHeight,body.scrollHeight,mainBottom,window.innerHeight);const h=Math.max(window.innerHeight-top,docBottom-top);root.style.setProperty('--vsn-sidebar-document-height',Math.ceil(h)+'px');side.style.height=Math.ceil(h)+'px';side.style.minHeight=Math.ceil(h)+'px';});}fit();window.addEventListener('resize',fit,{passive:true});window.addEventListener('load',fit,{once:true});window.addEventListener('orientationchange',fit,{passive:true});if(window.ResizeObserver){const main=document.querySelector('main.wrap, main, #app, .wrap');if(main)new ResizeObserver(fit).observe(main);}if(window.MutationObserver){new MutationObserver(fit).observe(document.body,{childList:true,subtree:true});}})();</script></body></html>
