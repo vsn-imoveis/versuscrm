@@ -1,0 +1,1 @@
+ALTER TABLE public.crm_requests ADD COLUMN IF NOT EXISTS source_url text; CREATE INDEX IF NOT EXISTS crm_requests_created_at_idx ON public.crm_requests(created_at DESC);
