@@ -274,31 +274,6 @@ async function loadDevelopers(selected=''){
 }
 async function onReady(){try{if(!recordId){resetForm();await loadDevelopers();return}$('#pageTitle').textContent='Editar condomínio';$('#formMsg').textContent='Buscando dados no catálogo desta imobiliária...';const{data,error}=await db.from('crm_condominiums').select('*').eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',recordId).maybeSingle();if(error)throw error;if(!data)throw new Error('Condomínio não encontrado nesta imobiliária.');const d={...data,...(data.details||{}),id:data.id,name:data.name,address:data.address,neighborhood:data.neighborhood,city:data.city,state:data.state,construction_year:data.construction_year,builder:data.builder,features:data.details?.features||[],cover_image_url:data.details?.cover_image_url||''};fill(d);await loadDevelopers(data.builder||'');await loadCondominiumsForName(data.name||'');$('#formMsg').textContent='Dados carregados.'}catch(e){console.error('[Versus] carregar condomínio',e);msg($('#formMsg'),'Não foi possível carregar: '+(e.message||'erro desconhecido'),true)}}
 function pageSlug(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/&/g,' e ').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').replace(/-+/g,'-').slice(0,70)}
-async function setupCondoPageButton(data){
- const host=document.getElementById('pageAction');if(!host)return;let btn=document.getElementById('pageBtn');if(!btn){btn=document.createElement('button');btn.type='button';btn.id='pageBtn';btn.className='btn secondary';host.appendChild(btn)}
- const published=Boolean(data?.page_published&&data?.page_slug);
- btn.textContent=published?'Ver a página do condomínio':'Gerar página do condomínio';
- btn.onclick=async()=>{
-  if(published){window.open('/condominio/'+encodeURIComponent(data.page_slug),'_blank','noopener');return}
-  btn.disabled=true;btn.textContent='Gerando página...';
-  try{
-   let slug=pageSlug(form.elements.name?.value||data?.name||'condominio');
-   const {data:existing,error:checkError}=await db.from('crm_condominiums').select('id,page_slug').eq('page_slug',slug).neq('id',recordId).limit(1);
-   if(checkError)throw checkError;
-   if(existing?.length)slug=slug+'-'+String(recordId).slice(0,8);
-   const {error}=await db.from('crm_condominiums').update({page_slug:slug,page_published:true,updated_at:new Date().toISOString()}).eq('id',recordId);
-   if(error)throw error;
-   btn.textContent='Ver a página do condomínio';
-   btn.disabled=false;
-   btn.onclick=()=>window.open('/condominio/'+encodeURIComponent(slug),'_blank','noopener');
-   window.open('/condominio/'+encodeURIComponent(slug),'_blank','noopener');
-  }catch(e){
-   console.error('[VSN] gerar página do condomínio',e);
-   btn.disabled=false;btn.textContent='Gerar página do condomínio';
-   msg($('#formMsg'),'Não foi possível gerar a página: '+(e.message||e),true);
-  }
- };
-}
 form.elements.name.addEventListener('input',syncNormalized);renderFeatures();$('#cancelBtn').onclick=()=>location.href='condominios.html';
 $('#deleteCondoBtn').onclick=async()=>{
   if(!recordId){msg($('#formMsg'),'Não é possível excluir: ID do condomínio ausente.',true);return}
