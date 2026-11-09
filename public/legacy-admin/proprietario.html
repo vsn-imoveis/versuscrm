@@ -317,9 +317,9 @@ function bindOwnerPhotoInput(){
   try{
     const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
     const path=ownerSession.user.id+'/'+crypto.randomUUID()+'.'+ext;
-    const up=await S.storage.from('profile-photos').upload(path,file,{upsert:false,contentType:file.type||'image/jpeg'});
+    const up=await S.storage.from('crm-profile-photos').upload(path,file,{upsert:false,contentType:file.type||'image/jpeg'});
     if(up.error)throw up.error;
-    const pub=S.storage.from('profile-photos').getPublicUrl(path);
+    const pub=S.storage.from('crm-profile-photos').getPublicUrl(path);
     const url=pub.data.publicUrl;
     const db=await S.from('profiles').update({avatar_url:url,updated_at:new Date().toISOString()}).eq('id',ownerSession.user.id);
     if(db.error)throw db.error;
