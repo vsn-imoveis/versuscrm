@@ -17,7 +17,7 @@
 <a class="sidebar-link" href="painel-login.html#configuracoes"><span class="sidebar-ico">⚙</span><span>Configurações</span></a>
 </nav></aside><main class="wrap" id="app"></main><div id="toast" class="toast"></div>
 <script>
-const SUPA='window.__VERSUS_CONFIG.supabaseUrl', KEY='window.__VERSUS_CONFIG.supabaseAnonKey', db=supabase.createClient(SUPA,KEY);let editId='',photos=[],selected=[];
+const SUPA=window.__VERSUS_CONFIG.supabaseUrl, KEY=window.__VERSUS_CONFIG.supabaseAnonKey, db=supabase.createClient(SUPA,KEY);let editId='',photos=[],selected=[];
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=(sel,root=document)=>root.querySelector(sel), $$=(sel,root=document)=>[...root.querySelectorAll(sel)];
 function toast(t,c=''){const e=$('#toast');e.textContent=t;e.className='toast show '+c;setTimeout(()=>e.className='toast',5000)}
