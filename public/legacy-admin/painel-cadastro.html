@@ -145,7 +145,7 @@ async function loadOwnerData(ownerId){
  try{
   let data=null;
   if(editOwnerContactId){const r=await S.from('crm_contacts').select('name,email,phone').eq('company_id',window.__vsnCompanyId).eq('id',editOwnerContactId).maybeSingle();if(r.error)throw r.error;data=r.data?{full_name:r.data.name,email:r.data.email,phone:r.data.phone}:null;}
-  if(!data&&ownerId){const r=await S.from('profiles').select('full_name,email,phone').eq('id',ownerId).maybeSingle();if(r.error)throw r.error;data=r.data;}
+  if(!data&&ownerId){const r=await S.from('profiles').select('full_name,phone').eq('id',ownerId).maybeSingle();if(r.error)throw r.error;data=r.data;}
   if(!data){toast('O imóvel tem um proprietário vinculado, mas o contato não foi encontrado.','err');return;}
   const name=form.elements.namedItem('owner_name'),email=form.elements.namedItem('owner_email'),phone=form.elements.namedItem('owner_phone');
   if(name)name.value=data.full_name||'';if(email)email.value=data.email||'';if(phone)phone.value=data.phone||'';
@@ -187,7 +187,7 @@ function forceAreaTextField(){const form=document.getElementById('propertyForm')
     let candidates=[];
     // Primeiro tenta o nome-base dentro da chave normalizada, que pode conter rua e número.
     if(core.length>=6){
-     const q=await S.from('crm_condominiums').select('id,name,address,neighborhood,city,state,construction_year,builder,details').eq('company_id',window.__vsnCompanyId).ilike('normalized_name','%'+core+'%').limit(20);
+     const q=await S.from('crm_condominiums').select('id,name,address,neighborhood,city,state,construction_year,builder,details').eq('company_id',window.__vsnCompanyId).ilike('name','%'+core+'%').limit(20);
      if(q.error)throw q.error;
      candidates=(q.data||[]).filter(c=>{const dbCore=coreName(c.name||String(c.name||''));return dbCore===core||dbCore.includes(core)||core.includes(dbCore);});
     }
@@ -195,7 +195,7 @@ function forceAreaTextField(){const form=document.getElementById('propertyForm')
     if(!candidates.length){
      const tokens=String(condoName).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().split(/[^a-z0-9]+/).filter(t=>t.length>2&&!['edificio','condominio','residencial','conjunto','empreendimento'].includes(t));
      if(tokens.length){
-      let query=S.from('crm_condominiums').select('id,name,normalized_name,address,number,cep,neighborhood,city,state').ilike('name','%'+tokens[tokens.length-1]+'%').limit(50);
+      let query=S.from('crm_condominiums').select('id,name,address,neighborhood,city,state,details').ilike('name','%'+tokens[tokens.length-1]+'%').limit(50);
       const q=await query;
       if(q.error)throw q.error;
       candidates=(q.data||[]).filter(c=>{const dbCore=coreName(c.name);return tokens.every(t=>normalizeName(dbCore).includes(t))&&(dbCore===core||dbCore.includes(core)||core.includes(dbCore));});
@@ -206,7 +206,7 @@ function forceAreaTextField(){const form=document.getElementById('propertyForm')
     if(candidates.length===1){
      const condo=candidates[0];
      const fillIfBlank=(field,value)=>{const el=form.elements.namedItem(field);if(el&&value!==null&&value!==undefined&&String(value).trim()!==''&&!String(el.value||'').trim()){el.value=String(value);return true;}return false;};
-     fillIfBlank('address',condo.address);fillIfBlank('number',condo.number);fillIfBlank('cep',condo.cep);fillIfBlank('neighborhood',condo.neighborhood);fillIfBlank('city',condo.city);fillIfBlank('state',condo.state);
+     fillIfBlank('address',condo.address);fillIfBlank('number',condo.details?.number);fillIfBlank('cep',condo.details?.cep);fillIfBlank('neighborhood',condo.neighborhood);fillIfBlank('city',condo.city);fillIfBlank('state',condo.state);
      const msg=document.getElementById('condomsg');
      if(msg)msg.innerHTML='<span class="help" style="color:var(--blue)">Condomínio encontrado na base VSN. Localização completada com o cadastro existente.</span>';
     }else if(candidates.length>1){
