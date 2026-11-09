@@ -2,6 +2,92 @@ const https = require("https");
 const http = require("http");
 const dns = require("node:dns").promises;
 const net = require("node:net");
+const { createClient } = require("@supabase/supabase-js");
+
+function privateAddress(address) {
+ const ip=String(address||"").toLowerCase().split("%")[0];
+ if(net.isIPv4(ip)){
+  const [a,b,c]=ip.split(".").map(Number);
+  return a===0||a===10||a===127||a>=224||(a===100&&b>=64&&b<=127)||(a===169&&b===254)||(a===172&&b>=16&&b<=31)||(a===192&&(b===168||b===0||b===2))||(a===198&&(b===18||b===19||b===51&&c===100))||(a===203&&b===0&&c===113);
+ }
+ if(net.isIPv6(ip)){
+  if(ip==="::"||ip==="::1"||ip.startsWith("fc")||ip.startsWith("fd")||/^fe[89ab]/.test(ip)||ip.startsWith("ff")||!/^2[0-9a-f]{3}:/i.test(ip))return true;
+  const mapped=ip.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if(mapped)return privateAddress(mapped[1]);
+ }
+ return true;
+}
+async function resolvePublicTarget(target){
+ const host=target.hostname.toLowerCase().replace(/^\[|\]$/g,"");
+ if(!["http:","https:"].includes(target.protocol)||target.username||target.password||host==="localhost"||host.endsWith(".localhost"))throw new Error("Endereço de imagem não permitido.");
+ const records=await dns.lookup(host,{all:true,verbatim:true});
+ if(!records.length||records.some(r=>privateAddress(r.address)))throw new Error("O endereço da imagem não é público.");
+ return records[0];
+}
+async function downloadImage(target, redirects=0){
+ if(redirects>3)throw new Error("A imagem redirecionou muitas vezes.");
+ const resolved=await resolvePublicTarget(target);
+ const client=target.protocol==="https:"?https:http;
+ return await new Promise((resolve,reject)=>{
+  const request=client.get(target,{headers:{"User-Agent":"Mozilla/5.0 VersusCRM Image Import","Accept":"image/avif,image/webp,image/png,image/jpeg,image/gif,*/*;q=0.5"},timeout:12000,lookup:(_h,_o,cb)=>cb(null,resolved.address,resolved.family)},response=>{
+   if(response.statusCode>=300&&response.statusCode<400&&response.headers.location){
+    response.resume();let next;try{next=new URL(response.headers.location,target)}catch(_){return reject(new Error("Redirecionamento de imagem inválido."))}
+    return downloadImage(next,redirects+1).then(resolve,reject);
+   }
+   if(response.statusCode<200||response.statusCode>=300){response.resume();return reject(new Error("O portal não liberou uma foto (HTTP "+response.statusCode+")."))}
+   const mime=String(response.headers["content-type"]||"").split(";")[0].trim().toLowerCase();
+   const extensions={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/avif":"avif","image/gif":"gif"};
+   if(!extensions[mime]){response.resume();return reject(new Error("O arquivo recebido não é uma imagem compatível."))}
+   const chunks=[];let size=0;
+   response.on("data",chunk=>{size+=chunk.length;if(size>8*1024*1024){request.destroy(new Error("Cada foto importada deve ter até 8 MB."));response.destroy();}else chunks.push(chunk)});
+   response.on("end",()=>{const buffer=Buffer.concat(chunks);if(!buffer.length)return reject(new Error("A imagem veio vazia."));resolve({buffer,mime,ext:extensions[mime]})});
+   response.on("error",reject);
+  });
+  request.on("timeout",()=>request.destroy(new Error("Tempo limite ao baixar uma foto.")));
+  request.on("error",reject);
+ });
+}
+async function importImages(req,res){
+ const authorization=String(req.headers.authorization||"");
+ if(!authorization.startsWith("Bearer "))return send(res,401,{error:"Sessão não autenticada."});
+ const url=process.env.NEXT_PUBLIC_SUPABASE_URL;
+ const anon=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+ const service=process.env.SUPABASE_SERVICE_ROLE_KEY;
+ if(!url||!anon||!service)return send(res,503,{error:"Configuração do Supabase incompleta."});
+ const auth=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false},global:{headers:{Authorization:authorization}}});
+ const {data:{user},error:authError}=await auth.auth.getUser();
+ if(authError||!user)return send(res,401,{error:"Sessão expirada. Entre novamente."});
+ const companyId=String(req.body?.companyId||"").trim(),propertyId=String(req.body?.propertyId||"").trim();
+ const urls=Array.isArray(req.body?.photos)?req.body.photos:[];
+ if(!/^[0-9a-f-]{36}$/i.test(companyId)||!/^[0-9a-f-]{36}$/i.test(propertyId)||!urls.length||urls.length>35)return send(res,400,{error:"Imóvel, imobiliária ou lista de fotos inválida."});
+ const admin=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
+ const [{data:membership,error:memberError},{data:property,error:propertyError}]=await Promise.all([
+  admin.from("crm_memberships").select("role").eq("company_id",companyId).eq("user_id",user.id).maybeSingle(),
+  admin.from("properties").select("id").eq("id",propertyId).eq("company_id",companyId).maybeSingle()
+ ]);
+ if(memberError||!membership||propertyError||!property)return send(res,403,{error:"Você não tem permissão para importar fotos neste imóvel."});
+ const uploaded=[];
+ try{
+  for(let i=0;i<urls.length;i++){
+   const raw=String(urls[i]||"");let target;
+   try{target=new URL(raw)}catch(_){throw new Error("Uma das URLs de foto é inválida.")}
+   if(!["http:","https:"].includes(target.protocol))throw new Error("URL de foto não permitida.");
+   const file=await downloadImage(target);
+   const path=companyId+"/"+propertyId+"/import_"+Date.now()+"_"+i+"."+file.ext;
+   const result=await admin.storage.from("crm-property-photos").upload(path,file.buffer,{contentType:file.mime,upsert:false,cacheControl:"31536000"});
+   if(result.error)throw result.error;
+   uploaded.push(admin.storage.from("crm-property-photos").getPublicUrl(path).data.publicUrl);
+  }
+  return send(res,200,{photos:uploaded});
+ }catch(error){
+  if(uploaded.length){
+   const paths=uploaded.map(publicUrl=>{const part=publicUrl.split("/crm-property-photos/")[1];return part?decodeURIComponent(part.split("?")[0]):null}).filter(Boolean);
+   if(paths.length)await admin.storage.from("crm-property-photos").remove(paths);
+  }
+  return send(res,422,{error:error.message||"Não foi possível importar as fotos."});
+ }
+}
+
 function send(res,status,data){res.statusCode=status;res.setHeader("Content-Type","application/json; charset=utf-8");res.setHeader("Cache-Control","no-store");return res.end(JSON.stringify(data));}
 function decode(s){return String(s||"").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(Number(n))).trim();}
 function plain(s){return decode(String(s||"").replace(/<script[\s\S]*?<\/script>/gi," ").replace(/<style[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/\s+/g," "));}
@@ -175,6 +261,7 @@ function num(v){if(v===null||v===undefined||v==="")return null;if(typeof v==="nu
 function find(t,re){const m=String(t||"").match(re);return m?m[1].trim():"";}
 module.exports=async function(req,res){
  if(req.method!=="POST")return send(res,405,{error:"Método não permitido."});
+ if(req.body?.action==="import_images")return importImages(req,res);
  try{
   const raw=String(req.body?.url||"").trim();let u;try{u=new URL(raw);}catch(_){return send(res,400,{error:"Informe um link válido."});}
   if(!["http:","https:"].includes(u.protocol)||u.username||u.password)return send(res,400,{error:"O link deve usar HTTP ou HTTPS."});
