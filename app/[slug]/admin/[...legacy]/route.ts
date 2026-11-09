@@ -10,6 +10,7 @@ type Context = { params: Promise<{ slug: string; legacy: string[] }> };
 
 const allowedScreens = new Set([
   "painel-cadastro.html",
+  "index.html",
   "painel-login.html",
   "cadastrar-condominio.html",
   "condominios.html",
@@ -35,6 +36,10 @@ const allowedScreens = new Set([
 export async function GET(request: NextRequest, context: Context) {
   const { slug, legacy } = await context.params;
   const requestedFile = legacy.join("/");
+
+  if (requestedFile === "index.html") {
+    return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/painel-login.html`, request.url));
+  }
 
   if (!allowedScreens.has(requestedFile)) {
     return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin`, request.url));
@@ -87,6 +92,7 @@ export async function GET(request: NextRequest, context: Context) {
   }).replace(/</g, "\\u003c");
 
   html = html.replace("<head>", `<head><script>window.__VERSUS_CONFIG=${config};</script>`);
+  html = html.replace(/href=(["\'])\/\1/g, `href="/${encodeURIComponent(slug)}"`);
 
   return new NextResponse(html, {
     headers: {
