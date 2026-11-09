@@ -24,10 +24,10 @@ export default async function TenantPropertiesPage({ params }: Props) {
           {properties?.map(p => {
             const photos = Array.isArray(p.photos) ? p.photos : [];
             const photo = photos[0];
-            return <article key={p.id} style={{ background: "#fff", border: "1px solid #e6e8ea", borderRadius: 10, overflow: "hidden" }}>
+            return <a key={p.id} href={`/${slug}/imoveis/${p.id}`} style={{ display: "block", background: "#fff", border: "1px solid #e6e8ea", borderRadius: 10, overflow: "hidden", color: "inherit", textDecoration: "none" }}>
               {photo ? <img src={photo} alt={p.title} style={{ width: "100%", height: 210, objectFit: "cover" }} /> : <div style={{ height: 210, background: "#e9ecef", display: "grid", placeItems: "center", color: "#8b9299" }}>Foto não disponível</div>}
-              <div style={{ padding: 18 }}><small style={{ color: "#8a929a" }}>{p.code ?? p.property_type}</small><h2 style={{ font: "21px Georgia,serif", margin: "8px 0" }}>{p.title}</h2><p style={{ color: "#68737d", fontSize: 13 }}>{[p.neighborhood,p.city].filter(Boolean).join(" · ")}</p><strong>{p.transaction_type === "rent" ? `R$ ${Number(p.rent_price ?? p.price ?? 0).toLocaleString("pt-BR")}/mês` : `R$ ${Number(p.price ?? 0).toLocaleString("pt-BR")}`}</strong><p style={{ color: "#68737d", fontSize: 12 }}>{p.area ?? "—"} m² · {p.bedrooms} quartos · {p.bathrooms} banheiros · {p.parking} vagas</p></div>
-            </article>;
+              <div style={{ padding: 18 }}><small style={{ color: "#8a929a" }}>{p.code ?? p.property_type}</small><h2 style={{ font: "21px Georgia,serif", margin: "8px 0" }}>{p.title}</h2><p style={{ color: "#68737d", fontSize: 13 }}>{[p.neighborhood,p.city].filter(Boolean).join(" · ")}</p><strong>{p.for_rent && !p.for_sale || p.transaction_type === "rent" ? `R$ ${Number(p.rent_price ?? p.price ?? 0).toLocaleString("pt-BR")}/mês` : `R$ ${Number(p.price ?? 0).toLocaleString("pt-BR")}`}</strong><p style={{ color: "#68737d", fontSize: 12 }}>{p.area ?? "—"} m² · {p.bedrooms} quartos · {p.bathrooms} banheiros · {p.parking} vagas</p></div>
+            </a>;
           })}
         </div>
         {!properties?.length && <p style={{ color: "#68737d", marginTop: 28 }}>Nenhum imóvel publicado no momento.</p>}
