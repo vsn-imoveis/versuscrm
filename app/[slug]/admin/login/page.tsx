@@ -1,17 +1,22 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function TenantLoginPage() {
   const params = useParams<{ slug: string }>();
-  const search = useSearchParams();
   const slug = params.slug;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(search.get("erro") === "acesso" ? "Este usuário não possui vínculo com esta imobiliária." : "");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("erro") === "acesso") {
+      setError("Este usuário não possui vínculo com esta imobiliária.");
+    }
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
