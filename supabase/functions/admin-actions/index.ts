@@ -59,8 +59,9 @@ Deno.serve(async req => {
       if(error||!data.user)return out({error:"Não foi possível enviar o convite: "+(error?.message||"usuário não retornado")},400);
       userId=data.user.id;invitationSent=true;
     }
-    const {error:profileError}=await db.from("profiles").upsert({id:userId,full_name:name,role:"user"},{onConflict:"id"});
-    if(profileError)return out({error:"Convite enviado, mas não foi possível preparar o perfil: "+profileError.message},500);
+    const {data:existingProfile,error:profileReadError}=await db.from("profiles").select("id").eq("id",userId).maybeSingle();
+    if(profileReadError)return out({error:"Não foi possível verificar o perfil do membro."},500);
+    if(!existingProfile){const {error:profileError}=await db.from("profiles").insert({id:userId,full_name:name,role:"user"});if(profileError)return out({error:"Convite enviado, mas não foi possível preparar o perfil: "+profileError.message},500);}
     const {error:membershipError}=await db.from("crm_memberships").insert({company_id:companyId,user_id:userId,role});
     if(membershipError)return out({error:"Não foi possível vincular o usuário: "+membershipError.message},500);
     return out({ok:true,email,role,invitationSent,message:invitationSent?"Convite enviado por e-mail.":"Usuário existente vinculado à imobiliária."});
