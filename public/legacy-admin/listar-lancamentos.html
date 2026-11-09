@@ -95,7 +95,7 @@ body.vsn-sidebar-collapsed .sidebar-sub a:before{content:none!important}
 <div class="panel"><div id="statusMsg" class="status"></div><div class="table-wrap"><table><thead><tr><th>Empreendimento</th><th>Localização</th><th>Tipo / status</th><th>Entrega</th><th>Publicação</th><th>Ações</th></tr></thead><tbody id="rows"></tbody></table></div><div id="empty" class="empty" hidden>Nenhum lançamento encontrado com esses filtros.</div><div class="pagination"><span id="count"></span><div><button class="btn secondary" id="prevBtn">Anterior</button> <button class="btn secondary" id="nextBtn">Próxima</button></div></div></div>
 </section></div></div>
 <script>
-const SUPA_URL='window.__VERSUS_CONFIG.supabaseUrl',SUPA_KEY='window.__VERSUS_CONFIG.supabaseAnonKey';const db=supabase.createClient(SUPA_URL,SUPA_KEY);
+const SUPA_URL=window.__VERSUS_CONFIG.supabaseUrl,SUPA_KEY=window.__VERSUS_CONFIG.supabaseAnonKey;const db=supabase.createClient(SUPA_URL,SUPA_KEY);
 const $=s=>document.querySelector(s);let sessionUser=null,allRows=[],filtered=[],page=1;const pageSize=15;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const statusNames={pre_launch:'Pré-lançamento',launch:'Lançamento',under_construction:'Em obras',ready:'Pronto'};
