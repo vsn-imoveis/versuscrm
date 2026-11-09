@@ -9,12 +9,12 @@ export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ slug: string; legacy: string[] }> };
 
 const allowedScreens = new Set([
-  "painel-cadastro.html",
   "index.html",
   "painel-login.html",
+  "painel-cadastro.html",
   "cadastrar-condominio.html",
-  "condominios.html",
   "editar-condominio.html",
+  "condominios.html",
   "construtoras.html",
   "lancamentos.html",
   "listar-lancamentos.html",
@@ -22,15 +22,6 @@ const allowedScreens = new Set([
   "proprietario.html",
   "solicitacoes-proprietario.html",
   "vendedor.html",
-  "painel-2colunas-v3.html",
-  "painel-2colunas.html",
-  "painel-v2.html",
-  "painel-v4.html",
-  "painel-v5.html",
-  "painel-v6.html",
-  "painel-v7.html",
-  "painel-v8.html",
-  "painel-v11.html"
 ]);
 
 export async function GET(request: NextRequest, context: Context) {
