@@ -26,5 +26,15 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Validate public legacy-site JavaScript
+        run: |
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const vm = require("node:vm");
+          const html = fs.readFileSync("public/legacy-site/index.html", "utf8");
+          const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)].map(match => match[1]).filter(Boolean);
+          scripts.forEach((source, index) => new vm.Script(source, { filename: `legacy-site-inline-${index}.js` }));
+          console.log(`Validated ${scripts.length} inline scripts.`);
+          NODE
       - name: Build application
         run: npm run build
