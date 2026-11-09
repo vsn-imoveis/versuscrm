@@ -71,9 +71,19 @@ export async function GET(request: NextRequest, context: Context) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (membershipError || !membership) {
+  const { data: ownerAccount } = await supabase
+    .from("crm_owner_accounts")
+    .select("company_id, user_id, contact_id, status")
+    .eq("company_id", tenant.id)
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+
+  const isOwnerPortal = ["proprietario.html", "painel-cadastro.html"].includes(requestedFile) && !!ownerAccount;
+  if ((membershipError || !membership) && !isOwnerPortal) {
     return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/login?erro=acesso`, request.url));
   }
+  const effectiveRole = membership?.role ?? (isOwnerPortal ? "owner" : "member");
 
   const filePath = path.join(process.cwd(), "public", "legacy-admin", requestedFile);
   let html: string;
@@ -86,12 +96,13 @@ export async function GET(request: NextRequest, context: Context) {
   const config = JSON.stringify({
     slug,
     companyId: tenant.id,
-    membershipRole: membership.role,
+    membershipRole: effectiveRole,
+    ownerContactId: ownerAccount?.contact_id ?? null,
     supabaseUrl,
     supabaseAnonKey
   }).replace(/</g, "\\u003c");
 
-  html = html.replace("<head>", `<head><script>window.__VERSUS_CONFIG=${config};</script>`);
+  html = html.replace("<head>", `<head><script>window.__VERSUS_CONFIG=${config};window.__vsnCompanyId=window.__VERSUS_CONFIG.companyId;window.__vsnMembershipRole=window.__VERSUS_CONFIG.membershipRole;window.__vsnOwnerContactId=window.__VERSUS_CONFIG.ownerContactId;</script>`);
   html = html.replace(/href=(["\'])\/\1/g, `href="/${encodeURIComponent(slug)}"`);
 
   return new NextResponse(html, {
