@@ -759,12 +759,19 @@ async function save(ev){
   btn.disabled=true;btn.textContent='Salvando...';
   try{
     const companyId=window.__VERSUS_CONFIG.companyId;
+    const {data:limitsData,error:limitsError}=await db.rpc('get_my_crm_company_limits',{p_company_id:companyId});
+    if(limitsError)throw limitsError;
+    const limits=Array.isArray(limitsData)?limitsData[0]:limitsData;
+    const photoLimit=Math.max(0,Number(limits?.photo_limit??35));
+    if(existingPhotos.length+selectedFiles.length>photoLimit){
+      throw new Error('O plano desta imobiliária permite até '+photoLimit+' fotos por imóvel. Remova fotos antes de salvar.');
+    }
     const obj={
       company_id:companyId,
       title:f.title.value.trim(),code:f.code.value.trim()||null,
-      transaction_type:sale?'sale':'rent',for_sale:sale,for_rent:rent,
-      property_type:f.property_type.value,price:sale?moneyVal(f.price.value):0,
-      rent_price:rent?moneyVal(f.rent_price.value):0,condo_fee:moneyVal(f.condo_fee.value),
+      transaction_type:sale&&rent?'both':rent?'rent':'sale',for_sale:sale,for_rent:rent,
+      property_type:f.property_type.value,price:sale?moneyVal(f.price.value):null,
+      rent_price:rent?moneyVal(f.rent_price.value):null,condo_fee:moneyVal(f.condo_fee.value),
       iptu:moneyVal(f.iptu.value),area:Number(f.area.value||0),bedrooms:Number(f.bedrooms.value||0),
       suites:Number(f.suites.value||0),bathrooms:Number(f.bathrooms.value||0),parking:Number(f.parking.value||0),
       cep:f.cep.value.trim(),address:f.address.value.trim(),number:f.number.value.trim(),
