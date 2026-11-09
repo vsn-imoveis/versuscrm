@@ -23,11 +23,11 @@ export async function requireTenantMember(slug: string) {
 
   const { data: membership, error } = await supabase
     .from("crm_memberships")
-    .select("company_id, user_id, role, status")
+    .select("company_id, user_id, role")
     .eq("company_id", tenant.id)
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (error || !membership || membership.status === "inactive") redirect(`/${encodeURIComponent(slug)}/admin/login?erro=acesso`);
+  if (error || !membership) redirect(`/${encodeURIComponent(slug)}/admin/login?erro=acesso`);
   return { supabase, user, tenant, membership };
 }
