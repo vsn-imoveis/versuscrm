@@ -149,7 +149,7 @@ function renderCondoNameOptions(items){
  const q=normalizeSearchText(input.value);
  const words=q.split(/\\s+/).filter(Boolean);
  const filtered=(items||[]).filter(d=>{
-  const hay=normalizeSearchText([d.name,d.address,d.number,d.neighborhood,d.city].filter(Boolean).join(' '));
+  const hay=normalizeSearchText([d.name,d.address,d.details?.number,d.neighborhood,d.city].filter(Boolean).join(' '));
   return !words.length||words.every(w=>hay.includes(w));
  });
  box.innerHTML='';
@@ -181,7 +181,7 @@ async function filterCondoNameOptions(){
   // também sem diferenciar acentos. Assim "space residence", "SPACE RESIDENCE"
   // e "Space Residence" retornam exatamente as mesmas opções.
   const queries=words.map(w=>db.from('crm_condominiums')
-    .select('id,name,address,neighborhood,city').eq('company_id',window.__VERSUS_CONFIG.companyId)
+    .select('id,name,address,neighborhood,city,details').eq('company_id',window.__VERSUS_CONFIG.companyId)
     .ilike('name','%'+w+'%')
     .order('name')
     .limit(50));
@@ -199,7 +199,7 @@ async function filterCondoNameOptions(){
   });
   const qWords=words;
   const filtered=merged.filter(d=>{
-   const hay=normalizeSearchText([d.name,d.address,d.number,d.neighborhood,d.city].filter(Boolean).join(' '));
+   const hay=normalizeSearchText([d.name,d.address,d.details?.number,d.neighborhood,d.city].filter(Boolean).join(' '));
    return qWords.every(w=>hay.includes(w));
   });
   renderCondoNameOptions(filtered.slice(0,10));
