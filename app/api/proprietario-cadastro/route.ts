@@ -44,15 +44,25 @@ export async function POST(request: NextRequest) {
   const admin = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: membership, error: membershipError } = await admin
-    .from("crm_memberships")
-    .select("role")
-    .eq("company_id", companyId)
-    .eq("user_id", requester.id)
-    .maybeSingle();
+  const [{ data: membership, error: membershipError }, { data: company, error: companyError }] = await Promise.all([
+    admin
+      .from("crm_memberships")
+      .select("role")
+      .eq("company_id", companyId)
+      .eq("user_id", requester.id)
+      .maybeSingle(),
+    admin
+      .from("crm_companies")
+      .select("status")
+      .eq("id", companyId)
+      .maybeSingle(),
+  ]);
 
   if (membershipError || !membership || !["owner", "admin", "manager"].includes(membership.role)) {
     return NextResponse.json({ error: "Você não tem permissão para cadastrar proprietários nesta imobiliária." }, { status: 403 });
+  }
+  if (companyError || !company || company.status !== "active") {
+    return NextResponse.json({ error: "A imobiliária está inativa ou não foi encontrada." }, { status: 403 });
   }
 
   let ownerUserId: string | null = null;
