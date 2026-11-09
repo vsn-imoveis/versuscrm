@@ -664,6 +664,28 @@ function descList(items){
 function showPhotoUploadProgress(total){const o=document.getElementById('photoUploadOverlay'),m=document.getElementById('photoUploadMessage'),bar=document.getElementById('photoUploadBar'),count=document.getElementById('photoUploadCount');if(!o)return;o.classList.add('show');if(bar)bar.style.width='0%';if(m)m.textContent='Preparando as fotos do imóvel...';if(count)count.textContent='0 de '+total+' fotos'}
 function updatePhotoUploadProgress(done,total){const m=document.getElementById('photoUploadMessage'),bar=document.getElementById('photoUploadBar'),count=document.getElementById('photoUploadCount');const pct=total?Math.round(done/total*100):100;if(bar)bar.style.width=pct+'%';if(m)m.textContent=done<total?'Enviando fotos...':'Fotos enviadas. Finalizando cadastro...';if(count)count.textContent=done+' de '+total+' fotos'}
 function hidePhotoUploadProgress(){const o=document.getElementById('photoUploadOverlay');if(o)o.classList.remove('show')}
+function propertyPhotoStoragePaths(urls,propertyId){
+ const companyId=String(window.__vsnCompanyId||'');
+ const prefix=companyId+'/'+String(propertyId||'')+'/';
+ const marker='/storage/v1/object/public/crm-property-photos/';
+ const paths=[];
+ for(const value of (Array.isArray(urls)?urls:[])){
+  if(typeof value!=='string')continue;
+  const at=value.indexOf(marker);if(at<0)continue;
+  let path=value.slice(at+marker.length).split('?')[0];
+  try{path=decodeURIComponent(path)}catch(e){}
+  if(path.startsWith(prefix)&&path.length>prefix.length&&!path.includes('..'))paths.push(path);
+ }
+ return [...new Set(paths)];
+}
+async function removePropertyPhotoFiles(urls,propertyId){
+ const paths=propertyPhotoStoragePaths(urls,propertyId);
+ if(!paths.length)return{removed:0,error:null};
+ const result=await S.storage.from('crm-property-photos').remove(paths);
+ return{removed:result.error?0:paths.length,error:result.error||null};
+}
+let saveCreatedPropertyId='';
+let saveUploadedPhotoUrls=[];
 async function uploadPhotos(id,files,onProgress){
  const list=Array.isArray(files)?files:[];if(!list.length)return[];
  const results=new Array(list.length);let done=0;
@@ -681,7 +703,14 @@ async function uploadPhotos(id,files,onProgress){
  };
  const workers=[];const concurrency=Math.min(4,list.length);
  for(let i=0;i<concurrency;i++)workers.push((async()=>{for(let j=i;j<list.length;j+=concurrency)await worker(j)})());
- await Promise.all(workers);return results;
+ const settled=await Promise.allSettled(workers);
+ const failed=settled.find(x=>x.status==='rejected');
+ if(failed){
+  const cleanup=await removePropertyPhotoFiles(results.filter(Boolean).map(x=>x.url),id);
+  if(cleanup.error)console.error('[Versus] limpeza de uploads parciais falhou:',cleanup.error);
+  throw failed.reason;
+ }
+ return results;
 }async function sendOwnerAccess(){if(currentUserRole!=='admin'){toast('Somente um administrador pode enviar os dados de acesso.','err');return}const b=document.getElementById('ownerAccessBtn');const form=document.getElementById('propertyForm');if(!form)return;const f=new FormData(form);const nome=String(f.get('owner_name')||'').trim(),email=String(f.get('owner_email')||'').trim(),celular=String(f.get('owner_phone')||'').trim();if(!nome||!email||!celular){toast('Preencha nome, e-mail e celular do proprietário.','err');return}const {data:{session}}=await S.auth.getSession();if(!session?.access_token){toast('Sua sessão expirou. Entre novamente.','err');return}b.disabled=true;b.textContent='Enviando...';try{const r=await fetch('/api/proprietario-cadastro',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({nome,email,celular,companyId:window.__vsnCompanyId,action:'send_access'})});const result=await r.json().catch(()=>({}));if(!r.ok)throw new Error(result.error||'Não foi possível enviar os dados de acesso.');toast(result.sent?'Convite de acesso enviado para '+email+'.':result.contactId?'Proprietário vinculado à imobiliária com sucesso.':'Acesso do proprietário atualizado.','ok')}catch(e){toast(e.message||'Falha ao enviar o e-mail.','err')}finally{b.disabled=false;b.textContent='Enviar login e senha'}}
 async function syncCondominiumFeatures(name,features){
   const condoName=String(name||"").trim();
