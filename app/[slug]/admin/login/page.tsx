@@ -22,8 +22,9 @@ export default function TenantLoginPage() {
       const { data: auth, error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError || !auth.user) throw authError ?? new Error("Não foi possível validar o usuário.");
 
-      const { data: tenant, error: tenantError } = await supabase
-        .from("crm_companies").select("id, status").eq("slug", slug).maybeSingle();
+      const { data: tenantData, error: tenantError } = await supabase
+        .rpc("get_public_tenant_by_slug", { p_slug: slug });
+      const tenant = Array.isArray(tenantData) ? tenantData[0] : tenantData;
       if (tenantError || !tenant || tenant.status !== "active") throw new Error("Imobiliária não encontrada ou inativa.");
 
       const [{ data: membership, error: memberError }, { data: ownerAccount, error: ownerError }] = await Promise.all([
