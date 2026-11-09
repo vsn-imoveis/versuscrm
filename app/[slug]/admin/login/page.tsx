@@ -6,7 +6,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function TenantLoginPage() {
   const params = useParams<{ slug: string }>();
-  const slug = params.slug;
+  const slug = params?.slug ?? "";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
