@@ -41,10 +41,10 @@ save.onclick=async()=>{
     const f=photoFile.files?.[0];
     if(f){
       const ext=(f.name.split('.').pop()||'jpg').toLowerCase();
-      const storagePath='companies/'+companyId+'/site/'+Date.now()+'.'+ext;
-      const upl=await S.storage.from('site-assets').upload(storagePath,f,{contentType:f.type,upsert:true});
+      const storagePath=companyId+'/'+Date.now()+'.'+ext;
+      const upl=await S.storage.from('crm-site-assets').upload(storagePath,f,{contentType:f.type,upsert:true});
       if(upl.error)throw upl.error;
-      photo=S.storage.from('site-assets').getPublicUrl(storagePath).data.publicUrl;
+      photo=S.storage.from('crm-site-assets').getPublicUrl(storagePath).data.publicUrl;
     }
     const row={
       name:siteName.value.trim(),
