@@ -1,27 +1,66 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { getPublicTenant } from "@/lib/tenant";
 
 type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const tenant = await getPublicTenant(slug);
+  if (!tenant) return { title: "Imobiliária não encontrada" };
+  return {
+    title: tenant.name,
+    description: tenant.about_text || `Encontre imóveis selecionados por ${tenant.name}.`,
+    openGraph: {
+      title: tenant.name,
+      description: tenant.about_text || `Conheça os imóveis de ${tenant.name}.`,
+      images: tenant.site_share_image_url ? [tenant.site_share_image_url] : tenant.logo_url ? [tenant.logo_url] : [],
+    },
+  };
+}
 
 export default async function TenantHomePage({ params }: Props) {
   const { slug } = await params;
   const tenant = await getPublicTenant(slug);
   if (!tenant) notFound();
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("As variáveis públicas do Supabase não estão configuradas.");
+  }
+
+  const query = new URLSearchParams({
+    slug: tenant.slug,
+    companyId: tenant.id,
+    supabaseUrl,
+    supabaseKey,
+    tenantName: tenant.name,
+    primaryColor: tenant.primary_color ?? "",
+    logoUrl: tenant.logo_url ?? "",
+    contactName: tenant.contact_name ?? "",
+    contactEmail: tenant.contact_email ?? "",
+    contactPhone: tenant.contact_phone ?? "",
+    whatsapp: tenant.whatsapp ?? "",
+    creci: tenant.creci ?? "",
+    instagramUrl: tenant.instagram_url ?? "",
+    facebookUrl: tenant.facebook_url ?? "",
+    youtubeUrl: tenant.youtube_url ?? "",
+    publicAddress: tenant.public_address ?? "",
+    aboutText: tenant.about_text ?? "",
+    sitePhotoUrl: tenant.site_photo_url ?? "",
+    siteCoverUrl: tenant.site_cover_url ?? "",
+    siteShareImageUrl: tenant.site_share_image_url ?? "",
+  });
+
   return (
-    <main style={{ minHeight: "100vh", background: "#f7f7f6", color: "#202a33" }}>
-      <header style={{ minHeight: 76, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 6%", background: "#171d24", color: "#fff" }}>
-        <strong style={{ color: tenant.primary_color ?? "#d3aa62", font: "34px Georgia,serif" }}>{tenant.name}</strong>
-        <nav style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <a href={`/${tenant.slug}/imoveis`} style={{ color: "#fff", textDecoration: "none" }}>Imóveis</a>
-          <a href={`/${tenant.slug}/admin/login`} style={{ color: "#fff", textDecoration: "none", border: "1px solid #59616a", padding: "10px 16px", borderRadius: 6 }}>Área administrativa</a>
-        </nav>
-      </header>
-      <section style={{ maxWidth: 1180, margin: "auto", padding: "12vh 24px" }}>
-        <p style={{ color: tenant.primary_color ?? "#b78d48", letterSpacing: 3, fontSize: 12 }}>IMÓVEIS SELECIONADOS</p>
-        <h1 style={{ maxWidth: 700, font: "clamp(38px,6vw,64px) Georgia,serif", lineHeight: 1.08, margin: "18px 0" }}>Encontre o imóvel ideal para sua próxima história.</h1>
-        <p style={{ color: "#68737d", fontSize: 17 }}>Conheça as oportunidades selecionadas por {tenant.name}.</p>
-        <a href={`/${tenant.slug}/imoveis`} style={{ display: "inline-block", marginTop: 18, padding: "13px 22px", borderRadius: 6, background: "#202a33", color: "#fff", textDecoration: "none" }}>Ver imóveis</a>
-      </section>
+    <main style={{ width: "100%", minHeight: "100dvh", margin: 0, padding: 0, overflow: "hidden" }}>
+      <iframe
+        title={tenant.name}
+        src={`/legacy-site/index.html?${query.toString()}`}
+        style={{ display: "block", width: "100%", height: "100dvh", border: 0 }}
+        referrerPolicy="strict-origin-when-cross-origin"
+      />
     </main>
   );
 }
