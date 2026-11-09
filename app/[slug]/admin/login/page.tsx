@@ -1,0 +1,57 @@
+"use client";
+
+import { FormEvent, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+
+export default function TenantLoginPage() {
+  const params = useParams<{ slug: string }>();
+  const search = useSearchParams();
+  const slug = params.slug;
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(search.get("erro") === "acesso" ? "Este usuário não possui acesso a esta imobiliária." : "");
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) throw authError;
+      const { data: tenant, error: tenantError } = await supabase
+        .from("crm_companies").select("id, status").eq("slug", slug).maybeSingle();
+      if (tenantError || !tenant || tenant.status !== "active") throw new Error("Imobiliária não encontrada ou inativa.");
+      const { data: membership, error: memberError } = await supabase
+        .from("crm_memberships").select("company_id, status")
+        .eq("company_id", tenant.id).maybeSingle();
+      // A validação final de vínculo individual é feita no servidor antes de liberar o painel.
+      if (memberError) throw memberError;
+      window.location.assign(`/${encodeURIComponent(slug)}/admin`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível entrar.");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24, background: "#f4f5f7" }}>
+      <form onSubmit={submit} style={{ width: "100%", maxWidth: 420, background: "#fff", padding: 36, borderRadius: 14, boxShadow: "0 16px 50px #17203312" }}>
+        <div style={{ width: 42, height: 4, background: "#b89a62", borderRadius: 9, marginBottom: 24 }} />
+        <div style={{ color: "#777", fontSize: 11, letterSpacing: 2, textTransform: "uppercase" }}>Versus CRM</div>
+        <h1 style={{ fontSize: 26, margin: "10px 0 6px" }}>Acesso administrativo</h1>
+        <p style={{ color: "#6b7280", marginBottom: 26 }}>Entre com seu usuário da imobiliária.</p>
+        <label style={{ display: "block", fontSize: 13, marginBottom: 7 }}>E-mail</label>
+        <input required type="email" autoComplete="username" value={email} onChange={e => setEmail(e.target.value)} style={fieldStyle} />
+        <label style={{ display: "block", fontSize: 13, margin: "16px 0 7px" }}>Senha</label>
+        <input required type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} style={fieldStyle} />
+        {error && <p role="alert" style={{ color: "#b42318", fontSize: 13, marginTop: 14 }}>{error}</p>}
+        <button disabled={busy} style={{ width: "100%", border: 0, borderRadius: 8, padding: 14, marginTop: 22, color: "#fff", background: "#202a38", cursor: busy ? "wait" : "pointer" }}>{busy ? "Acessando..." : "Entrar"}</button>
+      </form>
+    </main>
+  );
+}
+
+const fieldStyle: React.CSSProperties = { width: "100%", padding: 13, border: "1px solid #d7dbe0", borderRadius: 8, outlineColor: "#b89a62" };
