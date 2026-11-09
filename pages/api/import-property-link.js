@@ -88,14 +88,14 @@ async function importImages(req,res){
    totalBytes+=file.buffer.length;
    if(totalBytes>30*1024*1024)throw new Error("O conjunto de fotos excede 30 MB.");
    const path=folder+"/import_"+Date.now()+"_"+i+"_"+require("node:crypto").randomUUID()+"."+file.ext;
-   const result=await admin.storage.from("crm-property-photos").upload(path,file.buffer,{contentType:file.mime,upsert:false,cacheControl:"31536000"});
+   const result=await auth.storage.from("crm-property-photos").upload(path,file.buffer,{contentType:file.mime,upsert:false,cacheControl:"31536000"});
    if(result.error)throw result.error;
    uploadedPaths.push(path);
-   uploadedUrls.push(admin.storage.from("crm-property-photos").getPublicUrl(path).data.publicUrl);
+   uploadedUrls.push(auth.storage.from("crm-property-photos").getPublicUrl(path).data.publicUrl);
   }
   return send(res,200,{photos:uploadedUrls});
  }catch(error){
-  if(uploadedPaths.length)await admin.storage.from("crm-property-photos").remove(uploadedPaths);
+  if(uploadedPaths.length)await auth.storage.from("crm-property-photos").remove(uploadedPaths);
   return send(res,422,{error:error.message||"Não foi possível importar as fotos."});
  }
 }
