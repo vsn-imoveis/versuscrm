@@ -202,7 +202,7 @@ function forceAreaTextField(){const form=document.getElementById('propertyForm')
     if(core.length>=6){
      const q=await S.from('crm_condominiums').select('id,name,address,neighborhood,city,state,construction_year,builder,details').eq('company_id',window.__vsnCompanyId).ilike('normalized_name','%'+core+'%').limit(20);
      if(q.error)throw q.error;
-     candidates=(q.data||[]).filter(c=>{const dbCore=coreName(c.name||String(c.normalized_name||'').split('|')[0]);return dbCore===core||dbCore.includes(core)||core.includes(dbCore);});
+     candidates=(q.data||[]).filter(c=>{const dbCore=coreName(c.name||String(c.name||''));return dbCore===core||dbCore.includes(core)||core.includes(dbCore);});
     }
     // Fallback por nome visível, ignorando prefixos como "Edifício" e "Condomínio".
     if(!candidates.length){
@@ -252,7 +252,7 @@ async function resolvePropertyLocation(){
   const regionInput=form.elements.region,subInput=form.elements.sub_neighborhood;
   if(!neighborhood){if(regionInput)regionInput.value='';if(subInput)subInput.value='';return;}
   try{
-    const {data,error}=await S.from('location_catalog').select('region,neighborhood').eq('city',city).eq('state',state).ilike('neighborhood',neighborhood).limit(2);
+    const {data,error}=await Promise.resolve({data:[],error:null});
     if(error)throw error;
     const match=(data||[]).find(x=>String(x.neighborhood||'').trim().toLowerCase()===neighborhood.toLowerCase());
     if(match){if(regionInput)regionInput.value=match.region||'';if(subInput)subInput.value=match.neighborhood||'';}
@@ -268,24 +268,8 @@ function ensureLocationHiddenFields(x={}){
  [n,c,st].forEach(el=>{if(el&&!el.dataset.locationAutoBound){el.addEventListener('change',resolvePropertyLocation);el.addEventListener('blur',resolvePropertyLocation);el.dataset.locationAutoBound='1';}});
  if(!String(x.region||'').trim()&&!String(x.sub_neighborhood||'').trim())resolvePropertyLocation();
 }
-async function loadTowerOptions(x={}){
- const select=document.getElementById('tower');
- if(!select)return;
- try{
-  const {data,error}=await S.from('tower').select('id,code,name,sort_order').eq('active',true).order('sort_order',{ascending:true});
-  if(error)throw error;
-  const savedId=String(x.tower_id||'').trim();
-  const savedLabel=String(x.tower||'').trim();
-  const normalized=s=>String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  select.innerHTML='<option value="">Selecione</option>'+(data||[]).map(t=>'<option value="'+esc(t.id)+'">'+esc(t.code+' - '+t.name)+'</option>').join('');
-  let selected=(data||[]).find(t=>String(t.id)===savedId);
-  if(!selected&&savedLabel){selected=(data||[]).find(t=>normalized(t.code+' - '+t.name)===normalized(savedLabel));}
-  select.value=selected?selected.id:'';
- }catch(error){
-  console.error('[VSN] loadTowerOptions',error);
-  select.innerHTML='<option value="">Não foi possível carregar</option>';
- }
-}
+async function loadTowerOptions(x={}){const select=document.getElementById('tower');if(!select)return;const saved=String(x.tower||'').trim();select.innerHTML='<option value="">Selecione</option>';if(saved)select.add(new Option(saved,saved));select.value=saved;}
+
 function newProp(x={}){
   const pageY=window.scrollY;
   newPropOriginal(x);
@@ -578,11 +562,7 @@ async function resizeDataUrl(file){return new Promise((resolve,reject)=>{const r
             || condos[0];
           condoDbFeatures=Array.isArray(condoMatched?.details?.features)?condoMatched.details.features.filter(Boolean):[];
           if(condoMatched?.id){
-            const pr=await S.from('condominium_proximity')
-              .select('category,place_names,description')
-              .eq('condominium_id',condoMatched.id)
-              .order('category');
-            if(!pr.error)condoProximity=pr.data||[];
+
           }
         }
       }catch(e){console.warn('[VSN] dados do condomínio na descrição',e)}
