@@ -461,10 +461,10 @@ async function openLeadHistory(id){
   const body=document.getElementById('vsnLeadModalBody');if(!body)return;
   body.innerHTML='<p class="muted">Carregando histórico...</p>';
   const {data,error}=await S.from('crm_lead_activities').select('id,actor_id,action,details,created_at').eq('company_id',window.__VERSUS_CONFIG.companyId).eq('lead_id',id).order('created_at',{ascending:false}).limit(100);
-  if(error){body.innerHTML='<p class="danger">Não foi possível carregar o histórico: '+esc(error.message)+'</p><button class="btn gray" onclick="openLeadDetails(\\''+esc(id)+'\\')">Voltar</button>';return;}
+  if(error){body.innerHTML='<p class="danger">Não foi possível carregar o histórico: '+esc(error.message)+'</p><button class="btn gray" onclick="openLeadDetails(\''+esc(id)+'\\')">Voltar</button>';return;}
   const labels={created:'Lead recebido',assigned:'Lead atribuído',unassigned:'Responsável removido',status_changed:'Status alterado'};
   const statusLabels={new:'Novo',contacted:'Contatado',qualified:'Qualificado',converted:'Convertido',lost:'Perdido'};
-  body.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><b>Histórico de atendimento</b><button class="btn gray" onclick="openLeadDetails(\\''+esc(id)+'\\')">Voltar</button></div>'+(data?.length?'<div style="display:grid;gap:10px">'+data.map(item=>{
+  body.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><b>Histórico de atendimento</b><button class="btn gray" onclick="openLeadDetails(\''+esc(id)+'\\')">Voltar</button></div>'+(data?.length?'<div style="display:grid;gap:10px">'+data.map(item=>{
     const d=item.details||{};let detail='';
     if(item.action==='assigned')detail='Responsável: '+crmLeadMemberName(d.to||d.assigned_to);
     else if(item.action==='unassigned')detail='Responsável anterior: '+crmLeadMemberName(d.from);
