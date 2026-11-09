@@ -176,7 +176,7 @@ body.vsn-sidebar-collapsed .sidebar-sub a:before{content:none!important}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const U='window.__VERSUS_CONFIG.supabaseUrl',K='window.__VERSUS_CONFIG.supabaseAnonKey',S=supabase.createClient(U,K);
+const U=window.__VERSUS_CONFIG.supabaseUrl,K=window.__VERSUS_CONFIG.supabaseAnonKey,S=supabase.createClient(U,K);
 const OWNER_TERM_VERSION='2026-10-v2';
 let ownerSession=null;
 async function ownerLogout(){const btn=document.querySelector('.owner-header-logout');if(btn){btn.disabled=true;btn.textContent='Saindo...';}const {error}=await S.auth.signOut();if(error){if(btn){btn.disabled=false;btn.textContent='Sair';}alert('Não foi possível sair: '+error.message);return}window.location.href='/';}
