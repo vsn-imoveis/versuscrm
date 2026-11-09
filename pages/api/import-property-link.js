@@ -72,7 +72,9 @@ async function importImages(req,res){
  if(!property)return send(res,404,{error:"Imóvel não encontrado nesta imobiliária."});
  if(!membership&&(!owner||owner.contact_id!==property.owner_contact_id))return send(res,403,{error:"Você não tem permissão para importar fotos neste imóvel."});
  if(!company||company.status!=="active")return send(res,403,{error:"Imobiliária inativa ou não encontrada."});
- const subscriptionLimits=(subscriptions||[]).filter(x=>x.photo_limit!==null&&Number.isFinite(Number(x.photo_limit))).map(x=>Number(x.photo_limit));\n const effectivePhotoLimit=subscriptionLimits.length?Math.min(...subscriptionLimits):35;\n const photoLimit=Math.max(0,Math.min(Number(company.max_photos_per_property??35),effectivePhotoLimit));
+ const subscriptionLimits=(subscriptions||[]).filter(x=>x.photo_limit!==null&&Number.isFinite(Number(x.photo_limit))).map(x=>Number(x.photo_limit));
+ const effectivePhotoLimit=subscriptionLimits.length?Math.min(...subscriptionLimits):35;
+ const photoLimit=Math.max(0,Math.min(Number(company.max_photos_per_property??35),effectivePhotoLimit));
  const currentPhotos=Array.isArray(property.photos)?property.photos:[];
  const externalPhotoCount=currentPhotos.filter(x=>!String(x).includes("/storage/v1/object/public/crm-property-photos/")).length;
  const folder=companyId+"/"+propertyId;
