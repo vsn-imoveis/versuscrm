@@ -181,32 +181,20 @@ const OWNER_TERM_VERSION='2026-10-v2';
 let ownerSession=null;
 async function ownerLogout(){const btn=document.querySelector('.owner-header-logout');if(btn){btn.disabled=true;btn.textContent='Saindo...';}const {error}=await S.auth.signOut();if(error){if(btn){btn.disabled=false;btn.textContent='Sair';}alert('Não foi possível sair: '+error.message);return}window.location.href='/';}
 async function checkOwnerTerm(){
-  try{
-    const {data,error}=await S.auth.getSession();
-    if(error||!data?.session){window.location.href='painel-login.html';return;}
-    ownerSession=data.session;
-    const {data:accepted,error:acceptError}=await S.from('owner_term_acceptances').select('id').eq('user_id',ownerSession.user.id).eq('term_version',OWNER_TERM_VERSION).maybeSingle();
-    if(acceptError){console.error('Erro ao verificar aceite do termo:',acceptError);return;}
-    if(!accepted) openTerm();
-  }catch(e){console.error('Erro ao verificar termo:',e);}
+  const {data,error}=await S.auth.getSession();
+  if(error||!data?.session){window.location.href='painel-login.html';return;}
+  ownerSession=data.session;
+  const {data:accepted,error:acceptError}=await S.from('crm_owner_term_acceptances').select('id').eq('company_id',window.__VERSUS_CONFIG.companyId).eq('user_id',ownerSession.user.id).eq('term_version',OWNER_TERM_VERSION).maybeSingle();
+  if(acceptError){console.error('Erro ao verificar termo:',acceptError);return;}
+  if(!accepted)openTerm();
 }
 async function finish(){
-  const checkbox=document.getElementById('accept');
-  if(!checkbox?.checked||!ownerSession)return;
-  const btn=document.getElementById('finish');
-  if(btn){btn.disabled=true;btn.textContent='Registrando...';}
-  const {error}=await S.from('owner_term_acceptances').insert({user_id:ownerSession.user.id,term_version:OWNER_TERM_VERSION});
-  if(error){
-    if(error.code==='23505'){closeTerm();return;}
-    if(btn){btn.disabled=false;btn.textContent='Aceitar e finalizar cadastro';}
-    alert('Não foi possível registrar o aceite. Tente novamente.');
-    console.error(error);
-    return;
-  }
-  closeTerm();
-  alert('Termo aceito e registrado com sucesso.');
+  const checkbox=document.getElementById('accept');if(!checkbox?.checked||!ownerSession)return;
+  const btn=document.getElementById('finish');if(btn){btn.disabled=true;btn.textContent='Registrando...';}
+  const {error}=await S.from('crm_owner_term_acceptances').insert({company_id:window.__VERSUS_CONFIG.companyId,user_id:ownerSession.user.id,term_version:OWNER_TERM_VERSION});
+  if(error&&error.code!=='23505'){if(btn){btn.disabled=false;btn.textContent='Aceitar e finalizar cadastro';}alert('Não foi possível registrar o aceite.');return;}
+  closeTerm();alert('Termo aceito e registrado com sucesso.');
 }
-
 let ownerProperties=[];
 function money(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0})}
 function ownerPurpose(p){return p.for_rent&&!p.for_sale?'Locação':p.for_sale&&!p.for_rent?'Venda':p.for_rent&&p.for_sale?'Venda e locação':'—'}
@@ -221,21 +209,30 @@ async function toggleOwnerProperty(id,publish){
   const p=ownerProperties.find(x=>x.id===id);if(!p)return;
   const action=publish?'publicação':'despublicação';
   if(!confirm('Deseja solicitar a '+action+' deste imóvel?'))return;
-  const {error}=await S.from('property_owner_edit_requests').insert({
-    property_id:id,
-    owner_id:ownerSession.user.id,
-    changes:{published:publish},
-    status:'pending',
-    owner_message:'Solicitação de '+action+' enviada pelo proprietário.'
+  const {error}=await S.from('crm_catalog_change_requests').insert({
+    entity_type:'property',action:publish?'publish':'unpublish',status:'pending',
+    company_id:window.__VERSUS_CONFIG.companyId,requested_by:ownerSession.user.id,
+    record_id:id,current_data:p,proposed_data:{published:publish},
+    decision_note:'Solicitação de '+action+' enviada pelo proprietário.'
   });
-  if(error){
-    if(error.code==='23505')alert('Já existe uma solicitação pendente para este imóvel.');
-    else alert('Não foi possível enviar a solicitação: '+error.message);
-    console.error(error);return;
-  }
-  alert('Solicitação enviada. O administrador/corretor será notificado para análise.');
+  if(error){alert('Não foi possível enviar a solicitação: '+error.message);console.error(error);return;}
+  alert('Solicitação enviada para análise da imobiliária.');
 }
-async function loadOwnerProperties(){const {data:sessionData}=await S.auth.getSession();if(!sessionData?.session)return;ownerSession=sessionData.session;const [{data:rows,error},{data:profile},{data:contacts,error:contactsError}]=await Promise.all([S.from('properties').select('id,code,title,property_type,for_sale,for_rent,published,price,rent_price,area,bedrooms,suites,parking,condominium_name,address,neighborhood,city,state,photos').eq('owner_id',ownerSession.user.id).order('created_at',{ascending:false}),S.from('profiles').select('full_name,email,phone,avatar_url').eq('id',ownerSession.user.id).maybeSingle(),S.from('owner_contacts').select('id,contact_type,contact_value').eq('owner_id',ownerSession.user.id).order('created_at',{ascending:true})]);if(error){document.getElementById('ownerProperties').innerHTML='<div class="empty-owner">Não foi possível carregar seus imóveis.</div>';console.error(error);return}ownerProperties=rows||[];renderOwnerStats(ownerProperties);renderOwnerProperties();renderOwnerProfile(profile,contactsError?[]:(contacts||[]))}
+async function loadOwnerProperties(){
+  const {data:sessionData}=await S.auth.getSession();if(!sessionData?.session)return;
+  ownerSession=sessionData.session;
+  const companyId=window.__VERSUS_CONFIG.companyId,contactId=window.__VERSUS_CONFIG.ownerContactId;
+  const [{data:rows,error},{data:profile},{data:contact,error:contactError}]=await Promise.all([
+    S.from('properties').select('id,code,title,property_type,for_sale,for_rent,published,price,rent_price,area,bedrooms,suites,parking,condominium_name,address,neighborhood,city,state,photos').eq('company_id',companyId).eq('owner_contact_id',contactId).order('created_at',{ascending:false}),
+    S.from('profiles').select('full_name,email,phone,avatar_url').eq('id',ownerSession.user.id).maybeSingle(),
+    S.from('crm_contacts').select('id,name,email,phone,extra_contacts').eq('company_id',companyId).eq('id',contactId).maybeSingle()
+  ]);
+  if(error||contactError){document.getElementById('ownerProperties').innerHTML='<div class="empty-owner">Não foi possível carregar seus imóveis.</div>';console.error(error||contactError);return;}
+  ownerProperties=rows||[];renderOwnerStats(ownerProperties);renderOwnerProperties();
+  const mergedProfile={...(profile||{}),full_name:profile?.full_name||contact?.name,email:profile?.email||contact?.email,phone:profile?.phone||contact?.phone};
+  const contacts=(contact?.extra_contacts||[]).map((x,i)=>({id:x.id||null,contact_type:x.type,contact_value:x.value}));
+  renderOwnerProfile(mergedProfile,contacts);
+}
 let ownerContactRows=[];
 function updateOwnerHeader(profile){
   const avatar=document.getElementById('ownerHeaderAvatar'),name=document.getElementById('ownerHeaderName');
@@ -286,24 +283,14 @@ async function saveOwnerProfile(){
   const btn=document.getElementById('saveOwnerProfile'),status=document.getElementById('ownerProfileStatus');
   btn.disabled=true;status.textContent='Salvando...';
   try{
-    const name=document.getElementById('ownerName').value.trim();
-    const phone=document.getElementById('ownerPrimaryPhone').value.trim();
-    if(!name){status.textContent='Informe seu nome.';return}
+    const name=document.getElementById('ownerName').value.trim(),phone=document.getElementById('ownerPrimaryPhone').value.trim();
+    if(!name){status.textContent='Informe seu nome.';return;}
     const up=await S.from('profiles').update({full_name:name,phone,updated_at:new Date().toISOString()}).eq('id',ownerSession.user.id);
     if(up.error)throw up.error;
-    const {data:existing,error:existingError}=await S.from('owner_contacts').select('id').eq('owner_id',ownerSession.user.id);
-    if(existingError)throw existingError;
-    const currentIds=new Set(ownerContactRows.filter(x=>x.id).map(x=>x.id));
-    const removeIds=(existing||[]).map(x=>x.id).filter(id=>!currentIds.has(id));
-    if(removeIds.length){const d=await S.from('owner_contacts').delete().in('id',removeIds).eq('owner_id',ownerSession.user.id);if(d.error)throw d.error}
-    for(const x of ownerContactRows){
-      const value=String(x.value||'').trim();if(!value)continue;
-      if(x.id){const u=await S.from('owner_contacts').update({contact_type:x.type,contact_value:value,updated_at:new Date().toISOString()}).eq('id',x.id).eq('owner_id',ownerSession.user.id);if(u.error)throw u.error}
-      else{const ins=await S.from('owner_contacts').insert({owner_id:ownerSession.user.id,contact_type:x.type,contact_value:value});if(ins.error)throw ins.error}
-    }
-    status.textContent='Perfil salvo com sucesso.';
-    setTimeout(()=>{status.textContent=''},2500);
-    await loadOwnerProperties();
+    const extra=ownerContactRows.filter(x=>String(x.value||'').trim()).map(x=>({id:x.id||crypto.randomUUID(),type:x.type,value:String(x.value).trim()}));
+    const contact=await S.from('crm_contacts').update({name,email:document.getElementById('ownerPrimaryEmail').value.trim(),phone,extra_contacts:extra,updated_at:new Date().toISOString()}).eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',window.__VERSUS_CONFIG.ownerContactId);
+    if(contact.error)throw contact.error;
+    status.textContent='Perfil salvo com sucesso.';setTimeout(()=>{status.textContent=''},2500);await loadOwnerProperties();
   }catch(e){console.error(e);status.textContent='Não foi possível salvar: '+(e.message||e)}
   finally{btn.disabled=false}
 }
