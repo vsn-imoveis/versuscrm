@@ -92,10 +92,12 @@ async function routeDistances(origin: { lat: number; lon: number }, places: Plac
   if (!response.ok) return [];
   const json = await response.json();
   const row = json?.distances?.[0] ?? [];
-  return places.map((place, index) => {
+  const result: Place[] = [];
+  places.forEach((place, index) => {
     const distance = Number(row[index + 1]);
-    return Number.isFinite(distance) ? { ...place, distance } : null;
-  }).filter((place): place is Place => !!place);
+    if (Number.isFinite(distance)) result.push({ ...place, distance });
+  });
+  return result;
 }
 function distance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const radius = 6371000, rad = (value: number) => value * Math.PI / 180;
