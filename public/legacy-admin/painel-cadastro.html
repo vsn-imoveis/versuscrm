@@ -205,7 +205,7 @@ function forceAreaTextField(){const form=document.getElementById('propertyForm')
     if(!candidates.length){
      const tokens=String(condoName).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().split(/[^a-z0-9]+/).filter(t=>t.length>2&&!['edificio','condominio','residencial','conjunto','empreendimento'].includes(t));
      if(tokens.length){
-      let query=S.from('crm_condominiums').select('id,name,address,neighborhood,city,state,details').ilike('name','%'+tokens[tokens.length-1]+'%').limit(50);
+      let query=S.from('crm_condominiums').select('id,name,address,neighborhood,city,state,details').eq('company_id',window.__vsnCompanyId).ilike('name','%'+tokens[tokens.length-1]+'%').limit(50);
       const q=await query;
       if(q.error)throw q.error;
       candidates=(q.data||[]).filter(c=>{const dbCore=coreName(c.name);return tokens.every(t=>normalizeName(dbCore).includes(t))&&(dbCore===core||dbCore.includes(core)||core.includes(dbCore));});
