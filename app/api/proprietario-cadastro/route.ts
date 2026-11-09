@@ -83,6 +83,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: existingAccountError.message }, { status: 400 });
   }
   if (existingAccount?.contact_id) {
+    const { error: reactivateError } = await admin.from("crm_owner_accounts").update({ status: "active" }).eq("company_id", companyId).eq("user_id", ownerUserId);
+    if (reactivateError) return NextResponse.json({ error: reactivateError.message }, { status: 400 });
     const { error: updateContactError } = await admin
       .from("crm_contacts")
       .update({ name: nome, email, phone: celular, status: "active", updated_at: new Date().toISOString() })
