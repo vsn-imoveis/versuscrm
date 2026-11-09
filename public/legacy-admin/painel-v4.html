@@ -12,8 +12,8 @@
 <header class="top"><div class="brand">VSN IMÓVEIS</div><div id="user" class="muted" style="color:#fff"></div></header>
 <main id="app" class="wrap"></main><div id="toast" class="toast"></div>
 <script>
-const SUPA='window.__VERSUS_CONFIG.supabaseUrl';
-const KEY='window.__VERSUS_CONFIG.supabaseAnonKey';
+const SUPA=window.__VERSUS_CONFIG.supabaseUrl;
+const KEY=window.__VERSUS_CONFIG.supabaseAnonKey;
 const DB=window.supabase.createClient(SUPA,KEY);
 const appEl=document.getElementById('app');
 let editId='',storedPhotos=[],newFiles=[];
