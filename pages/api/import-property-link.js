@@ -61,17 +61,18 @@ async function importImages(req,res){
  const urls=Array.isArray(req.body?.photos)?[...new Set(req.body.photos.filter(x=>typeof x==="string"))]:[];
  if(!/^[0-9a-f-]{36}$/i.test(companyId)||!/^[0-9a-f-]{36}$/i.test(propertyId)||!urls.length||urls.length>35)return send(res,400,{error:"Imóvel, imobiliária ou lista de fotos inválida."});
  const admin=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
- const [{data:membership,error:memberError},{data:owner,error:ownerError},{data:property,error:propertyError},{data:company,error:companyError}]=await Promise.all([
+ const [{data:membership,error:memberError},{data:owner,error:ownerError},{data:property,error:propertyError},{data:company,error:companyError},{data:subscriptions,error:subscriptionError}]=await Promise.all([
   admin.from("crm_memberships").select("role").eq("company_id",companyId).eq("user_id",user.id).maybeSingle(),
   admin.from("crm_owner_accounts").select("contact_id").eq("company_id",companyId).eq("user_id",user.id).eq("status","active").maybeSingle(),
   admin.from("properties").select("id,owner_contact_id,photos").eq("id",propertyId).eq("company_id",companyId).maybeSingle(),
-  admin.from("crm_companies").select("status,max_photos_per_property").eq("id",companyId).maybeSingle()
+  admin.from("crm_companies").select("status,max_photos_per_property").eq("id",companyId).maybeSingle(),
+  admin.from("crm_subscriptions").select("photo_limit").eq("company_id",companyId).in("status",["active","trial"])
  ]);
- if(memberError||ownerError||propertyError||companyError)return send(res,503,{error:"Não foi possível validar as permissões e os limites do imóvel."});
+ if(memberError||ownerError||propertyError||companyError||subscriptionError)return send(res,503,{error:"Não foi possível validar as permissões e os limites do imóvel."});
  if(!property)return send(res,404,{error:"Imóvel não encontrado nesta imobiliária."});
  if(!membership&&(!owner||owner.contact_id!==property.owner_contact_id))return send(res,403,{error:"Você não tem permissão para importar fotos neste imóvel."});
  if(!company||company.status!=="active")return send(res,403,{error:"Imobiliária inativa ou não encontrada."});
- const photoLimit=Math.max(0,Number(company.max_photos_per_property??35));
+ const subscriptionLimits=(subscriptions||[]).filter(x=>x.photo_limit!==null&&Number.isFinite(Number(x.photo_limit))).map(x=>Number(x.photo_limit));\n const effectivePhotoLimit=subscriptionLimits.length?Math.min(...subscriptionLimits):35;\n const photoLimit=Math.max(0,Math.min(Number(company.max_photos_per_property??35),effectivePhotoLimit));
  const currentPhotos=Array.isArray(property.photos)?property.photos:[];
  const externalPhotoCount=currentPhotos.filter(x=>!String(x).includes("/storage/v1/object/public/crm-property-photos/")).length;
  const folder=companyId+"/"+propertyId;
