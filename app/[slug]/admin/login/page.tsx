@@ -26,15 +26,21 @@ export default function TenantLoginPage() {
         .from("crm_companies").select("id, status").eq("slug", slug).maybeSingle();
       if (tenantError || !tenant || tenant.status !== "active") throw new Error("Imobiliária não encontrada ou inativa.");
 
-      const { data: membership, error: memberError } = await supabase
-        .from("crm_memberships").select("company_id")
-        .eq("company_id", tenant.id).eq("user_id", auth.user.id).maybeSingle();
-      if (memberError || !membership) {
+      const [{ data: membership, error: memberError }, { data: ownerAccount, error: ownerError }] = await Promise.all([
+        supabase.from("crm_memberships").select("company_id")
+          .eq("company_id", tenant.id).eq("user_id", auth.user.id).maybeSingle(),
+        supabase.from("crm_owner_accounts").select("company_id,contact_id,status")
+          .eq("company_id", tenant.id).eq("user_id", auth.user.id).eq("status", "active").maybeSingle()
+      ]);
+      if ((memberError || !membership) && (ownerError || !ownerAccount)) {
         await supabase.auth.signOut();
         throw new Error("Este usuário não possui acesso a esta imobiliária.");
       }
 
-      window.location.assign(`/${encodeURIComponent(slug)}/admin`);
+      const destination = ownerAccount && !membership
+        ? `/${encodeURIComponent(slug)}/admin/proprietario.html`
+        : `/${encodeURIComponent(slug)}/admin`;
+      window.location.assign(destination);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível entrar.");
       setBusy(false);
