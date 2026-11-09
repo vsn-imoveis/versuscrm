@@ -1,0 +1,1 @@
+alter table public.crm_contacts add column if not exists extra_contacts jsonb not null default '[]'::jsonb;
