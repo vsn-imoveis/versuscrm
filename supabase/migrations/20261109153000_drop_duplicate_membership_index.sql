@@ -1,0 +1,1 @@
+drop index if exists public.crm_memberships_company_user_unique;
