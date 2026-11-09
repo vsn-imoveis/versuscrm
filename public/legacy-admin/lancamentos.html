@@ -104,7 +104,7 @@ body.vsn-sidebar-collapsed .sidebar-sub a:before{content:none!important}
 <div class="actions"><button type="button" class="secondary" id="resetBtn">Limpar formulário</button><button type="submit" class="primary" id="saveBtn">Salvar lançamento</button></div><div id="formMsg" class="status"></div>
 </form></div></div></section></div></div>
 <script>
-const SUPA_URL='window.__VERSUS_CONFIG.supabaseUrl', SUPA_KEY='window.__VERSUS_CONFIG.supabaseAnonKey';
+const SUPA_URL=window.__VERSUS_CONFIG.supabaseUrl, SUPA_KEY=window.__VERSUS_CONFIG.supabaseAnonKey;
 const db=supabase.createClient(SUPA_URL,SUPA_KEY);
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const AMENITIES=['Piscina adulto','Piscina infantil','Academia','Salão de festas','Espaço gourmet','Brinquedoteca','Coworking','Pet place','Quadra esportiva','Portaria 24h','Áreas verdes','Playground','Sauna','Spa','Espaço delivery'];
