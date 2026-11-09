@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState, type CSSProperties, type FormEvent } from "react";
 
 type Props = { slug: string; propertyTitle: string; companyName: string; propertyCode?: string | null };
 
@@ -70,7 +70,7 @@ export default function PropertyLeadForm({ slug, propertyTitle, companyName, pro
   );
 }
 
-const inputStyle: React.CSSProperties = {
+const inputStyle: CSSProperties = {
   width: "100%", border: "1px solid #d9dfe3", borderRadius: 5, padding: "12px 13px",
   background: "#fff", color: "#1c2730", font: "inherit", boxSizing: "border-box",
 };
