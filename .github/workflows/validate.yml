@@ -50,7 +50,7 @@ jobs:
           let count = 0;
           for (const page of pages) {
             const html = fs.readFileSync(`${dir}/${page}`, "utf8");
-            const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)].map((match) => match[1]).filter(Boolean);
+            const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map((match) => match[1]).filter(Boolean);
             scripts.forEach((source, index) => new vm.Script(source, { filename: `${page}:inline-${index}` }));
             count += scripts.length;
           }
