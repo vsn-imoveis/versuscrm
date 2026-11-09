@@ -200,7 +200,7 @@ function forceAreaTextField(){const form=document.getElementById('propertyForm')
     let candidates=[];
     // Primeiro tenta o nome-base dentro da chave normalizada, que pode conter rua e número.
     if(core.length>=6){
-     const q=await S.from('condominiums').select('id,name,normalized_name,address,number,cep,neighborhood,city,state').ilike('normalized_name','%'+core+'%').limit(20);
+     const q=await S.from('crm_condominiums').select('id,name,address,neighborhood,city,state,construction_year,builder,details').eq('company_id',window.__vsnCompanyId).ilike('normalized_name','%'+core+'%').limit(20);
      if(q.error)throw q.error;
      candidates=(q.data||[]).filter(c=>{const dbCore=coreName(c.name||String(c.normalized_name||'').split('|')[0]);return dbCore===core||dbCore.includes(core)||core.includes(dbCore);});
     }
@@ -208,7 +208,7 @@ function forceAreaTextField(){const form=document.getElementById('propertyForm')
     if(!candidates.length){
      const tokens=String(condoName).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().split(/[^a-z0-9]+/).filter(t=>t.length>2&&!['edificio','condominio','residencial','conjunto','empreendimento'].includes(t));
      if(tokens.length){
-      let query=S.from('condominiums').select('id,name,normalized_name,address,number,cep,neighborhood,city,state').ilike('name','%'+tokens[tokens.length-1]+'%').limit(50);
+      let query=S.from('crm_condominiums').select('id,name,normalized_name,address,number,cep,neighborhood,city,state').ilike('name','%'+tokens[tokens.length-1]+'%').limit(50);
       const q=await query;
       if(q.error)throw q.error;
       candidates=(q.data||[]).filter(c=>{const dbCore=coreName(c.name);return tokens.every(t=>normalizeName(dbCore).includes(t))&&(dbCore===core||dbCore.includes(core)||core.includes(dbCore));});
@@ -410,15 +410,15 @@ function clearDraft(){}function addressData(){const f=document.getElementById("p
  if(msg)msg.innerHTML='<span style="color:var(--blue)">Consultando a base VSN pelo CEP e número...</span>';
  try{
    // Consulta somente a tabela principal. Não depende de tabela auxiliar nem de serviço externo.
-   const q=await S.from("condominiums").select("*").eq("number",number).eq("city",d.city||"São Paulo").eq("state",d.state||"SP").limit(1000);
+   const q=await S.from("crm_condominiums").select("id,name,address,neighborhood,city,state,construction_year,builder,details").eq("company_id",window.__vsnCompanyId).eq("city",d.city||"São Paulo").eq("state",d.state||"SP").limit(1000);
    if(seq!==window.__condoLookupSeq)return false;
    if(q.error)throw q.error;
    const rows=q.data||[];
    let matches=[];
    // Prioridade máxima: CEP + número exatos, ignorando hífen/pontuação no CEP.
-   if(cep)matches=rows.filter(x=>digits(x.cep)===cep&&digits(x.number)===digits(number));
+   if(cep)matches=rows.filter(x=>digits(x.details?.cep)===cep&&digits(x.details?.number)===digits(number));
    // Se CEP não estiver cadastrado no condomínio, usar rua + número e validar cidade/UF.
-   if(!matches.length&&addr)matches=rows.filter(x=>clean(x.address)===addr&&digits(x.number)===digits(number));
+   if(!matches.length&&addr)matches=rows.filter(x=>clean(x.address)===addr&&digits(x.details?.number)===digits(number));
    // Se houver mais de um resultado plausível, não escolher arbitrariamente.
    if(matches.length>1&&neigh){
      const byNeighborhood=matches.filter(x=>clean(x.neighborhood)===neigh);
@@ -483,23 +483,24 @@ function selectCondoCandidate(i){
   msg.insertAdjacentHTML("beforeend",'<div data-confirm-condo style="margin-top:10px;padding:11px;border:1px solid #b9d8c0;background:#f3fbf5;border-radius:10px"><b>Selecionado:</b> '+esc(c.nome)+'<br><span style="font-size:12px;color:#6c7881">Ainda NÃO está na base VSN.</span><br><button type="button" class="btn red" style="margin-top:9px;padding:9px 13px;font-size:12px" onclick="saveCondoCandidate()">✓ Confirmar e adicionar à base</button></div>');
 }
 async function saveCondoCandidate(){
-  const p=window.__pendingCondo,d=addressData(),field=document.getElementById("condominium_name"),msg=document.getElementById("condomsg");
-  if(!p?.name||!field){toast("Nenhum condomínio selecionado para confirmar.","err");return}
-  try{
-    const e=window.__condoEnrichment||{};
-    const cleanNoSpace=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");
-    const condoRow={normalized_name:cleanNoSpace(p.name),name:p.name,address:d.address,number:d.number,neighborhood:d.neighborhood||null,city:d.city||"São Paulo",state:d.state||"SP",cep:d.cep||null,features:Array.isArray(e.features)?e.features:[],delivery_year:e.condominium_delivery_year||e.delivery_year||null,construction_year:e.condominium_construction_year||e.construction_year||null,units:e.condominium_units||e.units||null,towers:e.towers||null,floors:e.floors||null,builder:e.condominium_builder||e.builder||null,source_urls:Array.isArray(e.sources)?e.sources:[],evidence:e.evidence||null,confidence:e.confidence||"manual",last_enriched_at:new Date().toISOString(),updated_at:new Date().toISOString()};
-    const cr=await S.from("condominiums").upsert(condoRow,{onConflict:"normalized_name"}).select().single();
-    if(cr.error)throw cr.error;
-    const r=await S.from("condominium_address_map").upsert({address_key:p.addressKey,address:d.address,number:d.number,neighborhood:d.neighborhood||null,city:d.city||"São Paulo",state:d.state||"SP",cep:d.cep||null,condominium_name:p.name,condominium_id:cr.data.id,source:p.source||"confirmação manual",updated_at:new Date().toISOString()},{onConflict:"address_key"}).select().maybeSingle();
-    if(r.error)throw r.error;
-    const data={ok:true,condominium_id:cr.data.id,features:condoRow.features};
-    window.__pendingCondo=null;
-    msg.innerHTML='<div style="margin-top:10px;padding:11px;border:1px solid #b9d8c0;background:#f3fbf5;border-radius:10px"><b>✓ Condomínio confirmado:</b> '+esc(p.name)+'</div>';
-    const debugEl=document.getElementById("condoDebug");if(debugEl){let arr=[];try{arr=JSON.parse(debugEl.textContent||"[]")}catch(_){}arr.push({etapa:"7. SALVAMENTO NA BASE VSN",salvo:true,registro:data||null});debugEl.textContent=JSON.stringify(arr,null,2)}
-    toast("Condomínio confirmado e adicionado à base VSN.","ok");
-  }catch(e){toast("Não foi possível adicionar à base: "+e.message,"err")}
+ const p=window.__pendingCondo,d=addressData(),field=document.getElementById("condominium_name"),msg=document.getElementById("condomsg");
+ if(!p?.name||!field){toast("Nenhum condomínio selecionado para confirmar.","err");return}
+ try{
+  const e=window.__condoEnrichment||{},companyId=window.__vsnCompanyId;
+  const details={number:d.number||null,cep:d.cep||null,features:Array.isArray(e.features)?e.features:[],delivery_year:e.condominium_delivery_year||e.delivery_year||null,units:e.condominium_units||e.units||null,towers:e.towers||null,floors:e.floors||null,source_urls:Array.isArray(e.sources)?e.sources:[],evidence:e.evidence||null,confidence:e.confidence||"manual",last_enriched_at:new Date().toISOString()};
+  const row={company_id:companyId,name:p.name,address:d.address,neighborhood:d.neighborhood||null,city:d.city||"São Paulo",state:d.state||"SP",construction_year:e.condominium_construction_year||e.construction_year||null,builder:e.condominium_builder||e.builder||null,details,updated_at:new Date().toISOString()};
+  const existing=await S.from("crm_condominiums").select("id,details").eq("company_id",companyId).ilike("name",p.name).eq("address",d.address).eq("city",d.city||"São Paulo").eq("state",d.state||"SP").maybeSingle();
+  if(existing.error)throw existing.error;
+  const saved=existing.data
+   ?await S.from("crm_condominiums").update({...row,details:{...(existing.data.details||{}),...details}}).eq("company_id",companyId).eq("id",existing.data.id).select("id").single()
+   :await S.from("crm_condominiums").insert(row).select("id").single();
+  if(saved.error)throw saved.error;
+  window.__pendingCondo=null;
+  msg.innerHTML='<div style="margin-top:10px;padding:11px;border:1px solid #b9d8c0;background:#f3fbf5;border-radius:10px"><b>✓ Condomínio confirmado:</b> '+esc(p.name)+'</div>';
+  toast("Condomínio confirmado no catálogo desta imobiliária.","ok");
+ }catch(e){toast("Não foi possível adicionar ao catálogo: "+e.message,"err")}
 }
+
 function setupAddress(){const e=document.getElementById('cep');let t;e.addEventListener('input',()=>{e.value=e.value.replace(/\D/g,'').slice(0,8);clearTimeout(t);if(e.value.length===8)t=setTimeout(lookupAddress,250)});e.addEventListener('blur',lookupAddress)}async function lookupAddress(){const cep=document.getElementById('cep').value.replace(/\D/g,'');if(cep.length!==8)return;const l=document.getElementById('addrLoading'),h=document.getElementById('addrHint');l.textContent='Consultando CEP...';l.style.display='inline';h.style.display='none';try{const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');if(!r.ok)throw new Error('Falha na consulta');const a=await r.json();if(a.erro)throw new Error('CEP não encontrado');document.getElementById('address').value=a.logradouro||'';document.getElementById('neighborhood').value=a.bairro||'';document.getElementById('city').value=a.localidade||'';document.getElementById('state').value=a.uf||'';h.textContent='✓ Endereço preenchido automaticamente pelo CEP';h.style.display='inline';autoCondo()}catch(e){h.textContent=e.message==='CEP não encontrado'?'CEP não encontrado. Confira o número.':'Não foi possível consultar o CEP. Preencha o endereço manualmente.';h.style.display='inline'}finally{l.style.display='none'}}function setupDrop(){const z=document.getElementById('drop');['dragenter','dragover'].forEach(v=>z.addEventListener(v,e=>{e.preventDefault();z.classList.add('drag')}));['dragleave','drop'].forEach(v=>z.addEventListener(v,e=>{e.preventDefault();z.classList.remove('drag')}));z.addEventListener('drop',e=>pick({target:{files:e.dataTransfer.files}}))}const MAX_PROPERTY_PHOTOS=35;
 function pick(e){
  const files=[...e.target.files];
@@ -564,7 +565,7 @@ async function resizeDataUrl(file){return new Promise((resolve,reject)=>{const r
 
     if(condoName && S){
       try{
-        let cq=S.from('condominiums')
+        let cq=S.from('crm_condominiums')
           .select('id,name,address,number,city,state,features')
           .eq('name',condoName)
           .eq('city',condoCity)
@@ -575,7 +576,7 @@ async function resizeDataUrl(file){return new Promise((resolve,reject)=>{const r
           condoMatched=condos.find(x=>String(x.address||'').trim().toLowerCase()===condoAddress.toLowerCase() && String(x.number||'').trim()===condoNumber)
             || condos.find(x=>String(x.address||'').trim().toLowerCase()===condoAddress.toLowerCase())
             || condos[0];
-          condoDbFeatures=Array.isArray(condoMatched?.features)?condoMatched.features.filter(Boolean):[];
+          condoDbFeatures=Array.isArray(condoMatched?.details?.features)?condoMatched.details.features.filter(Boolean):[];
           if(condoMatched?.id){
             const pr=await S.from('condominium_proximity')
               .select('category,place_names,description')
