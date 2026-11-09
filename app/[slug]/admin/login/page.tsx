@@ -11,7 +11,7 @@ export default function TenantLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(search.get("erro") === "acesso" ? "Este usuário não possui acesso a esta imobiliária." : "");
+  const [error, setError] = useState(search.get("erro") === "acesso" ? "Este usuário não possui vínculo com esta imobiliária." : "");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -19,16 +19,21 @@ export default function TenantLoginPage() {
     setError("");
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-      if (authError) throw authError;
+      const { data: auth, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError || !auth.user) throw authError ?? new Error("Não foi possível validar o usuário.");
+
       const { data: tenant, error: tenantError } = await supabase
         .from("crm_companies").select("id, status").eq("slug", slug).maybeSingle();
       if (tenantError || !tenant || tenant.status !== "active") throw new Error("Imobiliária não encontrada ou inativa.");
+
       const { data: membership, error: memberError } = await supabase
-        .from("crm_memberships").select("company_id, status")
-        .eq("company_id", tenant.id).maybeSingle();
-      // A validação final de vínculo individual é feita no servidor antes de liberar o painel.
-      if (memberError) throw memberError;
+        .from("crm_memberships").select("company_id")
+        .eq("company_id", tenant.id).eq("user_id", auth.user.id).maybeSingle();
+      if (memberError || !membership) {
+        await supabase.auth.signOut();
+        throw new Error("Este usuário não possui acesso a esta imobiliária.");
+      }
+
       window.location.assign(`/${encodeURIComponent(slug)}/admin`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível entrar.");
