@@ -73,6 +73,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Não foi possível identificar a conta do proprietário." }, { status: 500 });
   }
 
+  const { data: existingAccount, error: existingAccountError } = await admin
+    .from("crm_owner_accounts")
+    .select("contact_id")
+    .eq("company_id", companyId)
+    .eq("user_id", ownerUserId)
+    .maybeSingle();
+  if (existingAccountError) {
+    return NextResponse.json({ error: existingAccountError.message }, { status: 400 });
+  }
+  if (existingAccount?.contact_id) {
+    const { error: updateContactError } = await admin
+      .from("crm_contacts")
+      .update({ name: nome, email, phone: celular, status: "active", updated_at: new Date().toISOString() })
+      .eq("company_id", companyId)
+      .eq("id", existingAccount.contact_id);
+    if (updateContactError) return NextResponse.json({ error: updateContactError.message }, { status: 400 });
+    return NextResponse.json({ userId: ownerUserId, contactId: existingAccount.contact_id });
+  }
+
   const { data: contact, error: contactError } = await admin
     .from("crm_contacts")
     .insert({
