@@ -122,7 +122,7 @@ let currentProfile=null;
 async function loadProfileSummary(user){
   const nameEl=document.getElementById('profileFirstName');
 
-  const {data}=await S.from('profiles').select('role,full_name,avatar_url').eq('id',user.id).maybeSingle();
+  const {data}=await S.from('profiles').select('full_name,avatar_url').eq('id',user.id).maybeSingle();
   currentProfile=data||{role:'corretor',full_name:user.user_metadata?.full_name||'',avatar_url:''};const tenantRole=window.__VERSUS_CONFIG.membershipRole||'member';currentProfile.role=(tenantRole==='owner'||tenantRole==='admin')?'admin':(tenantRole==='manager'?'gerente':'corretor');
   const fullName=(currentProfile.full_name||user.user_metadata?.full_name||user.email||'Usuário').trim();
   document.getElementById('user').textContent=fullName;
