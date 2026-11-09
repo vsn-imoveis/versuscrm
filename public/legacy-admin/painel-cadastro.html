@@ -141,21 +141,14 @@ const [membershipResult,ownerResult]=await Promise.all([
 if((membershipResult.error||!membershipResult.data)&&(!ownerResult.data||ownerResult.error))throw new Error('Este usuário não possui acesso a esta imobiliária.');
 window.__vsnCompanyId=tenant.id;window.__vsnCompanySlug=tenantSlug;
 try{
- const [companyLimitsResult,subscriptionLimitsResult]=await Promise.all([
-  S.from('crm_companies').select('max_properties,max_photos_per_property').eq('id',tenant.id).maybeSingle(),
-  S.from('crm_subscriptions').select('property_limit,photo_limit,status').eq('company_id',tenant.id).in('status',['active','trial']).maybeSingle()
- ]);
- if(companyLimitsResult.error)throw companyLimitsResult.error;
- if(subscriptionLimitsResult.error)throw subscriptionLimitsResult.error;
- const companyLimits=companyLimitsResult.data||{},subscriptionLimits=subscriptionLimitsResult.data||{};
- const companyPropertyLimit=Number(companyLimits.max_properties)||100;
- const subscriptionPropertyLimit=Number(subscriptionLimits.property_limit)||companyPropertyLimit;
- const companyPhotoLimit=Number(companyLimits.max_photos_per_property)||35;
- const subscriptionPhotoLimit=Number(subscriptionLimits.photo_limit)||companyPhotoLimit;
- window.__versusLimits={properties:Math.max(0,Math.min(companyPropertyLimit,subscriptionPropertyLimit)),photos:Math.max(0,Math.min(companyPhotoLimit,subscriptionPhotoLimit))};
+ const {data:limitsData,error:limitsError}=await S.rpc('get_my_crm_company_limits',{p_company_id:tenant.id});
+ if(limitsError)throw limitsError;
+ const limits=Array.isArray(limitsData)?limitsData[0]:limitsData;
+ if(!limits)throw new Error('Não foi possível confirmar os limites desta imobiliária.');
+ window.__versusLimits={properties:Math.max(0,Number(limits.property_limit)||0),photos:Math.max(0,Number(limits.photo_limit)||0)};
 }catch(limitError){
- console.warn('[Versus] Não foi possível consultar os limites do plano; a validação definitiva continuará no banco.',limitError);
- window.__versusLimits={properties:100,photos:35};
+ console.error('[Versus] Não foi possível confirmar os limites do plano.',limitError);
+ throw new Error('Não foi possível validar os limites desta imobiliária. Atualize o painel ou tente novamente.');
 }window.__vsnOwnerContactId=ownerResult.data?.contact_id||window.__VERSUS_CONFIG.ownerContactId||null;window.__vsnMembershipRole=membershipResult.data?.role||(ownerResult.data?'proprietario':'member');const headerProfile=await S.from('profiles').select('full_name,avatar_url').eq('id',session.user.id).maybeSingle();const headerName=(headerProfile.data?.full_name||session.user.user_metadata?.full_name||session.user.email||'Usuário').trim();document.getElementById('user').textContent=headerName.split(/\s+/)[0]||'Usuário';const avatarUrl=headerProfile.data?.avatar_url||'';const userPhoto=document.getElementById('userPhoto');const userInitial=document.getElementById('userInitial');if(avatarUrl){userPhoto.src=avatarUrl;userPhoto.style.display='block';userInitial.style.display='none';}else{userInitial.textContent=(document.getElementById('user').textContent||'U').charAt(0).toUpperCase();userInitial.style.display='grid';}canDeleteProperties=false;{const role=window.__vsnMembershipRole==='owner'?'admin':window.__vsnMembershipRole;currentUserRole=role;if(role==='proprietario'){document.body.classList.add('owner-edit-mode');}document.body.classList.add('admin-ui-ready');canDeleteProperties=role==='admin'}if(document.getElementById('propertyForm'))return;const requestedId=new URLSearchParams(location.search).get('id');if(requestedId){let propertyQuery=S.from('properties').select('*').eq('id',requestedId).eq('company_id',window.__vsnCompanyId);if(role==='proprietario')propertyQuery=propertyQuery.eq('owner_contact_id',window.__vsnOwnerContactId);const {data,error}=await propertyQuery.single();if(error||!data){A.innerHTML='<div class="card"><h1>Imóvel não encontrado</h1><p class="help">Não foi possível carregar o imóvel para edição.</p><button class="btn gray" onclick="window.location.href=\'painel-cadastro.html\'">Voltar</button></div>';return}A.innerHTML='<div class="head"><div><h1>Editar imóvel</h1><p>Atualize os dados do imóvel cadastrado.</p></div><button type="button" class="btn gray" onclick="window.location.href=\'painel-login.html\'">← Voltar ao painel</button></div><div id="form"></div>';newProp(data);configureOwnerAccessUI(true);if(data.owner_id)loadOwnerData(data.owner_id);return}A.innerHTML='<div class="head"><div><h1>Novo imóvel</h1><p>Preencha os dados e deixe o sistema automatizar o restante.</p></div><button type="button" class="btn gray" onclick="window.location.href=\'painel-login.html\'">← Voltar ao painel</button></div><div id="form"></div>';newProp();configureOwnerAccessUI(false)}function configureOwnerAccessUI(isEditing){const b=document.getElementById('ownerAccessBtn'),h=document.getElementById('ownerAccessHelp');if(!b)return;if(currentUserRole!=='admin'||isEditing){b.style.display='none';if(h)h.textContent=isEditing?'O proprietário já possui acesso. A edição do imóvel não envia novamente os dados de acesso.':'Somente um administrador pode enviar os dados de acesso.'}}
 async function loadOwnerData(ownerId){
  const form=document.getElementById('propertyForm');if(!form)return;
