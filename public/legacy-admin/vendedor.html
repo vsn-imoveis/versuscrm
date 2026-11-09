@@ -577,7 +577,7 @@ function card(x){
 
 async function togglePub(id){
   const item=ITEMS.find(x=>x.id===id);if(!item)return;
-  const {error}=await db.from('properties').update({published:!item.published}).eq('id',id);
+  const {error}=await db.from('properties').update({published:!item.published}).eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',id);
   if(error){toast('Erro: '+error.message,'err');return}
   item.published=!item.published;
   toast(item.published?'Imóvel publicado.':'Imóvel ocultado.','ok');
@@ -585,7 +585,7 @@ async function togglePub(id){
 }
 
 async function edit(id){
-  const {data,error}=await db.from('properties').select('*').eq('id',id).single();
+  const {data,error}=await db.from('properties').select('*').eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',id).single();
   if(error){toast(error.message,'err');return}
   openForm(data);
 }
