@@ -426,7 +426,7 @@ function renderApp(session){
 /* ================= DATA ================= */
 async function loadProperties(){
   renderSkeletons();
-  const {data,error}=await db.from('properties').select('*').order('created_at',{ascending:false});
+  const {data,error}=await db.from('properties').select('*').eq('company_id',window.__VERSUS_CONFIG.companyId).order('created_at',{ascending:false});
   if(error){ $('#grid').innerHTML='<div class="empty"><h3>Erro ao carregar</h3><p>'+esc(error.message)+'</p></div>'; return; }
   ITEMS=data||[];
   renderStats();renderChips();renderGrid();
@@ -738,13 +738,13 @@ function renderPhotos(){
 function rmExisting(i){existingPhotos.splice(i,1);renderPhotos()}
 function rmNew(i){selectedFiles.splice(i,1);renderPhotos()}
 
-async function uploadPhotos(){
+async function uploadPhotos(propertyId){
   const urls=[];
   for(const f of selectedFiles){
-    const path='properties/'+(editId||crypto.randomUUID())+'/'+crypto.randomUUID()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-    const {error}=await db.storage.from('property-photos').upload(path,f,{upsert:false});
+    const path=window.__VERSUS_CONFIG.companyId+'/'+propertyId+'/'+crypto.randomUUID()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const {error}=await db.storage.from('crm-property-photos').upload(path,f,{upsert:false,contentType:f.type||'image/jpeg'});
     if(error)throw error;
-    urls.push(db.storage.from('property-photos').getPublicUrl(path).data.publicUrl);
+    urls.push(db.storage.from('crm-property-photos').getPublicUrl(path).data.publicUrl);
   }
   return urls;
 }
@@ -758,39 +758,33 @@ async function save(ev){
   if(!sale&&!rent){toast('Selecione Venda ou Locação.','err');return}
   btn.disabled=true;btn.textContent='Salvando...';
   try{
-    const newUrls=await uploadPhotos();
+    const companyId=window.__VERSUS_CONFIG.companyId;
     const obj={
-      title:f.title.value.trim(),
-      code:f.code.value.trim()||null,
-      transaction_type:sale?'sale':'rent',
-      for_sale:sale,for_rent:rent,
-      property_type:f.property_type.value,
-      price:sale?moneyVal(f.price.value):0,
-      rent_price:rent?moneyVal(f.rent_price.value):0,
-      condo_fee:moneyVal(f.condo_fee.value),
-      iptu:moneyVal(f.iptu.value),
-      area:Number(f.area.value||0),
-      bedrooms:Number(f.bedrooms.value||0),
-      suites:Number(f.suites.value||0),
-      bathrooms:Number(f.bathrooms.value||0),
-      parking:Number(f.parking.value||0),
+      company_id:companyId,
+      title:f.title.value.trim(),code:f.code.value.trim()||null,
+      transaction_type:sale?'sale':'rent',for_sale:sale,for_rent:rent,
+      property_type:f.property_type.value,price:sale?moneyVal(f.price.value):0,
+      rent_price:rent?moneyVal(f.rent_price.value):0,condo_fee:moneyVal(f.condo_fee.value),
+      iptu:moneyVal(f.iptu.value),area:Number(f.area.value||0),bedrooms:Number(f.bedrooms.value||0),
+      suites:Number(f.suites.value||0),bathrooms:Number(f.bathrooms.value||0),parking:Number(f.parking.value||0),
       cep:f.cep.value.trim(),address:f.address.value.trim(),number:f.number.value.trim(),
       neighborhood:f.neighborhood.value.trim(),complement:f.complement.value.trim()||null,
       city:f.city.value.trim(),state:f.state.value.trim().toUpperCase(),
-      condominium_name:f.condominium_name.value.trim()||null,
-      description:f.description.value.trim(),
+      condominium_name:f.condominium_name.value.trim()||null,description:f.description.value.trim(),
       features:[...f.querySelectorAll('[name=feature]:checked')].map(x=>x.value),
-      photos:[...existingPhotos,...newUrls]
+      photos:existingPhotos,photo_thumbnails:existingPhotos
     };
-    const q=editId?await db.from('properties').update(obj).eq('id',editId):await db.from('properties').insert(obj);
+    const q=editId
+      ?await db.from('properties').update(obj).eq('id',editId).eq('company_id',companyId).select('id').single()
+      :await db.from('properties').insert(obj).select('id').single();
     if(q.error)throw q.error;
+    const newUrls=await uploadPhotos(q.data.id);
+    const photos=[...existingPhotos,...newUrls];
+    const photoUpdate=await db.from('properties').update({photos,photo_thumbnails:photos}).eq('id',q.data.id).eq('company_id',companyId);
+    if(photoUpdate.error)throw photoUpdate.error;
     toast(editId?'Alterações salvas.':'Imóvel cadastrado com sucesso.','ok');
-    closeForm();
-    await loadProperties();
-  }catch(e){
-    toast('Erro ao salvar: '+e.message,'err');
-    btn.disabled=false;btn.textContent=editId?'Salvar alterações':'Cadastrar imóvel';
-  }
+    closeForm();await loadProperties();
+  }catch(e){toast('Erro ao salvar: '+e.message,'err');btn.disabled=false;btn.textContent=editId?'Salvar alterações':'Cadastrar imóvel'}
 }
 
 boot();
