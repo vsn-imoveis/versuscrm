@@ -40,5 +40,21 @@ jobs:
           scripts.forEach((source, index) => new vm.Script(source, { filename: `legacy-site-inline-${index}.js` }));
           console.log(`Validated ${scripts.length} inline scripts.`);
           NODE
+      - name: Validate all imported admin HTML scripts
+        run: |
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const vm = require("node:vm");
+          const dir = "public/legacy-admin";
+          const pages = fs.readdirSync(dir).filter((name) => name.endsWith(".html"));
+          let count = 0;
+          for (const page of pages) {
+            const html = fs.readFileSync(`${dir}/${page}`, "utf8");
+            const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)].map((match) => match[1]).filter(Boolean);
+            scripts.forEach((source, index) => new vm.Script(source, { filename: `${page}:inline-${index}` }));
+            count += scripts.length;
+          }
+          console.log(`Validated ${pages.length} admin screens and ${count} inline scripts.`);
+          NODE
       - name: Build application
         run: npm run build
