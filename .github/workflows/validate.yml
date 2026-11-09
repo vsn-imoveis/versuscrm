@@ -32,7 +32,7 @@ jobs:
           const fs = require("node:fs");
           const vm = require("node:vm");
           const html = fs.readFileSync("public/legacy-site/index.html", "utf8");
-          const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)].map(match => match[1]).filter(Boolean);
+          const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(match => match[1]).filter(Boolean);
           scripts.forEach((source, index) => new vm.Script(source, { filename: `legacy-site-inline-${index}.js` }));
           console.log(`Validated ${scripts.length} inline scripts.`);
           NODE
