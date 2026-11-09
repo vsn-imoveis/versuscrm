@@ -1,0 +1,1 @@
+create policy "crm_requests_admin_update" on public.crm_requests for update to authenticated using (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin')) with check (exists (select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='admin'));

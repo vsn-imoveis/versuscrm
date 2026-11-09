@@ -1,0 +1,1 @@
+alter table public.crm_requests add column if not exists admin_response text; alter table public.crm_requests add column if not exists responded_at timestamptz; alter table public.crm_requests add column if not exists responded_by uuid;
