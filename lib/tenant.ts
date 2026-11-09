@@ -3,14 +3,12 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function getPublicTenant(slug: string) {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("crm_companies")
-    .select("id, slug, name, status")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (error || !data || data.status !== "active") return null;
-  return data;
+  const { data, error } = await supabase.rpc("get_public_tenant_by_slug", { p_slug: slug });
+  if (error || !data?.length || data[0].status !== "active") return null;
+  return data[0] as {
+    id: string; slug: string; name: string; status: string;
+    logo_url: string | null; primary_color: string | null;
+  };
 }
 
 export async function requireTenantMember(slug: string) {
