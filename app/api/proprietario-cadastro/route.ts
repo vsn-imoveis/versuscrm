@@ -37,8 +37,15 @@ export async function POST(request: NextRequest) {
   const email = String(body.email ?? "").trim().toLowerCase();
   const celular = String(body.celular ?? "").trim();
   const companyId = String(body.companyId ?? "").trim();
+  const phoneDigits = celular.replace(/\D/g, "");
   if (!nome || !email || !celular || !companyId) {
     return NextResponse.json({ error: "Nome, e-mail, celular e imobiliária são obrigatórios." }, { status: 400 });
+  }
+  if (nome.length > 160 || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: "Informe um nome e um e-mail válidos." }, { status: 400 });
+  }
+  if (phoneDigits.length < 10 || phoneDigits.length > 15) {
+    return NextResponse.json({ error: "Informe um celular válido com DDD." }, { status: 400 });
   }
 
   const admin = createClient(url, serviceKey, {
@@ -122,12 +129,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Conta de acesso criada, mas não foi possível criar o contato: " + contactError.message, userId: ownerUserId }, { status: 400 });
   }
 
-  const { error: accountError } = await admin
-    .from("crm_owner_accounts")
-    .insert({ company_id: companyId, contact_id: contact.id, user_id: ownerUserId, status: "active" });
-  if (accountError) {
+  const accountWrite = existingAccount
+    ? await admin.from("crm_owner_accounts").update({ contact_id: contact.id, status: "active" }).eq("company_id", companyId).eq("user_id", ownerUserId)
+    : await admin.from("crm_owner_accounts").insert({ company_id: companyId, contact_id: contact.id, user_id: ownerUserId, status: "active" });
+  if (accountWrite.error) {
     await admin.from("crm_contacts").delete().eq("id", contact.id).eq("company_id", companyId);
-    return NextResponse.json({ error: "Não foi possível vincular a conta do proprietário: " + accountError.message, userId: ownerUserId }, { status: 400 });
+    return NextResponse.json({ error: "Não foi possível vincular a conta do proprietário: " + accountWrite.error.message, userId: ownerUserId }, { status: 400 });
   }
 
   return NextResponse.json({ userId: ownerUserId, contactId: contact.id, sent: !inviteError });
