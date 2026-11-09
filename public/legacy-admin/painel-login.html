@@ -212,7 +212,7 @@ function switchProfileTab(tab){
   if(tab==='site') loadSiteProfile();
 }
 async function openSettingsSection(tab){
-  if(!['admin','gerente'].includes(currentProfile?.role))return false;
+  if(currentProfile?.role!=='admin')return false;
   if(tab==='site'){
     A.innerHTML='<div id="siteSettingsPage">'+
       '<div class="head"><div><h1>Perfil do site</h1><p>Configure as informações institucionais e os canais de contato exibidos no site.</p></div></div>'+
@@ -289,7 +289,7 @@ const ADMIN_PERMISSION_LABELS={
 let adminUsers=[];
 let adminPermissions=[];
 async function openUserAdmin(){
-  if(!['admin','gerente'].includes(currentProfile?.role))return;
+  if(currentProfile?.role!=='admin')return;
   switchProfileTab('admin');
 }
 function closeUserAdmin(){switchProfileTab('profile')}
