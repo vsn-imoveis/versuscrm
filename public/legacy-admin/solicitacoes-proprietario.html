@@ -48,42 +48,44 @@ async function boot(){
  const {data:{session}}=await S.auth.getSession();if(!session){$('status').innerHTML='Faça login no painel administrativo para acessar as solicitações. <a href="painel-login.html">Entrar</a>';return}
  
  await setAdminHeader(session.user);$('adminLogout').onclick=()=>S.auth.signOut().then(()=>location.href='painel-login.html');
- const {data:perm,error:permError}=await S.rpc('has_permission',{requested_permission:'properties.edit'});
- if(permError||perm!==true){$('status').textContent='Acesso restrito: seu usuário não tem permissão para revisar alterações de imóveis.';return}
+ if(!['owner','admin','manager'].includes(window.__VERSUS_CONFIG.membershipRole)){$('status').textContent='Acesso restrito: somente administradores e gerentes podem revisar solicitações.';return}
  $('status').textContent='Carregando solicitações...';await load();
 }
 async function load(){
- const {data,error}=await S.from('property_owner_edit_requests').select('id,property_id,owner_id,changes,status,owner_message,admin_note,created_at,properties(*)').eq('status','pending').order('created_at',{ascending:true});
+ const {data,error}=await S.from('crm_catalog_change_requests').select('*').eq('company_id',window.__VERSUS_CONFIG.companyId).eq('entity_type','property').eq('status','pending').order('created_at',{ascending:true});
  if(error){$('status').textContent='Erro ao carregar: '+error.message;return}
  $('status').textContent=(data?.length||0)+' solicitação(ões) aguardando análise.';
  if(!data?.length){$('requests').innerHTML='<div class="empty">Nenhuma solicitação pendente no momento.</div>';return}
- $('requests').innerHTML=data.map(r=>{
-  const p=r.properties||{},changes=r.changes||{};
+ const rows=await Promise.all((data||[]).map(async r=>{const {data:p}=await S.from('properties').select('*').eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',r.record_id).maybeSingle();return {...r,property:p||r.current_data||{}};}));
+ $('requests').innerHTML=rows.map(r=>{
+  const p=r.property||{},changes=r.proposed_data||{};
   const entries=Object.entries(changes).filter(([k,v])=>allowed.has(k)&&!sameValue(p[k],v));
-  return '<article class="card request-panel" id="req_'+r.id+'"><div class="request-head"><div><span class="badge">Aguardando aprovação</span><h2>'+esc(p.title||'Imóvel')+'</h2><div class="request-meta"><span><b>Código:</b> '+esc(p.code||'—')+'</span><span>'+esc([p.address,p.neighborhood,p.city].filter(Boolean).join(', '))+'</span><span>Enviada em '+new Date(r.created_at).toLocaleString('pt-BR')+'</span></div></div></div><div class="changes-title">Campos realmente alterados · '+entries.length+' campo(s)</div><div class="changes">'+entries.map(([k,v])=>'<div class="change"><b>'+esc(labels[k])+'</b><div class="value-row before"><small>Antes</small><div>'+esc(fmt(k,p[k]))+'</div></div><div class="value-row after"><small>Depois · valor solicitado</small><strong>'+esc(fmt(k,v))+'</strong></div></div>').join('')+'</div><label class="note-label" for="note_'+r.id+'">Observação para o proprietário <span style="font-weight:500;color:var(--muted)">(opcional)</span></label><textarea class="note-input" id="note_'+r.id+'" rows="3" placeholder="Escreva uma orientação ou o motivo de uma eventual recusa..."></textarea><div class="actions"><button class="btn gold" onclick="approveRequest(\''+r.id+'\')">Aprovar e aplicar alterações</button><button class="btn reject" onclick="rejectRequest(\''+r.id+'\')">Recusar solicitação</button></div></article>';
+  return '<article class="card request-panel" id="req_'+r.id+'"><div class="request-head"><div><span class="badge">Aguardando aprovação</span><h2>'+esc(p.title||'Imóvel')+'</h2><div class="request-meta"><span><b>Código:</b> '+esc(p.code||'—')+'</span><span>'+esc([p.address,p.neighborhood,p.city].filter(Boolean).join(', '))+'</span><span>Enviada em '+new Date(r.created_at).toLocaleString('pt-BR')+'</span></div></div></div><div class="changes-title">Campos realmente alterados · '+entries.length+' campo(s)</div><div class="changes">'+entries.map(([k,v])=>'<div class="change"><b>'+esc(labels[k]||k)+'</b><div class="value-row before"><small>Antes</small><div>'+esc(fmt(k,p[k]))+'</div></div><div class="value-row after"><small>Depois · valor solicitado</small><strong>'+esc(fmt(k,v))+'</strong></div></div>').join('')+'</div><label class="note-label" for="note_'+r.id+'">Observação para o proprietário <span style="font-weight:500;color:var(--muted)">(opcional)</span></label><textarea class="note-input" id="note_'+r.id+'" rows="3" placeholder="Escreva uma orientação ou o motivo de uma eventual recusa..."></textarea><div class="actions"><button class="btn gold" onclick="approveRequest(\''+r.id+'\')">Aprovar e aplicar alterações</button><button class="btn reject" onclick="rejectRequest(\''+r.id+'\')">Recusar solicitação</button></div></article>';
  }).join('');
 }
+
 async function approveRequest(id){
- const card=$('req_'+id);if(!card)return;
  if(!confirm('Aprovar esta solicitação e aplicar as alterações ao imóvel?'))return;
- const {data:req,error}=await S.from('property_owner_edit_requests').select('*').eq('id',id).eq('status','pending').single();if(error){alert('Não foi possível carregar a solicitação: '+error.message);return}
- const changes=req.changes||{},row={};for(const [k,v] of Object.entries(changes)){if(allowed.has(k))row[k]=v}
+ const {data:req,error}=await S.from('crm_catalog_change_requests').select('*').eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',id).eq('status','pending').single();
+ if(error){alert('Não foi possível carregar a solicitação: '+error.message);return}
+ const changes=req.proposed_data||{},row={};for(const [k,v] of Object.entries(changes)){if(allowed.has(k))row[k]=v}
  if(!Object.keys(row).length){alert('A solicitação não contém alterações reconhecidas.');return}
- const upd=await S.from('properties').update(row).eq('id',req.property_id).eq('owner_id',req.owner_id);
+ const upd=await S.from('properties').update(row).eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',req.record_id);
  if(upd.error){alert('Não foi possível aplicar as alterações: '+upd.error.message);return}
- const {data:{user}}=await S.auth.getUser();
- const note=$('note_'+id)?.value.trim()||null;
- const done=await S.from('property_owner_edit_requests').update({status:'approved',admin_note:note,reviewed_by:user.id,reviewed_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id).eq('status','pending');
- if(done.error){alert('As alterações foram aplicadas, mas não foi possível atualizar o status da solicitação: '+done.error.message);return}
+ const {data:{user}}=await S.auth.getUser(),note=$('note_'+id)?.value.trim()||null;
+ const done=await S.from('crm_catalog_change_requests').update({status:'approved',decision_note:note,decision_by:user.id,decision_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',id).eq('status','pending');
+ if(done.error){alert('As alterações foram aplicadas, mas não foi possível atualizar o status: '+done.error.message);return}
  alert('Solicitação aprovada e alterações aplicadas.');await load();
 }
+
 async function rejectRequest(id){
  const note=$('note_'+id)?.value.trim()||prompt('Informe o motivo da recusa (opcional):')||null;
  if(!confirm('Recusar esta solicitação?'))return;
  const {data:{user}}=await S.auth.getUser();
- const r=await S.from('property_owner_edit_requests').update({status:'rejected',admin_note:note,reviewed_by:user.id,reviewed_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id).eq('status','pending');
- if(r.error){alert('Não foi possível recusar: '+r.error.message);return}
+ const result=await S.from('crm_catalog_change_requests').update({status:'rejected',decision_note:note,decision_by:user.id,decision_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',id).eq('status','pending');
+ if(result.error){alert('Não foi possível recusar: '+result.error.message);return}
  await load();
 }
+
 boot();
 </script><script id="vsn-sidebar-controller">(function(){const b=document.getElementById('vsnSidebarToggle');if(!b)return;const key='vsnAdminSidebarCollapsed';function set(v){document.body.classList.toggle('vsn-sidebar-collapsed',v);b.setAttribute('aria-expanded',String(!v));b.setAttribute('aria-label',v?'Expandir menu lateral':'Recolher menu lateral');b.title=v?'Expandir menu':'Recolher menu';}let saved=false;try{saved=localStorage.getItem(key)==='1'}catch(e){}set(saved);b.addEventListener('click',()=>{const v=!document.body.classList.contains('vsn-sidebar-collapsed');set(v);try{localStorage.setItem(key,v?'1':'0')}catch(e){}});})();</script><script id="vsn-sidebar-page-height-fix">(function(){const side=document.querySelector('.admin-sidebar');if(!side)return;let raf=0;function fit(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const root=document.documentElement;const body=document.body;const top=parseFloat(getComputedStyle(root).getPropertyValue('--vsn-sidebar-top'))||98;const main=document.querySelector('main.wrap, main, #app, .wrap');const mainBottom=main?main.getBoundingClientRect().bottom+window.scrollY:0;const docBottom=Math.max(root.scrollHeight,body.scrollHeight,mainBottom,window.innerHeight);const h=Math.max(window.innerHeight-top,docBottom-top);root.style.setProperty('--vsn-sidebar-document-height',Math.ceil(h)+'px');side.style.height=Math.ceil(h)+'px';side.style.minHeight=Math.ceil(h)+'px';});}fit();window.addEventListener('resize',fit,{passive:true});window.addEventListener('load',fit,{once:true});window.addEventListener('orientationchange',fit,{passive:true});if(window.ResizeObserver){const main=document.querySelector('main.wrap, main, #app, .wrap');if(main)new ResizeObserver(fit).observe(main);}if(window.MutationObserver)new MutationObserver(fit).observe(document.body,{childList:true,subtree:true});})();</script></body></html>
