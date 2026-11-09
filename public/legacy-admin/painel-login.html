@@ -270,9 +270,9 @@ async function saveProfile(){
     if(file){
       const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
       const path=user.id+'/'+Date.now()+'.'+ext;
-      const up=await S.storage.from('profile-photos').upload(path,file,{contentType:file.type||'image/jpeg',upsert:true});
+      const up=await S.storage.from('crm-profile-photos').upload(path,file,{contentType:file.type||'image/jpeg',upsert:true});
       if(up.error)throw up.error;
-      avatar=S.storage.from('profile-photos').getPublicUrl(path).data.publicUrl;
+      avatar=S.storage.from('crm-profile-photos').getPublicUrl(path).data.publicUrl;
     }
     const row={full_name:document.getElementById('profileName').value.trim(),phone:document.getElementById('profilePhone').value.trim(),cpf_cnpj:document.getElementById('profileCpfCnpj').value.trim(),creci:document.getElementById('profileCreci')?.value.trim()||'',company:document.getElementById('profileCompany').value.trim(),bio:document.getElementById('profileBio').value.trim(),avatar_url:avatar,updated_at:new Date().toISOString()};
     const {data:saved,error}=await S.from('profiles').update(row).eq('id',user.id).select('id,role,full_name,phone,cpf_cnpj,creci,company,bio,avatar_url,updated_at').maybeSingle();if(error)throw error;if(!saved)throw new Error('Perfil não encontrado para este usuário.');
