@@ -293,16 +293,48 @@ async function openUserAdmin(){
   switchProfileTab('admin');
 }
 function closeUserAdmin(){switchProfileTab('profile')}
+async function teamAdminAction(action,payload={}){
+ const {data,error}=await S.functions.invoke('admin-actions',{body:{action,companyId:window.__VERSUS_CONFIG.companyId,redirectTo:location.origin+'/'+encodeURIComponent(window.__VERSUS_CONFIG.slug)+'/admin/painel-login.html',...payload}});
+ if(error)throw new Error(error.message||'Falha ao comunicar com o serviço de equipe.');
+ if(data?.error)throw new Error(data.error);
+ return data;
+}
 async function loadUserAdmin(){
  const el=document.getElementById('usersContent');if(!el)return;
  el.innerHTML='<p class="muted">Carregando usuários desta imobiliária...</p>';
- const {data:members,error}=await S.from('crm_memberships').select('user_id,role,created_at').eq('company_id',window.__VERSUS_CONFIG.companyId).order('created_at',{ascending:true});
- if(error){el.innerHTML='<p class="danger">Não foi possível carregar os usuários: '+esc(error.message)+'</p>';return}
- const ids=(members||[]).map(x=>x.user_id);
- let profiles=[];
- if(ids.length){const r=await S.from('profiles').select('id,full_name,phone,avatar_url').in('id',ids);if(r.error){el.innerHTML='<p class="danger">Não foi possível carregar os perfis: '+esc(r.error.message)+'</p>';return}profiles=r.data||[];}
- const rows=(members||[]).map(m=>({...m,...(profiles.find(p=>p.id===m.user_id)||{})}));
- el.innerHTML='<section class="user-admin-card" style="padding:0;overflow:hidden"><div style="padding:18px 20px;border-bottom:1px solid var(--line)"><h3 style="margin:0">Usuários da imobiliária</h3><p class="muted" style="margin:5px 0 0">'+rows.length+' membro(s) vinculado(s) a esta conta</p></div>'+(rows.length?'<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:620px"><thead><tr style="background:#f3f5f6;text-align:left"><th style="padding:13px 16px">Nome</th><th style="padding:13px 16px">Função</th><th style="padding:13px 16px">Telefone</th><th style="padding:13px 16px">Desde</th></tr></thead><tbody>'+rows.map(u=>'<tr style="border-top:1px solid #edf0f2"><td style="padding:13px 16px"><strong>'+esc(u.full_name||'Usuário')+'</strong></td><td style="padding:13px 16px">'+esc(({owner:'Proprietário da conta',admin:'Administrador',manager:'Gerente',agent:'Corretor',member:'Membro'})[u.role]||u.role)+'</td><td style="padding:13px 16px">'+esc(u.phone||'—')+'</td><td style="padding:13px 16px">'+(u.created_at?new Date(u.created_at).toLocaleDateString('pt-BR'):'—')+'</td></tr>').join('')+'</tbody></table></div>':'<p class="muted" style="padding:20px">Nenhum usuário adicional vinculado.</p>')+'</section><p class="muted" style="margin-top:12px">Convites, funções e acessos são administrados pela gestão de usuários do Versus CRM.</p>';
+ try{
+  const result=await teamAdminAction('team-list');adminUsers=result.members||[];
+  const roleLabels={owner:'Proprietário',admin:'Administrador',manager:'Gerente',agent:'Corretor',member:'Membro'};
+  const options=(selected,allowAdmin)=>['admin','manager','agent','member'].filter(role=>allowAdmin||role!=='admin').map(role=>'<option value="'+role+'" '+(selected===role?'selected':'')+'>'+roleLabels[role]+'</option>').join('');
+  const rows=adminUsers.map(u=>{
+   const protectedMember=u.role==='owner'||u.user_id===result.currentUserId;
+   const transferOptions=adminUsers.filter(x=>x.user_id!==u.user_id).map(x=>'<option value="'+esc(x.user_id)+'">'+esc(x.full_name||x.email||'Usuário')+'</option>').join('');
+   return '<tr style="border-top:1px solid #edf0f2"><td style="padding:13px 12px"><strong>'+esc(u.full_name||'Usuário')+'</strong><div class="user-admin-email">'+esc(u.email||'')+'</div></td><td style="padding:13px 12px">'+(protectedMember?'<span class="profile-role">'+esc(roleLabels[u.role]||u.role)+'</span>':'<select id="teamRole_'+esc(u.user_id)+'" style="margin:0;min-width:130px" onchange="changeTeamRole(\''+esc(u.user_id)+'\',this.value)">'+options(u.role,result.canManageAdmins)+'</select>')+'</td><td style="padding:13px 12px">'+esc(u.phone||'—')+'</td><td style="padding:13px 12px">'+Number(u.assigned_leads||0)+'</td><td style="padding:13px 12px">'+(u.created_at?new Date(u.created_at).toLocaleDateString('pt-BR'):'—')+'</td><td style="padding:13px 12px">'+(protectedMember?'<span class="muted">—</span>':'<div style="min-width:170px"><select id="teamTransfer_'+esc(u.user_id)+'" style="margin:0 0 6px;padding:7px;font-size:11px"><option value="">Transferir leads para...</option>'+transferOptions+'</select><button type="button" class="btn gray" style="padding:7px 10px;font-size:11px" onclick="removeTeamMember(\''+esc(u.user_id)+'\')">Remover</button></div>')+'</td></tr>';
+  }).join('');
+  el.innerHTML='<section class="user-admin-card" style="padding:0;overflow:hidden"><div style="padding:18px 20px;border-bottom:1px solid var(--line)"><h3 style="margin:0">Equipe da imobiliária</h3><p class="muted" style="margin:5px 0 0">'+adminUsers.length+' membro(s) · dados isolados desta imobiliária</p></div><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:900px"><thead><tr style="background:#f3f5f6;text-align:left"><th style="padding:12px">Nome / e-mail</th><th style="padding:12px">Função</th><th style="padding:12px">Telefone</th><th style="padding:12px">Leads</th><th style="padding:12px">Desde</th><th style="padding:12px">Ações</th></tr></thead><tbody>'+rows+'</tbody></table></div></section><section class="user-admin-card"><h3 style="margin:0 0 5px">Convidar membro</h3><p class="muted" style="font-size:12px;margin:0 0 14px">O convite será enviado por e-mail. Se a pessoa já possuir conta no Versus, ela será vinculada a esta imobiliária sem alterar a senha.</p><div class="grid"><div><label>Nome completo</label><input id="teamInviteName" placeholder="Nome do corretor"></div><div><label>E-mail</label><input id="teamInviteEmail" type="email" placeholder="corretor@exemplo.com"></div><div><label>Função</label><select id="teamInviteRole">'+options('agent',result.canManageAdmins)+'</select></div><div style="display:flex;align-items:end"><button type="button" class="btn red" style="width:100%" onclick="inviteTeamMember()">Enviar convite</button></div></div><p class="muted" style="font-size:11px;margin:5px 0 0">O proprietário pode conceder função de administrador. Administradores podem convidar gerentes e corretores.</p></section>';
+ }catch(e){el.innerHTML='<p class="danger">Não foi possível carregar a equipe: '+esc(e.message)+'</p>';}
+}
+async function inviteTeamMember(){
+ const name=document.getElementById('teamInviteName')?.value.trim(),email=document.getElementById('teamInviteEmail')?.value.trim(),role=document.getElementById('teamInviteRole')?.value||'agent';
+ if(!name||!email){alert('Informe nome e e-mail.');return;}
+ try{const result=await teamAdminAction('team-invite',{fullName:name,email,role});alert(result.message||'Membro vinculado com sucesso.');await loadUserAdmin();}
+ catch(e){alert('Não foi possível convidar: '+e.message);}
+}
+async function changeTeamRole(userId,role){
+ const current=adminUsers.find(x=>x.user_id===userId);if(!current)return;
+ if(!confirm('Alterar a função de '+(current.full_name||current.email)+' para '+({admin:'Administrador',manager:'Gerente',agent:'Corretor',member:'Membro'}[role]||role)+'?')){await loadUserAdmin();return;}
+ try{await teamAdminAction('team-role',{userId,role});toast('Função atualizada.','ok');await loadUserAdmin();}
+ catch(e){alert('Não foi possível alterar a função: '+e.message);await loadUserAdmin();}
+}
+async function removeTeamMember(userId){
+ const member=adminUsers.find(x=>x.user_id===userId);if(!member)return;
+ const transferTo=document.getElementById('teamTransfer_'+userId)?.value||'';
+ if(Number(member.assigned_leads||0)>0&&!transferTo){alert('Selecione o novo responsável para transferir os '+member.assigned_leads+' lead(s) antes da remoção.');return;}
+ const recipient=adminUsers.find(x=>x.user_id===transferTo);
+ const detail=Number(member.assigned_leads||0)>0?' Os '+member.assigned_leads+' lead(s) serão transferidos para '+(recipient?.full_name||recipient?.email||'o membro selecionado')+'.':'';
+ if(!confirm('Remover '+(member.full_name||member.email)+' desta imobiliária?'+detail+' A conta global e o histórico serão preservados.'))return;
+ try{const result=await teamAdminAction('team-remove',{userId,transferTo});toast('Membro removido. '+Number(result.transferredLeads||0)+' lead(s) transferidos.','ok');await loadUserAdmin();}
+ catch(e){alert('Não foi possível remover o membro: '+e.message);await loadUserAdmin();}
 }
 function renderUserAdmin(){loadUserAdmin();}
 
