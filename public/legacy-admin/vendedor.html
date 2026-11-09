@@ -351,7 +351,7 @@ function renderLogin(msg=''){
       <div class="lbrand"><div class="mark">V</div><div><b>VSN IMÓVEIS</b><small>PAINEL DO VENDEDOR</small></div></div>
       <h1>Bem-vindo de volta</h1>
       <p>Entre com seu e-mail e senha para gerenciar seus anúncios.</p>
-      <div class="field"><label>E-mail</label><input id="em" type="email" placeholder="voce@vsnimoveis.com" autocomplete="username"></div>
+      <div class="field"><label>E-mail</label><input id="em" type="email" placeholder="seuemail@imobiliaria.com" autocomplete="username"></div>
       <div class="field"><label>Senha</label><input id="pw" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter'&&!event.isComposing)doLogin()"></div>
       <button class="btn red" onclick="doLogin()">Entrar</button>
       <div id="msg" class="msg">${esc(msg)}</div>
