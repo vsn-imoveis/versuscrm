@@ -306,49 +306,6 @@ async function loadUserAdmin(){
 }
 function renderUserAdmin(){loadUserAdmin();}
 
-function toggleUserEdit(userId){const card=document.getElementById('user-card-'+userId),modal=document.getElementById('userEditModal'),content=document.getElementById('userEditModalContent');if(!card||!modal||!content)return;content.querySelectorAll('[data-user-card]').forEach(other=>other.style.display='none');card.style.display='block';const target=adminUsers.find(x=>x.id===userId),title=document.getElementById('userEditModalTitle');if(title)title.textContent='Editar usuário — '+(target?.full_name||target?.email||'Usuário');modal.classList.add('open');document.body.style.overflow='hidden'}
-function closeUserEditModal(){const modal=document.getElementById('userEditModal');if(modal)modal.classList.remove('open');document.body.style.overflow=''}
-function toggleCreateUserForm(force){const modal=document.getElementById('createUserModal');if(!modal)return;const open=typeof force==='boolean'?force:!modal.classList.contains('open');modal.classList.toggle('open',open);document.body.style.overflow=open?'hidden':'';if(open)document.getElementById('newUserName')?.focus()}
-function filterUserReport(value){const q=String(value||'').trim().toLowerCase();document.querySelectorAll('#userReportTable tbody tr').forEach(row=>{row.style.display=row.textContent.toLowerCase().includes(q)?'':'none'})}
-async function createManagedUser(){
-  const btn=document.getElementById('createUserBtn');if(!btn)return;
-  const full_name=document.getElementById('newUserName')?.value.trim(),email=document.getElementById('newUserEmail')?.value.trim(),role=document.getElementById('newUserRole')?.value||'corretor';
-  if(!full_name||!email){toast('Preencha nome e e-mail do usuário.','err');return}
-  btn.disabled=true;btn.textContent='Enviando convite...';
-  try{const r=await S.functions.invoke('admin-user-management',{body:{action:'create',full_name,email,role}});if(r.error)throw r.error;if(r.data?.error)throw new Error(r.data.error);toast(r.data?.message||'Usuário cadastrado e convite enviado.','ok');await loadUserAdmin()}
-  catch(e){toast('Não foi possível cadastrar: '+(e.message||e),'err');btn.disabled=false;btn.textContent='Cadastrar e enviar convite'}
-}
-async function setUserActive(userId,active){
-  const target=adminUsers.find(x=>x.id===userId);if(!target)return;
-  const verb=active?'reativar':'desativar';
-  if(!confirm('Deseja '+verb+' o usuário '+(target.email||target.full_name)+'?'))return;
-  try{
-    const r=await S.functions.invoke('admin-user-management',{body:{action:active?'activate':'deactivate',user_id:userId}});
-    if(r.error)throw r.error;if(r.data?.error)throw new Error(r.data.error);
-    toast(r.data?.message||(active?'Usuário reativado.':'Usuário desativado.'),'ok');await loadUserAdmin();
-  }catch(e){toast('Não foi possível '+verb+' o usuário: '+(e.message||e),'err')}
-}
-async function saveUserPermissions(userId){
-  const card=document.querySelector('[data-user-card="'+CSS.escape(userId)+'"]');if(!card)return;
-  const btn=card.querySelector('.users-save');if(btn){btn.disabled=true;btn.textContent='Salvando...'}
-  try{
-    const roleSel=card.querySelector('[data-role-user="'+CSS.escape(userId)+'"]');
-    const target=adminUsers.find(x=>x.id===userId);if(!target)throw new Error('Usuário não encontrado.');
-    const profilePatch={};card.querySelectorAll('[data-profile-field]').forEach(input=>profilePatch[input.dataset.profileField]=input.value.trim());
-    if(roleSel&&!roleSel.disabled&&roleSel.value!==target.role)profilePatch.role=roleSel.value;
-    if(Object.keys(profilePatch).length){const r=await S.functions.invoke('admin-user-management',{body:{action:'update',user_id:userId,...profilePatch}});if(r.error)throw r.error;if(r.data?.error)throw new Error(r.data.error)}
-    for(const sel of card.querySelectorAll('select[data-perm]')){
-      const key=sel.dataset.perm,val=sel.value;
-      if(val==='inherit'){
-        const r=await S.from('user_permissions').delete().eq('user_id',userId).eq('permission_key',key);if(r.error)throw r.error;
-      }else{
-        const r=await S.from('user_permissions').upsert({user_id:userId,permission_key:key,allowed:val==='allow'},{onConflict:'user_id,permission_key'});if(r.error)throw r.error;
-      }
-    }
-    toast('Usuário atualizado com sucesso.','ok');await loadUserAdmin();
-  }catch(e){toast('Não foi possível salvar: '+(e.message||e),'err');if(btn){btn.disabled=false;btn.textContent='Salvar permissões'}}
-}
-
 async function loadSiteProfile(){
   if(currentProfile?.role!=='admin')return;
   const {data,error}=await S.from('crm_companies').select('*').eq('id',window.__VERSUS_CONFIG.companyId).maybeSingle();
