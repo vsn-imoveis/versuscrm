@@ -10,7 +10,7 @@ export default async function TenantPropertiesPage({ params }: Props) {
 
   const { data: properties, error } = await (await import("@/lib/supabase/server")).createSupabaseServerClient()
     .then(client => client.from("properties")
-      .select("id,code,title,property_type,transaction_type,price,rent_price,area,bedrooms,bathrooms,parking,neighborhood,city,photos,photo_thumbnails")
+      .select("id,code,title,property_type,transaction_type,price,rent_price,area,bedrooms,bathrooms,parking,neighborhood,city,photos,photo_thumbnails,for_sale,for_rent")
       .eq("company_id", tenant.id).eq("published", true).order("created_at", { ascending: false }).limit(24));
 
   if (error) throw new Error("Não foi possível carregar os imóveis publicados.");
