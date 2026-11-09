@@ -8,6 +8,11 @@ export async function getPublicTenant(slug: string) {
   return data[0] as {
     id: string; slug: string; name: string; status: string;
     logo_url: string | null; primary_color: string | null;
+    contact_name: string | null; contact_email: string | null; contact_phone: string | null;
+    whatsapp: string | null; creci: string | null;
+    instagram_url: string | null; facebook_url: string | null; youtube_url: string | null;
+    public_address: string | null; about_text: string | null;
+    site_photo_url: string | null; site_cover_url: string | null; site_share_image_url: string | null;
   };
 }
 
