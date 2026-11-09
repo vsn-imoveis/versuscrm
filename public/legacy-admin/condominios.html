@@ -80,7 +80,7 @@ input,select,textarea{width:100%;border:1px solid #cbd3da;border-radius:9px;padd
 <div class="table-wrap"><table><thead><tr><th>Condomínio</th><th>Endereço</th><th>Bairro / Cidade</th><th>Ano</th><th>Construtora</th><th>Unidades</th><th>Ações</th></tr></thead><tbody id="rows"></tbody></table></div>
 <div id="empty" class="muted" style="padding:16px 0" hidden>Nenhum condomínio encontrado.</div><div id="listMsg" class="status"></div><div class="pagination"><span id="pageInfo" class="muted">Página 1</span><div class="pagination-actions"><button class="btn secondary" id="prev" disabled>Anterior</button><button class="btn secondary" id="next" disabled>Próxima</button></div></div></div></section></div></div><script>
 
-const SUPA_URL='window.__VERSUS_CONFIG.supabaseUrl',SUPA_KEY='window.__VERSUS_CONFIG.supabaseAnonKey';
+const SUPA_URL=window.__VERSUS_CONFIG.supabaseUrl,SUPA_KEY=window.__VERSUS_CONFIG.supabaseAnonKey;
 const db=supabase.createClient(SUPA_URL,SUPA_KEY);const $=(s,r=document)=>r.querySelector(s);let sessionUser=null;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function msg(el,t,err=false){el.textContent=t;el.style.color=err?'#b42318':'#168044'}
