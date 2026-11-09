@@ -1,6 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const cors = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info","Access-Control-Allow-Methods":"POST, OPTIONS"};
 const out = (body: unknown, status=200) => new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json"}});
+const generateInitialPassword = () => {
+ const bytes = new Uint8Array(24);
+ crypto.getRandomValues(bytes);
+ return Array.from(bytes, value => value.toString(16).padStart(2, "0")).join("");
+};
 Deno.serve(async req => {
  if(req.method==="OPTIONS") return new Response("ok",{headers:cors});
  if(req.method!=="POST") return out({error:"Método não permitido."},405);
@@ -24,9 +29,7 @@ Deno.serve(async req => {
    const {data:m,error:me}=await db.from("crm_memberships").select("user_id").eq("company_id",companyId).maybeSingle();
    if(me) return out({error:"Não foi possível verificar os vínculos existentes."},500);
    if(m) return out({error:"Esta empresa já possui um usuário vinculado. Nenhuma conta foi alterada."},409);
-   const first=companyName.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim().split(/[^a-z0-9]+/).filter(Boolean)[0];
-   if(!first) return out({error:"Não foi possível gerar a senha inicial."},400);
-   const initialPassword=first+"admin"; let userId:string|undefined,created=false;
+   const initialPassword=generateInitialPassword(); let userId:string|undefined,created=false;
    for(let page=1;page<=10&&!userId;page++){const {data,error}=await db.auth.admin.listUsers({page,perPage:1000});if(error)return out({error:"Não foi possível verificar contas existentes."},500);const found=data.users.find(x=>String(x.email||"").trim().toLowerCase()===email);if(found)userId=found.id;if(data.users.length<1000)break;}
    if(userId){const {data:links,error}=await db.from("crm_memberships").select("company_id").eq("user_id",userId);if(error)return out({error:"Não foi possível validar os vínculos da conta existente."},500);if((links||[]).some(x=>x.company_id!==companyId))return out({error:"Este e-mail já está vinculado a outra empresa."},409);const {error}=await db.auth.admin.updateUserById(userId,{password:initialPassword,email_confirm:true,user_metadata:{company_id:companyId,company_name:c.name}});if(error)return out({error:"Não foi possível definir a senha inicial: "+error.message},400);}
    else{const {data,error}=await db.auth.admin.createUser({email,password:initialPassword,email_confirm:true,user_metadata:{company_id:companyId,company_name:c.name}});if(error||!data.user)return out({error:error?.message||"Não foi possível criar a conta."},400);userId=data.user.id;created=true;}
