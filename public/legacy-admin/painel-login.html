@@ -411,7 +411,7 @@ async function openLeadNotifications(){
   }catch(e){list.textContent='Não foi possível carregar as notificações: '+e.message}
 }
 async function openLeadFromNotification(id){
-  try{await S.from('crm_leads').update({status:'contacted',updated_at:new Date().toISOString()}).eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',id);closeLeadNotifications();await refreshUpdatesCount();openClientsSection(id)}catch(e){alert('Não foi possível abrir o lead: '+e.message)}
+  try{const {error}=await S.from('crm_leads').update({status:'contacted',updated_at:new Date().toISOString()}).eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',id);if(error)throw error;closeLeadNotifications();await refreshUpdatesCount();openClientsSection(id)}catch(e){alert('Não foi possível atualizar o lead: '+e.message)}
 }
 function openLeadDetails(id){
   const lead=vsnLeadsCache.find(x=>String(x.id)===String(id));if(!lead)return;
