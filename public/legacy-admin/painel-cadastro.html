@@ -719,36 +719,18 @@ async function save(form){if(!form.reportValidity())return;if(photoOrder.length>
       b.disabled=false;b.textContent='Salvar imóvel';
       return;
     }
-    const {data:pendingRequest,error:findRequestError}=await S.from('property_owner_edit_requests')
-      .select('id')
-      .eq('property_id',editId)
-      .eq('owner_id',ownerId)
-      .eq('status','pending')
-      .maybeSingle();
+    const companyId=window.__vsnCompanyId;
+    const {data:pendingRequest,error:findRequestError}=await S.from('crm_catalog_change_requests')
+      .select('id').eq('company_id',companyId).eq('entity_type','property')
+      .eq('record_id',editId).eq('requested_by',session.user.id).eq('status','pending').maybeSingle();
     if(findRequestError)throw findRequestError;
-
-    let reqError=null;
-    if(pendingRequest?.id){
-      const result=await S.from('property_owner_edit_requests')
-        .update({
-          changes,
-          owner_message:'Alteração atualizada pelo proprietário.',
-          updated_at:new Date().toISOString()
-        })
-        .eq('id',pendingRequest.id)
-        .eq('status','pending');
-      reqError=result.error;
-    }else{
-      const result=await S.from('property_owner_edit_requests').insert({
-        property_id:editId,
-        owner_id:ownerId,
-        changes,
-        status:'pending',
-        owner_message:'Alteração solicitada pelo proprietário.'
-      });
-      reqError=result.error;
-    }
-    if(reqError)throw reqError;
+    const requestRow={entity_type:'property',action:'update',status:'pending',company_id:companyId,
+      requested_by:session.user.id,record_id:editId,current_data:editOriginalData||{},proposed_data:changes,
+      decision_note:'Alteração solicitada pelo proprietário.'};
+    const result=pendingRequest?.id
+      ?await S.from('crm_catalog_change_requests').update({proposed_data:changes,decision_note:requestRow.decision_note,updated_at:new Date().toISOString()}).eq('company_id',companyId).eq('id',pendingRequest.id).eq('status','pending')
+      :await S.from('crm_catalog_change_requests').insert(requestRow);
+    if(result.error)throw result.error;
     hidePhotoUploadProgress();
     showOwnerRequestModal(
       pendingRequest?.id
