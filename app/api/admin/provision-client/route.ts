@@ -31,12 +31,18 @@ export async function POST(request: NextRequest) {
   })
   const { data: profile, error: profileError } = await sessionClient
     .from('profiles').select('role').eq('id', userData.user.id).maybeSingle()
-  if (profileError || profile?.role !== 'admin') {
-    console.error('[provision-client] admin profile validation failed', {
+  if (profileError) {
+    console.error('[provision-client] could not read admin profile', {
+      userId: userData.user.id,
+      error: profileError.message,
+    })
+    return NextResponse.json({ error: 'Não foi possível validar as permissões administrativas. Tente novamente.' }, { status: 500 })
+  }
+  if (!profile || profile.role !== 'admin') {
+    console.warn('[provision-client] provisioning denied: user is not a platform admin', {
       userId: userData.user.id,
       profileFound: Boolean(profile),
       role: profile?.role ?? null,
-      error: profileError?.message ?? null,
     })
     return NextResponse.json({ error: 'Somente o administrador do VersusCRM pode provisionar clientes.' }, { status: 403 })
   }
