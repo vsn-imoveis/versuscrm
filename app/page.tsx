@@ -61,7 +61,7 @@ export default function Page() {
     if (companyError || !createdCompany) { setNotice('Não foi possível criar o cliente: ' + (companyError?.message || 'erro inesperado')); return }
     const { error: subscriptionError } = await supabase.from('crm_subscriptions').insert({ company_id: createdCompany.id, plan_code: 'essencial', plan_name: 'Essencial', monthly_price: 100, property_limit: 100, photo_limit: 35, status: 'active' })
     if (subscriptionError) { await supabase.from('crm_companies').delete().eq('id',createdCompany.id); setNotice('Cliente criado parcialmente; falha ao criar assinatura. ' + subscriptionError.message); return }
-    const response = await fetch('/api/admin/provision-client', { method:'POST', headers:{'Content-Type':'application/json',Authorization:`Bearer ${current.access_token}`}, body:JSON.stringify({companyId:createdCompany.id,email:lead.email.trim().toLowerCase(),companyName:name}) })
+    const response = await fetch('/api/admin/provision-client', { method:'POST', headers:{'Content-Type':'application/json',Authorization:`Bearer ${current.access_token}`}, body:JSON.stringify({companyId:createdCompany.id,email:String(createdCompany.contact_email || '').trim().toLowerCase(),companyName:createdCompany.name}) })
     const provision = await response.json().catch(()=>({}))
     if (!response.ok) {
       await supabase.from('crm_subscriptions').delete().eq('company_id',createdCompany.id)
@@ -190,7 +190,7 @@ export default function Page() {
     const response = await fetch('/api/admin/provision-client', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentSession.access_token}` },
-      body: JSON.stringify({ companyId: c.id, email: contactEmail, companyName: name }),
+      body: JSON.stringify({ companyId: c.id, email: String(c.contact_email || '').trim().toLowerCase(), companyName: c.name }),
     })
     const provision = await response.json().catch(() => ({}))
     if (!response.ok) {
