@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
   const photoLimit = Number(body.photoLimit)
 
   if (!name || !slugBase || !contactName || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slugBase) ||
-      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
       ![monthlyPrice, propertyLimit, photoLimit].every(Number.isFinite) ||
       monthlyPrice < 0 || propertyLimit < 1 || photoLimit < 1) {
     return NextResponse.json({ error: 'Confira nome, endereço, contato, e-mail, mensalidade e limites.' }, { status: 400 })
