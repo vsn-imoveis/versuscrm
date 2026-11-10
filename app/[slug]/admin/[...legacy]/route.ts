@@ -52,8 +52,9 @@ export async function GET(request: NextRequest, context: Context) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
+  if (!user || !session) {
     return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/login`, request.url));
   }
 
@@ -101,6 +102,8 @@ export async function GET(request: NextRequest, context: Context) {
     companyId: tenant.id,
     membershipRole: effectiveRole,
     ownerContactId: ownerAccount?.contact_id ?? null,
+    accessToken: session.access_token,
+    refreshToken: session.refresh_token,
     supabaseUrl,
     supabaseAnonKey
   }).replace(/</g, "\\u003c");
