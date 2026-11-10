@@ -45,7 +45,7 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
   const urls = [
     `<url><loc>${xmlEscape(`${SITE_URL}/${companySlug}`)}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
     ...(properties || []).map((p: { id: string; updated_at?: string | null; condominium_name?: string | null; address?: string | null; bedrooms?: number | null; area?: number | null; for_sale?: boolean | null; for_rent?: boolean | null; transaction_type?: string | null }) => {
-      const loc = `${SITE_URL}/${companySlug}/imovel/${encodeURIComponent(propertySeoSlug(p))}`
+      const loc = `${SITE_URL}/${companySlug}/imovel/${encodeURIComponent(propertySeoSlug(p))}.html`
       const lastmod = p.updated_at ? `<lastmod>${xmlEscape(new Date(p.updated_at).toISOString())}</lastmod>` : ''
       return `<url><loc>${xmlEscape(loc)}</loc>${lastmod}<changefreq>weekly</changefreq><priority>0.8</priority></url>`
     }),
