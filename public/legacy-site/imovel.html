@@ -74,20 +74,10 @@ function propertySlug(p){
   const type=(p.for_rent&&!p.for_sale)?'locacao':(p.for_sale&&!p.for_rent)?'venda':(p.transaction_type==='rent'?'locacao':p.transaction_type==='sale'?'venda':'imovel');
   return [condo,rua,dorms?dorms+'-dorm':null,area?String(Math.round(area))+'m2':null,type].filter(Boolean).join('-');
 }
-const tenantParams=new URLSearchParams(location.search);const tenantSlug=tenantParams.get('slug')||'';const companyId=tenantParams.get('company')||'';const tenantName=tenantParams.get('name')||'Imóveis';const tenantPhone=(tenantParams.get('phone')||'').replace(/\\D/g,'');const tenantColor=tenantParams.get('color')||'#d3aa62';function propertyUrl(p){return '/'+encodeURIComponent(tenantSlug)+'/imoveis/'+encodeURIComponent(p.id);}
+const tenantParams=new URLSearchParams(location.search);const tenantSlug=tenantParams.get('slug')||'';const companyId=tenantParams.get('company')||'';const tenantName=tenantParams.get('name')||'Imóveis';const tenantPhone=(tenantParams.get('phone')||'').replace(/\\D/g,'');const tenantColor=tenantParams.get('color')||'#d3aa62';document.documentElement.style.setProperty('--gold',tenantColor);function propertyUrl(p){return '/'+encodeURIComponent(tenantSlug)+'/imoveis/'+encodeURIComponent(p.id);}
 async function resolvePropertyId(){
   const q=new URLSearchParams(location.search);
-  const legacy=q.get('id');
-  if(legacy)return legacy;
-  const slug=q.get('slug')||location.pathname.match(/^\/imovel\/([^/]+)\/?$/)?.[1]||'';
-  if(!slug)return null;
-  try{
-    const r=await fetch('https://jpdfynaioepcmgqlqlht.supabase.co/rest/v1/properties?select=id,condominium_name,address,bedrooms,area,for_sale,for_rent,transaction_type&published=eq.true',{headers:{apikey:'sb_publishable_Ulvr8RljdGaSS1dqlBijkg_vIC4wT4C',Accept:'application/json'}});
-    if(!r.ok)return null;
-    const rows=await r.json();
-    const match=(Array.isArray(rows)?rows:[]).find(p=>propertySlug(p)===slug);
-    return match?.id||null;
-  }catch(_){return null;}
+  return q.get('id')||null;
 }
 let id=null,app=document.getElementById('app');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
