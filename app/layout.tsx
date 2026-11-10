@@ -1,9 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Versus CRM",
-  description: "Plataforma de gestão imobiliária"
+  title: "Versus CRM · Painel administrativo",
+  description: "Central de gestão de clientes, planos, assinaturas e sites do Versus CRM.",
+};
+
+export const viewport: Viewport = {
+  colorScheme: "light",
+  themeColor: "#0b1020",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
