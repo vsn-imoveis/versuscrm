@@ -59,10 +59,46 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Empresa, nome e e-mail válidos são obrigatórios.' }, { status: 400 })
   }
 
-  const { data: company, error: companyError } = await admin
-    .from('crm_companies').select('id,name,contact_name,contact_email').eq('id', companyId).maybeSingle()
-  if (companyError || !company || String(company.contact_email || '').trim().toLowerCase() !== email) {
-    return NextResponse.json({ error: 'Empresa não encontrada ou e-mail diferente do cadastro.' }, { status: 400 })
+  // Read the company with the same authenticated admin session that created it.
+  // This avoids a false "company not found" when the service-role key configured
+  // in Vercel is stale or belongs to a different Supabase project. Privileged
+  // Auth operations below still use the service-role client.
+  const { data: company, error: companyError } = await sessionClient
+    .from('crm_companies')
+    .select('id,name,contact_name,contact_email')
+    .eq('id', companyId)
+    .maybeSingle()
+
+  if (companyError) {
+    console.error('[provision-client] company lookup failed for authenticated admin', {
+      companyId,
+      userId: userData.user.id,
+      error: companyError.message,
+      code: companyError.code,
+    })
+    return NextResponse.json({
+      error: 'Não foi possível consultar a empresa recém-cadastrada. Verifique as permissões de leitura de crm_companies.',
+    }, { status: 500 })
+  }
+  if (!company) {
+    console.error('[provision-client] company id was not found after creation', {
+      companyId,
+      userId: userData.user.id,
+    })
+    return NextResponse.json({
+      error: 'A empresa foi criada, mas não foi localizada pelo mesmo ID retornado pelo cadastro. Atualize a página e tente novamente.',
+    }, { status: 404 })
+  }
+  const storedEmail = String(company.contact_email || '').trim().toLowerCase()
+  if (storedEmail !== email) {
+    console.error('[provision-client] company contact email mismatch', {
+      companyId,
+      submittedEmail: email,
+      storedEmail,
+    })
+    return NextResponse.json({
+      error: 'O e-mail enviado não corresponde ao e-mail salvo na empresa. Confira o cadastro antes de criar o acesso.',
+    }, { status: 409 })
   }
 
   const { data: existingMembership, error: membershipLookupError } = await admin
