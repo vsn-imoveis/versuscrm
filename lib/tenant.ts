@@ -2,10 +2,32 @@ import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function getPublicTenant(slug: string) {
+  const normalizedSlug = String(slug ?? "").trim().toLowerCase();
+  if (!normalizedSlug) return null;
+
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("get_public_tenant_by_slug", { p_slug: slug });
-  if (error || !data?.length || data[0].status !== "active") return null;
-  return data[0] as {
+  const { data, error } = await supabase.rpc("get_public_tenant_by_slug", { p_slug: normalizedSlug });
+
+  // Keep database/API failures distinct from a genuinely unknown tenant. Returning
+  // null for both cases made a broken Supabase request look like a misleading 404.
+  if (error) {
+    console.error("[tenant] get_public_tenant_by_slug failed", {
+      slug: normalizedSlug,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw new Error(`Falha ao consultar a imobiliária (${error.code || "Supabase"}): ${error.message}`);
+  }
+
+  const tenant = Array.isArray(data) ? data[0] : data;
+  if (!tenant || tenant.status !== "active") {
+    console.warn("[tenant] active tenant not found", { slug: normalizedSlug, returned: Boolean(tenant) });
+    return null;
+  }
+
+  return tenant as {
     id: string; slug: string; name: string; status: string;
     logo_url: string | null; primary_color: string | null;
     contact_name: string | null; contact_email: string | null; contact_phone: string | null;
