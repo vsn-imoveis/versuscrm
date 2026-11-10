@@ -384,6 +384,6 @@ load();
  if(link){link.href='/'+encodeURIComponent(tenantSlug);link.setAttribute('aria-label',name);}
  document.title=document.title.replace(/VSN Imóveis/g,name);
  const search=document.getElementById('headerSearch');if(search)search.placeholder='Buscar imóvel — Bairro, cidade, código ou condomínio';
- const contact=document.querySelector('.header-btn.gold');if(contact)contact.href='/'+encodeURIComponent(tenantSlug)+'/imoveis';
+ const contact=document.querySelector('.header-btn.gold');if(contact)contact.href='#contato';const login=document.querySelector('.header-btn.login');if(login)login.href='/'+encodeURIComponent(tenantSlug)+'/admin/login';document.querySelectorAll('a.back').forEach(a=>a.href='/'+encodeURIComponent(tenantSlug)+'/imoveis');
 })();
-</script><script src="/site-auth.js"></script></body></html>
+</script></body></html>
