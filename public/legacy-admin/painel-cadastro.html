@@ -138,7 +138,7 @@ const [membershipResult,ownerResult]=await Promise.all([
  S.from('crm_memberships').select('company_id,user_id,role').eq('company_id',tenant.id).eq('user_id',session.user.id).maybeSingle(),
  S.from('crm_owner_accounts').select('company_id,user_id,contact_id,status').eq('company_id',tenant.id).eq('user_id',session.user.id).eq('status','active').maybeSingle()
 ]);
-if((membershipResult.error||!membershipResult.data)&&(!ownerResult.data||ownerResult.error))throw new Error('Este usuário não possui acesso a esta imobiliária.');
+if((membershipResult.error||!membershipResult.data)&&(!ownerResult.data||ownerResult.error)){const detail=membershipResult.error?.message||ownerResult.error?.message||'Nenhum vínculo ativo foi encontrado para o usuário autenticado.';console.error('[Versus acesso] falha na validação do vínculo',{slug:tenantSlug,companyId:tenant.id,userId:session.user.id,membershipError:membershipResult.error?.message||null,membershipCode:membershipResult.error?.code||null,ownerError:ownerResult.error?.message||null});throw new Error('Falha ao validar o acesso desta imobiliária: '+detail);}
 window.__vsnCompanyId=tenant.id;window.__vsnCompanySlug=tenantSlug;
 try{
  const {data:limitsData,error:limitsError}=await S.rpc('get_my_crm_company_limits',{p_company_id:tenant.id});
