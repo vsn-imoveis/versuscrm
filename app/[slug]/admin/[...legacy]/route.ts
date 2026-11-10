@@ -87,12 +87,12 @@ export async function GET(request: NextRequest, context: Context) {
 
   const isOwnerPortal = ["proprietario.html", "painel-cadastro.html"].includes(requestedFile) && !!ownerAccount;
   if (requestedFile === "proprietario.html" && !ownerAccount) {
-    return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/login?erro=proprietario`, request.url));
+    return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/painel-login.html?erro=proprietario`, request.url));
   }
-  if (user && (membershipError || !membership) && !isOwnerPortal) {
+  if (user && (membershipError || !membership) && !isOwnerPortal && !isLoginScreen) {
     return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/painel-login.html?erro=acesso`, request.url));
   }
-  const effectiveRole = membership?.role ?? (isOwnerPortal ? "owner" : "member");
+  const effectiveRole = membership?.role ?? (isOwnerPortal ? "owner" : user && isLoginScreen ? "unauthorized" : "member");
 
   const filePath = path.join(process.cwd(), "public", "legacy-admin", requestedFile);
   let html: string;
