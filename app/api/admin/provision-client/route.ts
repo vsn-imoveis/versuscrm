@@ -21,14 +21,28 @@ export async function POST(request: NextRequest) {
   const { data: userData, error: userError } = await publicClient.auth.getUser(token)
   if (userError || !userData.user) return NextResponse.json({ error: 'Sessão inválida.' }, { status: 401 })
 
-  // Use the service-role client for the role lookup so profiles RLS cannot
-  // incorrectly hide the authenticated administrator's own profile.
-  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
-  const { data: profile, error: profileError } = await admin
+  // Validate the role using the caller's own JWT. The profiles_read_self_or_admin
+  // RLS policy explicitly permits a user to read their own profile. This avoids
+  // a false "not admin" result if the server-side service-role key is stale or
+  // misconfigured, while still requiring the authenticated user's real DB role.
+  const sessionClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+  const { data: profile, error: profileError } = await sessionClient
     .from('profiles').select('role').eq('id', userData.user.id).maybeSingle()
   if (profileError || profile?.role !== 'admin') {
+    console.error('[provision-client] admin profile validation failed', {
+      userId: userData.user.id,
+      profileFound: Boolean(profile),
+      role: profile?.role ?? null,
+      error: profileError?.message ?? null,
+    })
     return NextResponse.json({ error: 'Somente o administrador do VersusCRM pode provisionar clientes.' }, { status: 403 })
   }
+
+  // Use service role only for privileged Auth and cross-company provisioning actions.
+  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
 
   let body: { companyId?: string; email?: string; companyName?: string }
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Corpo da requisição inválido.' }, { status: 400 }) }
