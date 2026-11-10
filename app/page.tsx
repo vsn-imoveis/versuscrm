@@ -184,8 +184,6 @@ export default function Page() {
     })
     const provision = await response.json().catch(() => ({}))
     if (!response.ok) {
-      await supabase.from('crm_subscriptions').delete().eq('company_id', c.id)
-      await supabase.from('crm_companies').delete().eq('id', c.id)
       setNotice(`Cliente não criado: ${provision.error || 'falha ao criar o acesso do cliente'}`)
       setSaving(false)
       return
@@ -193,7 +191,7 @@ export default function Page() {
 
     setModal(false)
     setForm(emptyForm)
-    setNotice(provision.initialPassword ? `Cliente criado com acesso automático. Login: ${provision.email} | Senha inicial: ${provision.initialPassword}. Painel: https://versuscrm.vercel.app/${slug}/area-cliente. Oriente o cliente a trocar a senha após o primeiro acesso.` : `Cliente criado e conta existente vinculada. Login: ${provision.email}. A senha atual foi mantida. Painel: https://versuscrm.vercel.app/${slug}/area-cliente.`)
+    setNotice(provision.initialPassword ? `Cliente criado com acesso automático. Login: ${provision.email} | Senha inicial: ${provision.initialPassword}. Painel: https://versuscrm.vercel.app/${provision.slug}/area-cliente. Oriente o cliente a trocar a senha após o primeiro acesso.` : `Cliente criado e conta existente vinculada. Login: ${provision.email}. A senha atual foi mantida. Painel: https://versuscrm.vercel.app/${slug}/area-cliente.`)
     setSaving(false)
     await loadData()
   }
