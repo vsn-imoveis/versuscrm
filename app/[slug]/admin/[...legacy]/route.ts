@@ -54,8 +54,9 @@ export async function GET(request: NextRequest, context: Context) {
   const supabase = await createSupabaseServerClient();
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user ?? null;
-  if (!user || !session) {
-    return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/login`, request.url));
+  const isLoginScreen = requestedFile === "painel-login.html";
+  if ((!user || !session) && !isLoginScreen) {
+    return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/painel-login.html`, request.url));
   }
 
   const { data: tenantData, error: tenantError } = await supabase
@@ -65,27 +66,31 @@ export async function GET(request: NextRequest, context: Context) {
     return new NextResponse("Imobiliária não encontrada ou inativa.", { status: 404 });
   }
 
-  const { data: membership, error: membershipError } = await supabase
-    .from("crm_memberships")
-    .select("company_id, user_id, role")
-    .eq("company_id", tenant.id)
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { data: membership, error: membershipError } = user
+    ? await supabase
+        .from("crm_memberships")
+        .select("company_id, user_id, role")
+        .eq("company_id", tenant.id)
+        .eq("user_id", user.id)
+        .maybeSingle()
+    : { data: null, error: null };
 
-  const { data: ownerAccount } = await supabase
-    .from("crm_owner_accounts")
-    .select("company_id, user_id, contact_id, status")
-    .eq("company_id", tenant.id)
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
+  const { data: ownerAccount } = user
+    ? await supabase
+        .from("crm_owner_accounts")
+        .select("company_id, user_id, contact_id, status")
+        .eq("company_id", tenant.id)
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle()
+    : { data: null };
 
   const isOwnerPortal = ["proprietario.html", "painel-cadastro.html"].includes(requestedFile) && !!ownerAccount;
   if (requestedFile === "proprietario.html" && !ownerAccount) {
     return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/login?erro=proprietario`, request.url));
   }
-  if ((membershipError || !membership) && !isOwnerPortal) {
-    return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/login?erro=acesso`, request.url));
+  if (user && (membershipError || !membership) && !isOwnerPortal) {
+    return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/painel-login.html?erro=acesso`, request.url));
   }
   const effectiveRole = membership?.role ?? (isOwnerPortal ? "owner" : "member");
 
@@ -102,8 +107,8 @@ export async function GET(request: NextRequest, context: Context) {
     companyId: tenant.id,
     membershipRole: effectiveRole,
     ownerContactId: ownerAccount?.contact_id ?? null,
-    accessToken: session.access_token,
-    refreshToken: session.refresh_token,
+    accessToken: session?.access_token ?? null,
+    refreshToken: session?.refresh_token ?? null,
     supabaseUrl,
     supabaseAnonKey
   }).replace(/</g, "\\u003c");
