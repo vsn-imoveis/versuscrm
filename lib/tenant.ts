@@ -3,7 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function getPublicTenant(slug: string) {
   const normalizedSlug = String(slug ?? "").trim().toLowerCase();
-  if (!normalizedSlug) return null;
+  // Dynamic [slug] routes must never treat static assets or framework paths as tenants.
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) return null;
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("get_public_tenant_by_slug", { p_slug: normalizedSlug });
