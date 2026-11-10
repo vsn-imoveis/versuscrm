@@ -33,7 +33,7 @@ async function boot(){
   document.getElementById('topUser').textContent=(prof?.full_name||session.user.email||'Usuário').split(/\s+/)[0];
   const {data,error}=await S.from('crm_companies').select('*').eq('id',companyId).maybeSingle();
   if(error){msg(error.message);return}
-  Object.entries(map).forEach(([id,col])=>{const el=document.getElementById(id);if(el)el.value=data?.[col]||''});
+  Object.entries(map).forEach(([id,col])=>{const el=document.getElementById(id);if(el)el.value=data?.[col]??(id==='sitePrimaryColor'?'#d3aa62':'')});
   if(data?.site_photo_url){photoPreview.src=data.site_photo_url;photoPreview.style.display='block'}
   }catch(e){console.error('Falha ao carregar perfil do site:',e);msg('Não foi possível carregar os dados: '+(e.message||'erro de conexão'))}
 }
