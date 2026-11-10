@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getPublicTenant } from "@/lib/tenant";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import OriginalPropertyFrame from "../../imoveis/[id]/original-frame";
@@ -90,6 +90,11 @@ export default async function PublicPropertySeoPage({ params }: Props) {
   if (!tenant) notFound();
   const p = await loadProperty(slug, propertyPath);
   if (!p) notFound();
+
+  // Old UUID URLs must forward visitors and search engines to the original friendly .html URL.
+  if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(propertyPath)) {
+    permanentRedirect(`/${encodeURIComponent(p.company_slug || slug)}/imovel/${propertySeoSlug(p)}.html`);
+  }
 
   const query = new URLSearchParams({
     slug: tenant.slug,
