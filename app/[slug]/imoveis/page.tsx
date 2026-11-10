@@ -3,14 +3,30 @@ import { getPublicTenant } from "@/lib/tenant";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export default async function TenantPropertiesPage({ params }: Props) {
+export default async function seoSlugPart(value: unknown) {
+  return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase()
+    .replace(/&/g, " e ").replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "").replace(/-+/g, "-").slice(0, 70).replace(/-+$/g, "");
+}
+function propertySeoSlug(p: any) {
+  const condo = seoSlugPart(p.condominium_name);
+  const street = seoSlugPart(p.address);
+  const bedrooms = Number(p.bedrooms || 0);
+  const area = Number(p.area || 0);
+  const type = (p.for_rent && !p.for_sale) ? "locacao"
+    : (p.for_sale && !p.for_rent) ? "venda"
+    : (p.transaction_type === "rent" ? "locacao" : p.transaction_type === "sale" ? "venda" : "imovel");
+  return [condo, street, bedrooms ? bedrooms + "-dorm" : null, area ? Math.round(area) + "m2" : null, type].filter(Boolean).join("-");
+}
+
+function TenantPropertiesPage({ params }: Props) {
   const { slug } = await params;
   const tenant = await getPublicTenant(slug);
   if (!tenant) notFound();
 
   const { data: properties, error } = await (await import("@/lib/supabase/server")).createSupabaseServerClient()
     .then(client => client.from("properties")
-      .select("id,code,title,property_type,transaction_type,price,rent_price,area,bedrooms,bathrooms,parking,neighborhood,city,photos,photo_thumbnails,for_sale,for_rent")
+      .select("id,code,title,property_type,transaction_type,price,rent_price,area,bedrooms,bathrooms,parking,neighborhood,city,photos,photo_thumbnails,for_sale,for_rent,condominium_name,address")
       .eq("company_id", tenant.id).eq("published", true).order("created_at", { ascending: false }).limit(24));
 
   if (error) throw new Error("Não foi possível carregar os imóveis publicados.");
@@ -24,7 +40,7 @@ export default async function TenantPropertiesPage({ params }: Props) {
           {properties?.map(p => {
             const photos = Array.isArray(p.photos) ? p.photos : [];
             const photo = photos[0];
-            return <a key={p.id} href={`/${slug}/imovel/${p.id}`} style={{ display: "block", background: "#fff", border: "1px solid #e6e8ea", borderRadius: 10, overflow: "hidden", color: "inherit", textDecoration: "none" }}>
+            return <a key={p.id} href={`/${slug}/imovel/${propertySeoSlug(p)}`} style={{ display: "block", background: "#fff", border: "1px solid #e6e8ea", borderRadius: 10, overflow: "hidden", color: "inherit", textDecoration: "none" }}>
               {photo ? <img src={photo} alt={p.title} style={{ width: "100%", height: 210, objectFit: "cover" }} /> : <div style={{ height: 210, background: "#e9ecef", display: "grid", placeItems: "center", color: "#8b9299" }}>Foto não disponível</div>}
               <div style={{ padding: 18 }}><small style={{ color: "#8a929a" }}>{p.code ?? p.property_type}</small><h2 style={{ font: "21px Georgia,serif", margin: "8px 0" }}>{p.title}</h2><p style={{ color: "#68737d", fontSize: 13 }}>{[p.neighborhood,p.city].filter(Boolean).join(" · ")}</p><strong>{p.for_rent && !p.for_sale || p.transaction_type === "rent" ? `R$ ${Number(p.rent_price ?? p.price ?? 0).toLocaleString("pt-BR")}/mês` : `R$ ${Number(p.price ?? 0).toLocaleString("pt-BR")}`}</strong><p style={{ color: "#68737d", fontSize: 12 }}>{p.area ?? "—"} m² · {p.bedrooms} quartos · {p.bathrooms} banheiros · {p.parking} vagas</p></div>
             </a>;
