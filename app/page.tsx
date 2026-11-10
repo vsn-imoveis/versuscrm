@@ -67,16 +67,14 @@ export default function Page() {
     })
     const provision = await response.json().catch(()=>({}))
     if (!response.ok) {
-      await supabase.from('crm_subscriptions').delete().eq('company_id',createdCompany.id)
-      await supabase.from('crm_companies').delete().eq('id',createdCompany.id)
-      setNotice('Não foi possível criar o acesso. Cliente não foi concluído: ' + (provision.error || 'erro no provisionamento'))
+      setNotice('Não foi possível concluir a criação do cliente: ' + (provision.error || 'erro no provisionamento'))
       return
     }
     const { error: leadError } = await supabase.from('crm_leads').update({status:'converted',converted_company_id:provision.companyId,updated_at:new Date().toISOString()}).eq('id',lead.id)
     if (leadError) { setNotice('Cliente e acesso criados, mas não foi possível atualizar o lead: ' + leadError.message); await loadData(); return }
     setPublicLeads(prev=>prev.map(row=>row.id===lead.id?{...row,status:'converted',converted_company_id:provision.companyId}:row))
     setLeadStatusDraft(prev=>({...prev,[lead.id]:'converted'}))
-    setNotice(provision.initialPassword ? `Lead convertido! Site: https://versuscrm.vercel.app/${provision.slug} | Painel: https://versuscrm.vercel.app/${provision.slug}/area-cliente | Login: ${provision.email} | Senha inicial: ${provision.initialPassword}. Oriente a troca após o primeiro acesso.` : `Lead convertido! Site: https://versuscrm.vercel.app/${slug} | Painel: https://versuscrm.vercel.app/${slug}/area-cliente | Login: ${provision.email}. A senha existente foi mantida.`)
+    setNotice(provision.initialPassword ? `Lead convertido! Site: https://versuscrm.vercel.app/${provision.slug} | Painel: https://versuscrm.vercel.app/${provision.slug}/area-cliente | Login: ${provision.email} | Senha inicial: ${provision.initialPassword}. Oriente a troca após o primeiro acesso.` : `Lead convertido! Site: https://versuscrm.vercel.app/${provision.slug} | Painel: https://versuscrm.vercel.app/${provision.slug}/area-cliente | Login: ${provision.email}. A senha existente foi mantida.`)
     await loadData()
   }
   async function deleteLead(lead: PublicLead) { if (!window.confirm(`Excluir definitivamente o lead de ${lead.contact_name}?`)) return; const { error } = await supabase.from('crm_leads').delete().eq('id', lead.id); if (error) { setNotice('Não foi possível excluir o lead.'); return } setPublicLeads(prev => prev.filter(row => row.id !== lead.id)); setNotice('Lead excluído com sucesso.') }
