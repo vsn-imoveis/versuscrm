@@ -1,6 +1,7 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getPublicTenant } from "@/lib/tenant";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import OriginalPropertyFrame from "./original-frame";
 
 type Props = { params: Promise<{ slug: string; id: string }> };
 
@@ -40,5 +41,5 @@ export default async function PropertyDetailPage({ params }: Props) {
     phone: tenant.whatsapp || tenant.contact_phone || "",
     color: tenant.primary_color || "#d3aa62",
   });
-  redirect(`/legacy-site/imovel.html?${query.toString()}`);
+  return <OriginalPropertyFrame src={`/legacy-site/imovel.html?${query.toString()}`} />;
 }
