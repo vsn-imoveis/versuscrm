@@ -56,7 +56,8 @@ const money = (value: number | string | null | undefined) => {
 
 export async function generateMetadata({ params }: Props) {
   const { slug, id } = await params;
-  const p = await loadProperty(slug, id);
+  const propertyPath = id.endsWith(".html") ? id.slice(0, -5) : id;
+  const p = await loadProperty(slug, propertyPath);
   if (!p) return { title: "Imóvel não encontrado", robots: { index: false, follow: false } };
 
   const company = p.company_name || slug;
@@ -70,7 +71,7 @@ export async function generateMetadata({ params }: Props) {
     p.price ? `Venda: ${money(p.price)}` : "",
     p.rent_price ? `Aluguel: ${money(p.rent_price)}/mês` : "",
   ].filter(Boolean).join(" · ").slice(0, 160);
-  const canonical = `https://versuscrm.vercel.app/${encodeURIComponent(p.company_slug || slug)}/imovel/${propertySeoSlug(p)}`;
+  const canonical = `https://versuscrm.vercel.app/${encodeURIComponent(p.company_slug || slug)}/imovel/${propertySeoSlug(p)}.html`;
   const image = Array.isArray(p.photos) ? p.photos[0] : undefined;
 
   return {
@@ -84,9 +85,10 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function PublicPropertySeoPage({ params }: Props) {
   const { slug, id } = await params;
+  const propertyPath = id.endsWith(".html") ? id.slice(0, -5) : id;
   const tenant = await getPublicTenant(slug);
   if (!tenant) notFound();
-  const p = await loadProperty(slug, id);
+  const p = await loadProperty(slug, propertyPath);
   if (!p) notFound();
 
   const query = new URLSearchParams({
