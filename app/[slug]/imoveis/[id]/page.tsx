@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getPublicTenant } from "@/lib/tenant";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import PropertyLeadForm from "./lead-form";
+import PropertyGallery from "./gallery";
 
 type Props = { params: Promise<{ slug: string; id: string }> };
 
@@ -62,9 +63,7 @@ export default async function PropertyDetailPage({ params }: Props) {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.7fr) minmax(280px,.8fr)", gap: 26, alignItems: "start" }}>
           <section>
-            {gallery.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10 }}>
-              {gallery.slice(0,6).map((src: string,index: number) => <img key={src+index} src={src} alt={`${property.title} - foto ${index+1}`} style={{ width: "100%", height: index===0?360:175, objectFit: "cover", borderRadius: 7, gridColumn: index===0?"1 / -1":undefined }} />)}
-            </div> : <div style={{ height: 340, borderRadius: 7, background: "#e5e8e9", display: "grid", placeItems: "center", color: "#7b858c" }}>Fotos não disponíveis</div>}
+            <PropertyGallery photos={gallery as string[]} title={property.title || property.property_type || "Imóvel"} accent={primaryColor} />
             <div style={{ background: "#fff", border: "1px solid #e8e9e7", borderRadius: 8, padding: 24, marginTop: 20 }}>
               <h2 style={{ font: "25px Georgia,serif", marginTop: 0 }}>Sobre o imóvel</h2>
               <p style={{ color: "#5d6871", lineHeight: 1.8, whiteSpace: "pre-line" }}>{property.description || "Entre em contato para receber mais informações sobre este imóvel."}</p>
