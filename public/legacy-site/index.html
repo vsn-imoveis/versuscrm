@@ -191,6 +191,8 @@ async function loadSiteSettings(){
 }
 loadSiteSettings();
 (function initTenantAuthHeader(){
+  if(window.__versusTenantAuthHeaderInitialized)return;
+  window.__versusTenantAuthHeaderInitialized=true;
   if(!window.supabase?.createClient||!SUPABASE_URL||!SUPABASE_KEY)return;
   const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
   const host=document.querySelector('.actions');
@@ -203,8 +205,8 @@ loadSiteSettings();
   let renderVersion=0;
   async function render(session){
     const version=++renderVersion;
-    const previous=host.querySelector('.site-auth-controls');
-    if(!session?.user){if(previous)previous.remove();login.hidden=false;return;}
+    document.querySelectorAll('.site-auth-controls').forEach(node=>node.remove());
+    if(!session?.user){login.hidden=false;return;}
     let profile={};
     try{const result=await client.from('profiles').select('role,full_name,avatar_url').eq('id',session.user.id).maybeSingle();profile=result.data||{};}catch(_){}
     if(version!==renderVersion)return;
@@ -217,7 +219,10 @@ loadSiteSettings();
     bell.addEventListener('click',()=>{window.location.href='/'+encodeURIComponent(tenantSlug)+'/admin/solicitacoes-proprietario.html';});
     const logout=document.createElement('button');logout.type='button';logout.className='site-auth-logout';logout.textContent='Sair';
     logout.addEventListener('click',async()=>{logout.disabled=true;logout.textContent='Saindo...';const result=await client.auth.signOut();if(result.error){logout.disabled=false;logout.textContent='Sair';alert('Não foi possível sair: '+result.error.message);return;}});
-    group.append(profileLink,bell,logout);login.hidden=true;host.appendChild(group);
+    group.append(profileLink,bell,logout);
+    if(!host.isConnected)return;
+    login.hidden=true;
+    host.appendChild(group);
   }
   client.auth.getSession().then(({data})=>render(data?.session||null)).catch(()=>{});
   client.auth.onAuthStateChange((_event,session)=>{void render(session||null);});
