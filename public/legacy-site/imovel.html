@@ -74,7 +74,7 @@ function propertySlug(p){
   const type=(p.for_rent&&!p.for_sale)?'locacao':(p.for_sale&&!p.for_rent)?'venda':(p.transaction_type==='rent'?'locacao':p.transaction_type==='sale'?'venda':'imovel');
   return [condo,rua,dorms?dorms+'-dorm':null,area?String(Math.round(area))+'m2':null,type].filter(Boolean).join('-');
 }
-const tenantParams=new URLSearchParams(location.search);const tenantSlug=tenantParams.get('slug')||'';const companyId=tenantParams.get('company')||'';const tenantName=tenantParams.get('name')||'Imóveis';const tenantPhone=(tenantParams.get('phone')||'').replace(/\\D/g,'');const tenantColor=tenantParams.get('color')||'#d3aa62';document.documentElement.style.setProperty('--gold',tenantColor);function propertyUrl(p){return '/'+encodeURIComponent(tenantSlug)+'/imoveis/'+encodeURIComponent(p.id);}
+const tenantParams=new URLSearchParams(location.search);const tenantSlug=tenantParams.get('slug')||'';const companyId=tenantParams.get('company')||'';const tenantName=tenantParams.get('name')||'Imóveis';const tenantPhone=(tenantParams.get('phone')||'').replace(/\D/g,'');const tenantColor=tenantParams.get('color')||'#d3aa62';document.documentElement.style.setProperty('--gold',tenantColor);function propertyUrl(p){return '/'+encodeURIComponent(tenantSlug)+'/imoveis/'+encodeURIComponent(p.id);}
 async function resolvePropertyId(){
   const q=new URLSearchParams(location.search);
   return q.get('id')||null;
@@ -378,7 +378,7 @@ load();
 </script><script id="site-brand-script">
 (function(){
  const name=new URLSearchParams(location.search).get('name')||'Imóveis';
- const parts=name.trim().split(/\\s+/);const main=parts.shift()||name;const sub=parts.join(' ')||'IMÓVEIS';
+ const parts=name.trim().split(/\s+/);const main=parts.shift()||name;const sub=parts.join(' ')||'IMÓVEIS';
  const brand=document.getElementById('siteBrandName'),link=document.getElementById('siteBrand');
  if(brand)brand.textContent=main;const brandSub=document.getElementById('siteBrandSub');if(brandSub)brandSub.textContent=sub;
  if(link){link.href='/'+encodeURIComponent(tenantSlug);link.setAttribute('aria-label',name);}
