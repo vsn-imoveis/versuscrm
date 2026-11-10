@@ -13,10 +13,42 @@ export default function TenantLoginPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("erro") === "acesso") {
-      setError("Este usuário não possui vínculo com esta imobiliária.");
+    let cancelled = false;
+    async function restoreSession() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("erro") === "acesso") {
+        setError("Este usuário não possui vínculo com esta imobiliária.");
+        return;
+      }
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user || cancelled) return;
+
+        const { data: tenantData, error: tenantError } = await supabase
+          .rpc("get_public_tenant_by_slug", { p_slug: slug });
+        const tenant = Array.isArray(tenantData) ? tenantData[0] : tenantData;
+        if (tenantError || !tenant || tenant.status !== "active") return;
+
+        const [{ data: membership }, { data: ownerAccount }] = await Promise.all([
+          supabase.from("crm_memberships").select("company_id")
+            .eq("company_id", tenant.id).eq("user_id", session.user.id).maybeSingle(),
+          supabase.from("crm_owner_accounts").select("company_id,status")
+            .eq("company_id", tenant.id).eq("user_id", session.user.id).eq("status", "active").maybeSingle()
+        ]);
+        if (cancelled || (!membership && !ownerAccount)) return;
+
+        const destination = ownerAccount && !membership
+          ? `/${encodeURIComponent(slug)}/admin/proprietario.html`
+          : `/${encodeURIComponent(slug)}/admin`;
+        window.location.replace(destination);
+      } catch (e) {
+        console.warn("[Versus] Não foi possível restaurar a sessão:", e);
+      }
     }
-  }, []);
+    void restoreSession();
+    return () => { cancelled = true; };
+  }, [slug]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
