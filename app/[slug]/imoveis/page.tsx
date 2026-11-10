@@ -3,8 +3,8 @@ import { getPublicTenant } from "@/lib/tenant";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export default async function seoSlugPart(value: unknown) {
-  return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase()
+function seoSlugPart(value: unknown) {
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
     .replace(/&/g, " e ").replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "").replace(/-+/g, "-").slice(0, 70).replace(/-+$/g, "");
 }
@@ -19,7 +19,7 @@ function propertySeoSlug(p: any) {
   return [condo, street, bedrooms ? bedrooms + "-dorm" : null, area ? Math.round(area) + "m2" : null, type].filter(Boolean).join("-");
 }
 
-function TenantPropertiesPage({ params }: Props) {
+export default async function TenantPropertiesPage({ params }: Props) {
   const { slug } = await params;
   const tenant = await getPublicTenant(slug);
   if (!tenant) notFound();
