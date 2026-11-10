@@ -9,22 +9,46 @@ type SeoProperty = {
   property_type?: string | null; price?: number | string | null; rent_price?: number | string | null;
   area?: number | string | null; bedrooms?: number | null; micro_neighborhood?: string | null;
   neighborhood?: string | null; city?: string | null; state?: string | null; photos?: string[] | null;
-  company_name?: string | null; company_slug?: string | null;
+  company_name?: string | null; company_slug?: string | null; condominium_name?: string | null; address?: string | null; for_sale?: boolean | null; for_rent?: boolean | null; transaction_type?: string | null; updated_at?: string | null;
 };
 
-async function loadProperty(slug: string, id: string): Promise<SeoProperty | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("get_public_crm_property", {
-    p_slug: slug,
-    p_property_id: id,
-  });
-  if (error) {
-    console.error("[property-seo]", { slug, id, code: error.code, message: error.message });
-    return null;
-  }
-  return data && typeof data === "object" ? data as SeoProperty : null;
+function seoSlugPart(value: unknown) {
+  return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase()
+    .replace(/&/g, " e ").replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "").replace(/-+/g, "-").slice(0, 70).replace(/-+$/g, "");
 }
 
+function propertySeoSlug(p: SeoProperty) {
+  const condo = seoSlugPart(p.condominium_name);
+  const street = seoSlugPart(p.address);
+  const bedrooms = Number(p.bedrooms || 0);
+  const area = Number(p.area || 0);
+  const type = (p.for_rent && !p.for_sale) ? "locacao"
+    : (p.for_sale && !p.for_rent) ? "venda"
+    : (p.transaction_type === "rent" ? "locacao"
+    : p.transaction_type === "sale" ? "venda" : "imovel");
+  return [condo, street, bedrooms ? bedrooms + "-dorm" : null, area ? Math.round(area) + "m2" : null, type]
+    .filter(Boolean).join("-");
+}
+
+async function loadProperty(tenantSlug: string, requested: string): Promise<SeoProperty | null> {
+  const supabase = await createSupabaseServerClient();
+  // Backward compatibility: old UUID links keep working, while SEO slugs resolve from the tenant's published inventory.
+  if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(requested)) {
+    const { data, error } = await supabase.rpc("get_public_crm_property", {
+      p_slug: tenantSlug, p_property_id: requested,
+    });
+    if (error) console.error("[property-seo]", { tenantSlug, requested, code: error.code, message: error.message });
+    return data && typeof data === "object" ? data as SeoProperty : null;
+  }
+  const { data, error } = await supabase.rpc("get_public_crm_properties", { p_slug: tenantSlug });
+  if (error) {
+    console.error("[property-seo-slug]", { tenantSlug, requested, code: error.code, message: error.message });
+    return null;
+  }
+  const rows = Array.isArray(data) ? data as SeoProperty[] : [];
+  return rows.find((property) => propertySeoSlug(property) === requested) || null;
+}
 const money = (value: number | string | null | undefined) => {
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) : null;
@@ -46,7 +70,7 @@ export async function generateMetadata({ params }: Props) {
     p.price ? `Venda: ${money(p.price)}` : "",
     p.rent_price ? `Aluguel: ${money(p.rent_price)}/mês` : "",
   ].filter(Boolean).join(" · ").slice(0, 160);
-  const canonical = `https://versuscrm.vercel.app/${encodeURIComponent(p.company_slug || slug)}/imovel/${encodeURIComponent(p.id)}`;
+  const canonical = `https://versuscrm.vercel.app/${encodeURIComponent(p.company_slug || slug)}/imovel/${propertySeoSlug(p)}`;
   const image = Array.isArray(p.photos) ? p.photos[0] : undefined;
 
   return {
