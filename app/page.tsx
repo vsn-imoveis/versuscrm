@@ -56,12 +56,15 @@ export default function Page() {
     const used = new Set((existing || []).map((row: {slug:string}) => row.slug))
     let slug = slugBase, suffix = 2
     while (used.has(slug)) slug = `${slugBase}-${suffix++}`
-    const company = { name, slug, status: 'active', contact_name: name, contact_email: lead.email.trim().toLowerCase(), contact_phone: lead.phone, max_properties: 100, max_photos_per_property: 35 }
-    const { data: createdCompany, error: companyError } = await supabase.from('crm_companies').insert(company).select().single()
-    if (companyError || !createdCompany) { setNotice('Não foi possível criar o cliente: ' + (companyError?.message || 'erro inesperado')); return }
-    const { error: subscriptionError } = await supabase.from('crm_subscriptions').insert({ company_id: createdCompany.id, plan_code: 'essencial', plan_name: 'Essencial', monthly_price: 100, property_limit: 100, photo_limit: 35, status: 'active' })
-    if (subscriptionError) { await supabase.from('crm_companies').delete().eq('id',createdCompany.id); setNotice('Cliente criado parcialmente; falha ao criar assinatura. ' + subscriptionError.message); return }
-    const response = await fetch('/api/admin/provision-client', { method:'POST', headers:{'Content-Type':'application/json',Authorization:`Bearer ${current.access_token}`}, body:JSON.stringify({companyId:createdCompany.id,email:String(createdCompany.contact_email || '').trim().toLowerCase(),companyName:createdCompany.name}) })
+    const response = await fetch('/api/admin/provision-client', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${current.access_token}` },
+      body: JSON.stringify({
+        name, slug, contactName: name, email: lead.email.trim().toLowerCase(),
+        phone: lead.phone, accountStatus: 'active', subscriptionStatus: 'active',
+        monthlyPrice: 100, propertyLimit: 100, photoLimit: 35,
+      }),
+    })
     const provision = await response.json().catch(()=>({}))
     if (!response.ok) {
       await supabase.from('crm_subscriptions').delete().eq('company_id',createdCompany.id)
@@ -69,11 +72,11 @@ export default function Page() {
       setNotice('Não foi possível criar o acesso. Cliente não foi concluído: ' + (provision.error || 'erro no provisionamento'))
       return
     }
-    const { error: leadError } = await supabase.from('crm_leads').update({status:'converted',converted_company_id:createdCompany.id,updated_at:new Date().toISOString()}).eq('id',lead.id)
+    const { error: leadError } = await supabase.from('crm_leads').update({status:'converted',converted_company_id:provision.companyId,updated_at:new Date().toISOString()}).eq('id',lead.id)
     if (leadError) { setNotice('Cliente e acesso criados, mas não foi possível atualizar o lead: ' + leadError.message); await loadData(); return }
-    setPublicLeads(prev=>prev.map(row=>row.id===lead.id?{...row,status:'converted',converted_company_id:createdCompany.id}:row))
+    setPublicLeads(prev=>prev.map(row=>row.id===lead.id?{...row,status:'converted',converted_company_id:provision.companyId}:row))
     setLeadStatusDraft(prev=>({...prev,[lead.id]:'converted'}))
-    setNotice(provision.initialPassword ? `Lead convertido! Site: https://versuscrm.vercel.app/${slug} | Painel: https://versuscrm.vercel.app/${slug}/area-cliente | Login: ${provision.email} | Senha inicial: ${provision.initialPassword}. Oriente a troca após o primeiro acesso.` : `Lead convertido! Site: https://versuscrm.vercel.app/${slug} | Painel: https://versuscrm.vercel.app/${slug}/area-cliente | Login: ${provision.email}. A senha existente foi mantida.`)
+    setNotice(provision.initialPassword ? `Lead convertido! Site: https://versuscrm.vercel.app/${provision.slug} | Painel: https://versuscrm.vercel.app/${provision.slug}/area-cliente | Login: ${provision.email} | Senha inicial: ${provision.initialPassword}. Oriente a troca após o primeiro acesso.` : `Lead convertido! Site: https://versuscrm.vercel.app/${slug} | Painel: https://versuscrm.vercel.app/${slug}/area-cliente | Login: ${provision.email}. A senha existente foi mantida.`)
     await loadData()
   }
   async function deleteLead(lead: PublicLead) { if (!window.confirm(`Excluir definitivamente o lead de ${lead.contact_name}?`)) return; const { error } = await supabase.from('crm_leads').delete().eq('id', lead.id); if (error) { setNotice('Não foi possível excluir o lead.'); return } setPublicLeads(prev => prev.filter(row => row.id !== lead.id)); setNotice('Lead excluído com sucesso.') }
@@ -171,26 +174,15 @@ export default function Page() {
     let suffix = 2
     while (taken.has(slug)) slug = `${baseSlug}-${suffix++}`
 
-    const company = { name, slug, status: form.account_status, contact_name: contact, contact_email: contactEmail, contact_phone: form.contact_phone.trim() || null, max_properties: properties, max_photos_per_property: photos }
-    const { data: c, error: ce } = await supabase.from('crm_companies').insert(company).select().single()
-    if (ce || !c) {
-      setNotice(ce?.code === '23505' ? 'Este identificador já está em uso.' : 'Não foi possível salvar o cliente.')
-      setSaving(false)
-      return
-    }
-
-    const { error: se } = await supabase.from('crm_subscriptions').insert({ company_id: c.id, plan_code: 'essencial', plan_name: 'Essencial', monthly_price: price, property_limit: properties, photo_limit: photos, status: form.subscription_status })
-    if (se) {
-      await supabase.from('crm_companies').delete().eq('id', c.id)
-      setNotice('Não foi possível salvar a assinatura; o cliente não foi criado.')
-      setSaving(false)
-      return
-    }
-
     const response = await fetch('/api/admin/provision-client', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentSession.access_token}` },
-      body: JSON.stringify({ companyId: c.id, email: String(c.contact_email || '').trim().toLowerCase(), companyName: c.name }),
+      body: JSON.stringify({
+        name, slug, contactName: contact, email: contactEmail,
+        phone: form.contact_phone.trim() || null,
+        accountStatus: form.account_status, subscriptionStatus: form.subscription_status,
+        monthlyPrice: price, propertyLimit: properties, photoLimit: photos,
+      }),
     })
     const provision = await response.json().catch(() => ({}))
     if (!response.ok) {
