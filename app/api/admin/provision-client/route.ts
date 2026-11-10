@@ -50,124 +50,123 @@ export async function POST(request: NextRequest) {
   // Use service role only for privileged Auth and cross-company provisioning actions.
   const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
 
-  let body: { companyId?: string; email?: string; companyName?: string }
+  let body: {
+    name?: string; slug?: string; contactName?: string; email?: string; phone?: string;
+    accountStatus?: string; subscriptionStatus?: string;
+    monthlyPrice?: number; propertyLimit?: number; photoLimit?: number;
+  }
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Corpo da requisição inválido.' }, { status: 400 }) }
-  const companyId = String(body.companyId || '')
+
+  const name = String(body.name || '').trim()
+  const slugBase = String(body.slug || '').trim().toLowerCase()
+  const contactName = String(body.contactName || '').trim()
   const email = String(body.email || '').trim().toLowerCase()
-  const companyName = String(body.companyName || '').trim()
-  if (!companyId || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !companyName) {
-    return NextResponse.json({ error: 'Empresa, nome e e-mail válidos são obrigatórios.' }, { status: 400 })
+  const phone = String(body.phone || '').trim() || null
+  const accountStatus = body.accountStatus === 'inactive' ? 'inactive' : 'active'
+  const subscriptionStatus = body.subscriptionStatus === 'inactive' ? 'inactive' : 'active'
+  const monthlyPrice = Number(body.monthlyPrice)
+  const propertyLimit = Number(body.propertyLimit)
+  const photoLimit = Number(body.photoLimit)
+
+  if (!name || !slugBase || !contactName || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slugBase) ||
+      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) ||
+      ![monthlyPrice, propertyLimit, photoLimit].every(Number.isFinite) ||
+      monthlyPrice < 0 || propertyLimit < 1 || photoLimit < 1) {
+    return NextResponse.json({ error: 'Confira nome, endereço, contato, e-mail, mensalidade e limites.' }, { status: 400 })
   }
 
-  // Read the company with the same authenticated admin session that created it.
-  // This avoids a false "company not found" when the service-role key configured
-  // in Vercel is stale or belongs to a different Supabase project. Privileged
-  // Auth operations below still use the service-role client.
-  const { data: company, error: companyError } = await sessionClient
+  // The platform administrator creates the company FIRST. Only after the
+  // database returns its persisted ID do we create the subscription and login.
+  const { data: existingCompany, error: slugLookupError } = await admin
+    .from('crm_companies').select('id').eq('slug', slugBase).maybeSingle()
+  if (slugLookupError) return NextResponse.json({ error: 'Não foi possível validar o endereço do site: ' + slugLookupError.message }, { status: 500 })
+  if (existingCompany) return NextResponse.json({ error: 'Este endereço de site já está em uso. Altere o nome para gerar outro endereço.' }, { status: 409 })
+
+  const { data: company, error: companyError } = await admin
     .from('crm_companies')
-    .select('id,name,contact_name,contact_email')
-    .eq('id', companyId)
-    .maybeSingle()
+    .insert({
+      name, slug: slugBase, contact_name: contactName, contact_email: email,
+      contact_phone: phone, status: accountStatus,
+      max_properties: propertyLimit, max_photos_per_property: photoLimit,
+    })
+    .select('id,name,slug,contact_name,contact_email')
+    .single()
 
-  if (companyError) {
-    console.error('[provision-client] company lookup failed for authenticated admin', {
-      companyId,
-      userId: userData.user.id,
-      error: companyError.message,
-      code: companyError.code,
-    })
-    return NextResponse.json({
-      error: 'Não foi possível consultar a empresa recém-cadastrada. Verifique as permissões de leitura de crm_companies.',
-    }, { status: 500 })
-  }
-  if (!company) {
-    console.error('[provision-client] company id was not found after creation', {
-      companyId,
-      userId: userData.user.id,
-    })
-    return NextResponse.json({
-      error: 'A empresa foi criada, mas não foi localizada pelo mesmo ID retornado pelo cadastro. Atualize a página e tente novamente.',
-    }, { status: 404 })
-  }
-  const storedEmail = String(company.contact_email || '').trim().toLowerCase()
-  if (storedEmail !== email) {
-    console.error('[provision-client] company contact email mismatch', {
-      companyId,
-      submittedEmail: email,
-      storedEmail,
-    })
-    return NextResponse.json({
-      error: 'O e-mail enviado não corresponde ao e-mail salvo na empresa. Confira o cadastro antes de criar o acesso.',
-    }, { status: 409 })
+  if (companyError || !company) {
+    console.error('[provision-client] company creation failed', { error: companyError?.message, code: companyError?.code })
+    return NextResponse.json({ error: 'Não foi possível criar a empresa: ' + (companyError?.message || 'registro não retornado') }, { status: 400 })
   }
 
-  const { data: existingMembership, error: membershipLookupError } = await admin
-    .from('crm_memberships').select('user_id').eq('company_id', companyId).maybeSingle()
-  if (membershipLookupError) return NextResponse.json({ error: 'Não foi possível verificar os vínculos existentes.' }, { status: 500 })
-  if (existingMembership) return NextResponse.json({ error: 'Esta empresa já possui um usuário vinculado. Nenhuma conta foi alterada.' }, { status: 409 })
+  const companyId = company.id
+  const rollbackCompany = async () => {
+    await admin.from('crm_subscriptions').delete().eq('company_id', companyId)
+    await admin.from('crm_companies').delete().eq('id', companyId)
+  }
 
-  // Never derive client credentials from public company names. Generate a
-  // high-entropy temporary password and return it only to the authenticated
-  // platform administrator who initiated this provisioning request.
+  const { error: subscriptionError } = await admin.from('crm_subscriptions').insert({
+    company_id: companyId, plan_code: 'essencial', plan_name: 'Essencial',
+    monthly_price: monthlyPrice, property_limit: propertyLimit,
+    photo_limit: photoLimit, status: subscriptionStatus,
+  })
+  if (subscriptionError) {
+    await rollbackCompany()
+    return NextResponse.json({ error: 'A empresa foi criada, mas não foi possível criar a assinatura. O cadastro foi revertido: ' + subscriptionError.message }, { status: 400 })
+  }
+
+  const { data: existingAuthUsers, error: authLookupError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  if (authLookupError) {
+    await rollbackCompany()
+    return NextResponse.json({ error: 'Empresa e assinatura criadas, mas não foi possível verificar o e-mail de acesso: ' + authLookupError.message }, { status: 500 })
+  }
+  const existingUser = existingAuthUsers.users.find(u => String(u.email || '').trim().toLowerCase() === email)
+  let userId = existingUser?.id
+  let createdUser = false
   const initialPassword = randomBytes(24).toString('base64url')
 
-  let userId: string | undefined
-  let createdUser = false
-  for (let page = 1; page <= 10 && !userId; page++) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 })
-    if (error) return NextResponse.json({ error: 'Não foi possível verificar contas existentes.' }, { status: 500 })
-    const found = data.users.find(u => String(u.email || '').trim().toLowerCase() === email)
-    if (found) userId = found.id
-    if (data.users.length < 1000) break
-  }
-
-  if (userId) {
-    const { data: memberships, error } = await admin.from('crm_memberships').select('company_id').eq('user_id', userId)
-    if (error) return NextResponse.json({ error: 'Não foi possível validar os vínculos da conta existente.' }, { status: 500 })
-    if ((memberships || []).some(m => m.company_id !== companyId)) {
-      return NextResponse.json({ error: 'Este e-mail já está vinculado a outra empresa. Nenhuma alteração foi feita.' }, { status: 409 })
+  if (existingUser) {
+    const { data: memberships, error: membershipError } = await admin.from('crm_memberships').select('company_id').eq('user_id', existingUser.id)
+    if (membershipError || (memberships || []).length > 0) {
+      await rollbackCompany()
+      return NextResponse.json({ error: membershipError?.message || 'Este e-mail já está vinculado a outra empresa. O novo cadastro foi revertido.' }, { status: 409 })
     }
-    // Ensure the client can log in with the credentials delivered at conversion,
-    // including Auth users created earlier but never fully provisioned.
-    const { error: resetError } = await admin.auth.admin.updateUserById(userId, {
-      password: initialPassword,
-      email_confirm: true,
+    const { error: updateError } = await admin.auth.admin.updateUserById(existingUser.id, {
+      password: initialPassword, email_confirm: true,
       user_metadata: { company_id: companyId, company_name: company.name },
     })
-    if (resetError) return NextResponse.json({ error: 'Não foi possível definir a senha inicial do cliente: ' + resetError.message }, { status: 400 })
+    if (updateError) {
+      await rollbackCompany()
+      return NextResponse.json({ error: 'Não foi possível preparar o acesso do cliente: ' + updateError.message }, { status: 400 })
+    }
   } else {
     const { data: created, error: createError } = await admin.auth.admin.createUser({
-      email,
-      password: initialPassword,
-      email_confirm: true,
+      email, password: initialPassword, email_confirm: true,
       user_metadata: { company_id: companyId, company_name: company.name },
     })
     if (createError || !created.user) {
-      return NextResponse.json({ error: createError?.message || 'Não foi possível criar a conta de acesso.' }, { status: 400 })
+      await rollbackCompany()
+      return NextResponse.json({ error: 'Empresa e assinatura criadas, mas não foi possível criar o acesso. Cadastro revertido: ' + (createError?.message || 'erro inesperado') }, { status: 400 })
     }
     userId = created.user.id
     createdUser = true
   }
 
-  // Every Auth account used by a client must have its public profile as well.
-  // Upsert repairs accounts that were created manually in Auth before provisioning.
-  const { error: profileUpsertError } = await admin.from('profiles').upsert({
-    id: userId,
-    full_name: company.contact_name || company.name,
-    role: 'owner',
+  const { error: profileError } = await admin.from('profiles').upsert({
+    id: userId, full_name: company.contact_name || company.name, role: 'owner',
   }, { onConflict: 'id' })
-  if (profileUpsertError) {
+  if (profileError) {
     if (createdUser && userId) await admin.auth.admin.deleteUser(userId)
-    return NextResponse.json({ error: 'A conta existe, mas não foi possível criar o perfil do usuário: ' + profileUpsertError.message }, { status: 500 })
+    await rollbackCompany()
+    return NextResponse.json({ error: 'Não foi possível criar o perfil do cliente. Cadastro revertido: ' + profileError.message }, { status: 500 })
   }
 
-  const { error: linkError } = await admin.from('crm_memberships').insert({
+  const { error: membershipError } = await admin.from('crm_memberships').insert({
     company_id: companyId, user_id: userId, role: 'owner',
   })
-  if (linkError) {
+  if (membershipError) {
     if (createdUser && userId) await admin.auth.admin.deleteUser(userId)
-    return NextResponse.json({ error: 'A conta não foi vinculada à empresa. Detalhe: ' + linkError.message }, { status: 500 })
+    await rollbackCompany()
+    return NextResponse.json({ error: 'Não foi possível vincular o acesso à empresa. Cadastro revertido: ' + membershipError.message }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, email, role: 'owner', profileCreated: true, accessCreated: true, initialPassword })
+  return NextResponse.json({ ok: true, companyId, slug: company.slug, companyName: company.name, email, role: 'owner', profileCreated: true, accessCreated: true, initialPassword })
 }
