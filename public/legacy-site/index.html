@@ -210,7 +210,7 @@ loadSiteSettings();
     try{const result=await client.from('profiles').select('role,full_name,avatar_url').eq('id',session.user.id).maybeSingle();profile=result.data||{};}catch(_){}
     if(version!==renderVersion)return;
     const display=profile.full_name||session.user.user_metadata?.full_name||session.user.email?.split('@')[0]||'Minha conta';
-    const firstName=display.trim().split(/\\s+/)[0]||'Minha conta';
+    const firstName=display.trim().split(/\s+/)[0]||'Minha conta';
     const photo=profile.avatar_url?'<img class="site-auth-avatar" src="'+esc(profile.avatar_url)+'" alt="">':'<span class="site-auth-avatar">'+esc(firstName.charAt(0).toUpperCase())+'</span>';
     const group=document.createElement('div');group.className='site-auth-controls';
     const profileLink=document.createElement('a');profileLink.className='site-auth-profile';profileLink.href='/'+encodeURIComponent(tenantSlug)+'/admin';profileLink.setAttribute('aria-label','Abrir painel administrativo');profileLink.innerHTML=photo+'<span>'+esc(firstName)+'</span>';
