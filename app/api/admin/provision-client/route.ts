@@ -150,13 +150,13 @@ export async function POST(request: NextRequest) {
     createdUser = true
   }
 
-  const { error: profileError } = await admin.from('profiles').upsert({
+  const { error: profileUpsertError } = await admin.from('profiles').upsert({
     id: userId, full_name: company.contact_name || company.name, role: 'owner',
   }, { onConflict: 'id' })
-  if (profileError) {
+  if (profileUpsertError) {
     if (createdUser && userId) await admin.auth.admin.deleteUser(userId)
     await rollbackCompany()
-    return NextResponse.json({ error: 'Não foi possível criar o perfil do cliente. Cadastro revertido: ' + profileError.message }, { status: 500 })
+    return NextResponse.json({ error: 'Não foi possível criar o perfil do cliente. Cadastro revertido: ' + profileUpsertError.message }, { status: 500 })
   }
 
   const { error: membershipError } = await admin.from('crm_memberships').insert({
