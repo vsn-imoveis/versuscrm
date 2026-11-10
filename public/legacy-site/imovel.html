@@ -311,7 +311,7 @@ async function load(){
   const bathrooms=Number(p.bathrooms||0);const facts=[p.area?[Number(p.area).toLocaleString('pt-BR')+' m²','Área útil']:null,beds?[beds+' '+(beds===1?'quarto':'quartos'),'Dormitórios']:null,suites?[suites+' '+(suites===1?'suíte':'suítes'),'Suítes']:null,bathrooms?[bathrooms+' '+(bathrooms===1?'banheiro':'banheiros'),'Banheiros']:null,parking?[parking+' '+(parking===1?'vaga':'vagas'),'Garagem']:null].filter(Boolean);
   const wa='https://wa.me/'+(tenantPhone.startsWith('55')?tenantPhone:'55'+tenantPhone)+'?text='+encodeURIComponent('Olá! Tenho interesse no imóvel '+(p.title||'')+(p.code?', código '+p.code:'')+'.');
   const canonicalUrl=location.origin+propertyUrl(p);
-  const seoTitle=((p.title||type+' em '+(neigh||city))+' | VSN Imóveis').slice(0,65);
+  const seoTitle=((p.title||type+' em '+(neigh||city))+' | '+tenantName).slice(0,65);
   const seoDescription=[p.title||type,neigh?'no bairro '+neigh:'',city?'em '+city:'',p.condominium_name?'Condomínio '+p.condominium_name:'',p.area?Number(p.area).toLocaleString('pt-BR')+' m²':'',beds?beds+' '+(beds===1?'quarto':'quartos'):''].filter(Boolean).join(' · ').slice(0,155);
   document.title=seoTitle;
   const setMeta=(id,attr,value)=>{const el=document.getElementById(id);if(el)el.setAttribute(attr,value)};
@@ -320,7 +320,7 @@ async function load(){
   setMeta('seoOgTitle','content',seoTitle);
   setMeta('seoOgDescription','content',seoDescription);
   setMeta('seoOgUrl','content',canonicalUrl);
-  setMeta('seoOgImage','content','https://vsn-imoveis.vercel.app/logo-vsn.png');
+  setMeta('seoOgImage','content',photos[0]||'');
   let schema=document.getElementById('seoSchema');
   if(!schema){schema=document.createElement('script');schema.id='seoSchema';schema.type='application/ld+json';document.head.appendChild(schema);}
   schema.textContent=JSON.stringify({
@@ -386,4 +386,4 @@ load();
  const search=document.getElementById('headerSearch');if(search)search.placeholder='Buscar imóvel — Bairro, cidade, código ou condomínio';
  const contact=document.querySelector('.header-btn.gold');if(contact)contact.href='/'+encodeURIComponent(tenantSlug)+'/imoveis';
 })();
-</script><script src="/site-auth.js"></script></body></html><script src="/site-auth.js"></script></body></html>
+</script><script src="/site-auth.js"></script></body></html>
