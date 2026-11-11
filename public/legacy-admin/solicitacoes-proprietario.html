@@ -48,17 +48,17 @@ async function boot(){
  const {data:{session}}=await S.auth.getSession();if(!session){$('status').innerHTML='Faça login no painel administrativo para acessar as solicitações. <a href="painel-login.html">Entrar</a>';return}
  
  await setAdminHeader(session.user);$('adminLogout').onclick=()=>S.auth.signOut().then(()=>location.href='painel-login.html');
- const{data:tenantMembership,error:tenantMembershipError}=await S.from('crm_memberships').select('role').eq('company_id',window.__VERSUS_CONFIG.companyId).eq('user_id',session.user.id).maybeSingle();
+ const{data:tenantMembership,error:tenantMembershipError}=await S.from('crm_memberships').select('role').eq('company_id',window.__VERSUS_TENANT__.companyId).eq('user_id',session.user.id).maybeSingle();
  if(tenantMembershipError||!tenantMembership||!['owner','admin','manager'].includes(String(tenantMembership.role||'').toLowerCase())){$('status').textContent='Acesso restrito: esta conta não pertence a esta imobiliária ou não possui perfil administrativo.';return}
  window.__VERSUS_CONFIG.membershipRole=tenantMembership.role;window.__vsnMembershipRole=tenantMembership.role;
  $('status').textContent='Carregando solicitações...';await load();
 }
 async function load(){
- const {data,error}=await S.from('crm_catalog_change_requests').select('*').eq('company_id',window.__VERSUS_CONFIG.companyId).eq('entity_type','property').eq('status','pending').order('created_at',{ascending:true});
+ const {data,error}=await S.from('crm_catalog_change_requests').select('*').eq('company_id',window.__VERSUS_TENANT__.companyId).eq('entity_type','property').eq('status','pending').order('created_at',{ascending:true});
  if(error){$('status').textContent='Erro ao carregar: '+error.message;return}
  $('status').textContent=(data?.length||0)+' solicitação(ões) aguardando análise.';
  if(!data?.length){$('requests').innerHTML='<div class="empty">Nenhuma solicitação pendente no momento.</div>';return}
- const rows=await Promise.all((data||[]).map(async r=>{const {data:p}=await S.from('properties').select('*').eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',r.record_id).maybeSingle();return {...r,property:p||r.current_data||{}};}));
+ const rows=await Promise.all((data||[]).map(async r=>{const {data:p}=await S.from('properties').select('*').eq('company_id',window.__VERSUS_TENANT__.companyId).eq('id',r.record_id).maybeSingle();return {...r,property:p||r.current_data||{}};}));
  $('requests').innerHTML=rows.map(r=>{
   const p=r.property||{},changes=r.proposed_data||{};
   const entries=Object.entries(changes).filter(([k,v])=>allowed.has(k)&&!sameValue(p[k],v));
@@ -68,14 +68,14 @@ async function load(){
 
 async function approveRequest(id){
  if(!confirm('Aprovar esta solicitação e aplicar as alterações ao imóvel?'))return;
- const {data:req,error}=await S.from('crm_catalog_change_requests').select('*').eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',id).eq('status','pending').single();
+ const {data:req,error}=await S.from('crm_catalog_change_requests').select('*').eq('company_id',window.__VERSUS_TENANT__.companyId).eq('id',id).eq('status','pending').single();
  if(error){alert('Não foi possível carregar a solicitação: '+error.message);return}
  const changes=req.proposed_data||{},row={};for(const [k,v] of Object.entries(changes)){if(allowed.has(k))row[k]=v}
  if(!Object.keys(row).length){alert('A solicitação não contém alterações reconhecidas.');return}
- const upd=await S.from('properties').update(row).eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',req.record_id);
+ const upd=await S.from('properties').update(row).eq('company_id',window.__VERSUS_TENANT__.companyId).eq('id',req.record_id);
  if(upd.error){alert('Não foi possível aplicar as alterações: '+upd.error.message);return}
  const {data:{user}}=await S.auth.getUser(),note=$('note_'+id)?.value.trim()||null;
- const done=await S.from('crm_catalog_change_requests').update({status:'approved',decision_note:note,decision_by:user.id,decision_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',id).eq('status','pending');
+ const done=await S.from('crm_catalog_change_requests').update({status:'approved',decision_note:note,decision_by:user.id,decision_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('company_id',window.__VERSUS_TENANT__.companyId).eq('id',id).eq('status','pending');
  if(done.error){alert('As alterações foram aplicadas, mas não foi possível atualizar o status: '+done.error.message);return}
  alert('Solicitação aprovada e alterações aplicadas.');await load();
 }
@@ -84,7 +84,7 @@ async function rejectRequest(id){
  const note=$('note_'+id)?.value.trim()||prompt('Informe o motivo da recusa (opcional):')||null;
  if(!confirm('Recusar esta solicitação?'))return;
  const {data:{user}}=await S.auth.getUser();
- const result=await S.from('crm_catalog_change_requests').update({status:'rejected',decision_note:note,decision_by:user.id,decision_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('company_id',window.__VERSUS_CONFIG.companyId).eq('id',id).eq('status','pending');
+ const result=await S.from('crm_catalog_change_requests').update({status:'rejected',decision_note:note,decision_by:user.id,decision_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('company_id',window.__VERSUS_TENANT__.companyId).eq('id',id).eq('status','pending');
  if(result.error){alert('Não foi possível recusar: '+result.error.message);return}
  await load();
 }
