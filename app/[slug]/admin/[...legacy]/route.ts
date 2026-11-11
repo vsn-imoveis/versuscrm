@@ -140,6 +140,16 @@ export async function GET(request: NextRequest, context: Context) {
 
 
 
+  if (request.nextUrl.searchParams.get("versus_content") === "1") {
+    html = html.replace("</head>", `<style id="versus-content-only">
+      html,body{min-height:100%;height:auto!important;margin:0!important}
+      body{padding-left:0!important}
+      body>.top,body>.admin-topbar,body>.admin-header,.admin-sidebar,#vsnSidebarToggle,body>header{display:none!important}
+      main.wrap,main#app,#app,.wrap{margin:0!important;padding:22px!important;width:100%!important;max-width:none!important;min-height:calc(100vh - 44px)!important;box-sizing:border-box!important}
+      body.vsn-sidebar-collapsed{--vsn-sidebar-width:0px}
+    </style></head>`);
+  }
+
   return new NextResponse(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
