@@ -55,11 +55,7 @@ export async function GET(request: NextRequest, context: Context) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user ?? null;
   const isLoginScreen = requestedFile === "painel-login.html";
-  const isEmbeddedScreen = request.nextUrl.searchParams.get("embed") === "1";
-  // Embedded legacy screens authenticate with the Supabase browser session
-  // stored in the same origin. Do not redirect them to the dashboard merely
-  // because the server-rendered cookie session is absent.
-  if ((!user || !session) && !isLoginScreen && !isEmbeddedScreen) {
+  if ((!user || !session) && !isLoginScreen) {
     return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/painel-login.html`, request.url));
   }
 
@@ -139,15 +135,7 @@ export async function GET(request: NextRequest, context: Context) {
     (_match, prefix, target, suffix) => prefix + tenantAdminBase + target + suffix);
 
 
-  if (request.nextUrl.searchParams.get("embed") === "1") {
-    const embedStyles = `<style id="versus-embedded-screen-style">
-      html,body{min-height:100%;background:#f6f8fa!important;overflow-x:hidden}
-      .admin-sidebar,.sidebar,.site-header,.admin-top,.admin-topbar,.top,.header,.site-nav,.admin-header-actions{display:none!important}
-      .wrap,main.wrap,.admin-main,.main-content{margin:0!important;width:100%!important;max-width:none!important;padding:24px!important}
-      body{padding:0!important}
-    </style>`;
-    html = html.replace("</head>", embedStyles + "</head>");
-  }
+
 
   return new NextResponse(html, {
     headers: {
