@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { randomBytes } from 'node:crypto'
 
 export const runtime = 'nodejs'
 
@@ -135,7 +134,7 @@ export async function POST(request: NextRequest) {
   const existingUser = existingAuthUsers.users.find(u => String(u.email || '').trim().toLowerCase() === email)
   let userId = existingUser?.id
   let createdUser = false
-  const initialPassword = randomBytes(24).toString('base64url')
+  const initialPassword = `${slugBase}admin`
 
   if (existingUser) {
     const { data: memberships, error: membershipError } = await admin.from('crm_memberships').select('company_id').eq('user_id', existingUser.id)
