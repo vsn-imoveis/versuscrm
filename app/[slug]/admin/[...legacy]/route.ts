@@ -120,6 +120,14 @@ export async function GET(request: NextRequest, context: Context) {
   // explicitly tenant-scoped so it never resolves outside the current slug.
   html = html.replace(/\bhref=(["'])((?:\.\/)?[A-Za-z0-9_-]+\.html(?:[?#][^"']*)?)\1/gi,
     (_match, quote, target) => 'href="' + tenantAdminBase + target.replace(/^\.\//, '') + '"');
+  // The legacy dashboard also navigates through inline JavaScript. Scope
+  // those destinations to the current tenant just like ordinary anchor links.
+  html = html.replace(/((?:window\\.)?location\\.href\\s*=\\s*["'])\\/admin\\/([A-Za-z0-9_-]+\\.html(?:[?#][^"']*)?)(["'])/gi,
+    (_match, prefix, target, suffix) => prefix + tenantAdminBase + target + suffix);
+  html = html.replace(/((?:window\\.)?location\\.href\\s*=\\s*["'])([A-Za-z0-9_-]+\\.html(?:[?#][^"']*)?)(["'])/gi,
+    (_match, prefix, target, suffix) => prefix + tenantAdminBase + target + suffix);
+  html = html.replace(/(window\\.open\\(\\s*["'])\\/admin\\/([A-Za-z0-9_-]+\\.html(?:[?#][^"']*)?)(["'])/gi,
+    (_match, prefix, target, suffix) => prefix + tenantAdminBase + target + suffix);
 
 
   return new NextResponse(html, {
