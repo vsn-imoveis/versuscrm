@@ -55,9 +55,11 @@ export async function GET(request: NextRequest, context: Context) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user ?? null;
   const isLoginScreen = requestedFile === "painel-login.html";
-  if ((!user || !session) && !isLoginScreen) {
-    return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/painel-login.html`, request.url));
-  }
+  // Legacy VSN pages authenticate with the Supabase browser session (localStorage).
+  // A server cookie may be absent even when the browser is signed in, so do not
+  // redirect a valid browser navigation to the dashboard here. Each screen must
+  // validate its own browser session and company membership before showing data.
+
 
   const { data: tenantData, error: tenantError } = await supabase
     .rpc("get_public_tenant_by_slug", { p_slug: slug });
@@ -86,9 +88,9 @@ export async function GET(request: NextRequest, context: Context) {
     : { data: null };
 
   const isOwnerPortal = ["proprietario.html", "painel-cadastro.html"].includes(requestedFile) && !!ownerAccount;
-  if (requestedFile === "proprietario.html" && !ownerAccount) {
-    return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/painel-login.html?erro=proprietario`, request.url));
-  }
+  // Owner portal access is checked in the browser against the active
+  // crm_owner_accounts row; do not redirect before its localStorage session loads.
+
   // A login/dashboard HTML is still tenant-protected when a session exists.
   // Never let an authenticated user from another company reach it.
   if (user && (membershipError || !membership) && !isOwnerPortal) {
