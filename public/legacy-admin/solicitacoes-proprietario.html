@@ -48,7 +48,9 @@ async function boot(){
  const {data:{session}}=await S.auth.getSession();if(!session){$('status').innerHTML='Faça login no painel administrativo para acessar as solicitações. <a href="painel-login.html">Entrar</a>';return}
  
  await setAdminHeader(session.user);$('adminLogout').onclick=()=>S.auth.signOut().then(()=>location.href='painel-login.html');
- if(!['owner','admin','manager'].includes(window.__VERSUS_CONFIG.membershipRole)){$('status').textContent='Acesso restrito: somente administradores e gerentes podem revisar solicitações.';return}
+ const{data:tenantMembership,error:tenantMembershipError}=await S.from('crm_memberships').select('role').eq('company_id',window.__VERSUS_CONFIG.companyId).eq('user_id',session.user.id).maybeSingle();
+ if(tenantMembershipError||!tenantMembership||!['owner','admin','manager'].includes(String(tenantMembership.role||'').toLowerCase())){$('status').textContent='Acesso restrito: esta conta não pertence a esta imobiliária ou não possui perfil administrativo.';return}
+ window.__VERSUS_CONFIG.membershipRole=tenantMembership.role;window.__vsnMembershipRole=tenantMembership.role;
  $('status').textContent='Carregando solicitações...';await load();
 }
 async function load(){
