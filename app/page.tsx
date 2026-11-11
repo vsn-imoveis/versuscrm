@@ -120,6 +120,30 @@ export default function Page() {
     const properties = Number(form.property_limit), photos = Number(form.photo_limit), price = Number(form.monthly_price)
     if (![properties, photos, price].every(Number.isFinite) || properties < 1 || photos < 1 || price < 0) { setNotice('Mensalidade e limites devem conter valores válidos.'); return }
 
+    // Prevent duplicate company names before attempting the insert. If the
+    // company already exists, load its persisted data into the edit form.
+    const duplicateCompany = !editingCompany
+      ? companies.find(company => company.name.trim().toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR'))
+      : null
+    if (duplicateCompany) {
+      const existingSubscription = subs.get(duplicateCompany.id)
+      setEditingCompany(duplicateCompany)
+      setForm({
+        name: duplicateCompany.name,
+        slug: duplicateCompany.slug,
+        contact_name: duplicateCompany.contact_name || '',
+        contact_email: duplicateCompany.contact_email || '',
+        contact_phone: duplicateCompany.contact_phone || '',
+        account_status: duplicateCompany.status || 'active',
+        subscription_status: existingSubscription?.status || 'trial',
+        monthly_price: String(existingSubscription?.monthly_price ?? 100),
+        property_limit: String(existingSubscription?.property_limit ?? duplicateCompany.max_properties ?? 100),
+        photo_limit: String(existingSubscription?.photo_limit ?? duplicateCompany.max_photos_per_property ?? 35),
+      })
+      setNotice(`Já existe um cliente com o nome "${duplicateCompany.name}". Carregamos o cadastro existente para você editar, sem criar uma duplicidade.`)
+      return
+    }
+
     setSaving(true)
     if (editingCompany) {
       setNotice('Salvando alterações do cliente...')
