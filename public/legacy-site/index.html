@@ -210,7 +210,24 @@ loadSiteSettings();
       login.hidden=false;
       return;
     }
-    // Sessão válida: mantém os controles atuais na tela enquanto atualiza o perfil.
+    // A sessão do navegador pode pertencer a outra empresa (por exemplo,
+    // o administrador da plataforma). Só exiba o usuário no site público se
+    // ele tiver vínculo ativo com o tenant que está sendo visitado.
+    let membership=null;
+    try{
+      const result=await client.from('crm_memberships')
+        .select('role')
+        .eq('company_id',companyId)
+        .eq('user_id',session.user.id)
+        .maybeSingle();
+      membership=result.data||null;
+    }catch(_){}
+    if(version!==renderVersion)return;
+    if(!membership){
+      document.querySelectorAll('.site-auth-controls').forEach(node=>node.remove());
+      login.hidden=false;
+      return;
+    }
     login.hidden=true;
     let profile={};
     try{const result=await client.from('profiles').select('role,full_name,avatar_url').eq('id',session.user.id).maybeSingle();profile=result.data||{};}catch(_){}
