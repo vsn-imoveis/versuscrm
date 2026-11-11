@@ -55,7 +55,11 @@ export async function GET(request: NextRequest, context: Context) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user ?? null;
   const isLoginScreen = requestedFile === "painel-login.html";
-  if ((!user || !session) && !isLoginScreen) {
+  const isEmbeddedScreen = request.nextUrl.searchParams.get("embed") === "1";
+  // Embedded legacy screens authenticate with the Supabase browser session
+  // stored in the same origin. Do not redirect them to the dashboard merely
+  // because the server-rendered cookie session is absent.
+  if ((!user || !session) && !isLoginScreen && !isEmbeddedScreen) {
     return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/painel-login.html`, request.url));
   }
 
