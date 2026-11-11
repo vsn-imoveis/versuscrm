@@ -135,6 +135,16 @@ export async function GET(request: NextRequest, context: Context) {
     (_match, prefix, target, suffix) => prefix + tenantAdminBase + target + suffix);
 
 
+  if (request.nextUrl.searchParams.get("modal") === "1") {
+    const modalStyles = `<style id="versus-modal-page-style">
+      html,body{min-height:100%;background:#f6f8fa!important}
+      .admin-sidebar,.sidebar,.site-header,.admin-top,.admin-topbar,.top,.header,.site-nav,.admin-header-actions{display:none!important}
+      .wrap,main.wrap,.admin-main,.main-content{margin-left:0!important;margin-top:0!important;width:100%!important;max-width:none!important;padding:24px!important}
+      body{padding-top:0!important}
+    </style>`;
+    html = html.replace("</head>", modalStyles + "</head>");
+  }
+
   return new NextResponse(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
