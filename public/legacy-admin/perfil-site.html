@@ -22,13 +22,22 @@ const msg=(s)=>{const e=document.getElementById('msg');e.textContent=s;e.style.d
 async function boot(){
   try{
     const cfg=window.__VERSUS_CONFIG||{};
-    if(!cfg.accessToken||!cfg.refreshToken){location.href='painel-login.html';return}
-    const {data:authData,error:authError}=await S.auth.setSession({access_token:cfg.accessToken,refresh_token:cfg.refreshToken});
+    // The iframe uses the same-origin Supabase browser session as the parent panel.
+    // Server-injected tokens are optional; do not redirect to the dashboard when cookies are absent.
+    let {data:authData,error:authError}=await S.auth.getSession();
+    if((authError||!authData?.session?.user)&&cfg.accessToken&&cfg.refreshToken){
+      const restored=await S.auth.setSession({access_token:cfg.accessToken,refresh_token:cfg.refreshToken});
+      authData=restored.data;authError=restored.error;
+    }
     if(authError)throw authError;
-    const session=authData.session;
-    if(!session?.user){location.href='painel-login.html';return}
-    const role=cfg.membershipRole;
-    if(!['owner','admin'].includes(role)){location.href='painel-cadastro.html';return}
+    const session=authData?.session;
+    if(!session?.user){msg('Sessão não encontrada. Saia e entre novamente.');return}
+    const tenant=window.__VERSUS_TENANT__;
+    if(!tenant||tenant.slug!==cfg.slug||tenant.companyId!==companyId||tenant.userId!==session.user.id){
+      msg('Acesso negado: contexto da imobiliária não validado.');return;
+    }
+    const role=tenant.role;
+    if(!['owner','admin'].includes(role)){msg('Acesso restrito a administradores.');return}
     const {data:prof}=await S.from('profiles').select('full_name').eq('id',session.user.id).maybeSingle();
   document.getElementById('topUser').textContent=(prof?.full_name||session.user.email||'Usuário').split(/\s+/)[0];
   const {data,error}=await S.from('crm_companies').select('*').eq('id',companyId).maybeSingle();
