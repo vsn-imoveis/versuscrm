@@ -89,8 +89,13 @@ export async function GET(request: NextRequest, context: Context) {
   if (requestedFile === "proprietario.html" && !ownerAccount) {
     return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/painel-login.html?erro=proprietario`, request.url));
   }
-  if (user && (membershipError || !membership) && !isOwnerPortal && !isLoginScreen) {
-    return NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}/admin/painel-login.html?erro=acesso`, request.url));
+  // A login/dashboard HTML is still tenant-protected when a session exists.
+  // Never let an authenticated user from another company reach it.
+  if (user && (membershipError || !membership) && !isOwnerPortal) {
+    return new NextResponse("Acesso negado: esta conta não pertence a esta imobiliária.", {
+      status: 403,
+      headers: { "Cache-Control": "private, no-store, max-age=0" }
+    });
   }
   const effectiveRole = membership?.role ?? (isOwnerPortal ? "owner" : user && isLoginScreen ? "unauthorized" : "member");
 
