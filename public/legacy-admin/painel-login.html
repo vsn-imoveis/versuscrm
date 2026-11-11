@@ -572,7 +572,7 @@ S.auth.onAuthStateChange((event,s)=>{if(event==='SIGNED_OUT'){login();return;}if
   const frame=document.getElementById('versusModalFrame');
   const title=document.getElementById('versusModalTitle');
   if(!modal||!frame)return;
-  function isAdminTarget(url){return url.origin===location.origin&&/^\\/[^/]+\\/admin\\/[A-Za-z0-9_-]+\\.html(?:[?#].*)?$/.test(url.pathname+url.search)}
+  function isAdminTarget(url){const parts=url.pathname.split('/');return url.origin===location.origin&&parts.length===4&&parts[2]==='admin'&&parts[3].endsWith('.html')}
   window.closeVersusScreenModal=function(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');frame.src='about:blank';document.body.style.overflow='';};
   function open(url,label){url.searchParams.set('modal','1');title.textContent=label||'Painel administrativo';frame.src=url.toString();modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';}
   document.addEventListener('click',function(event){
