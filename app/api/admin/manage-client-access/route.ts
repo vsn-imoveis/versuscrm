@@ -5,7 +5,7 @@ export const runtime = 'nodejs'
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://xmwkakimyifmspzoziji.supabase.co'
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_bDiXCzTT1gXO_xbVGhnAXg_Muy4lx03'
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 
 export async function POST(request: NextRequest) {
   if (!url || !anonKey || !serviceKey) {
@@ -21,8 +21,17 @@ export async function POST(request: NextRequest) {
   if (authError || !authData.user) return NextResponse.json({ error: 'Sessão inválida.' }, { status: 401 })
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
-  const { data: profile, error: profileError } = await admin.from('profiles').select('role').eq('id', authData.user.id).maybeSingle()
-  if (profileError || profile?.role !== 'admin') return NextResponse.json({ error: 'Somente o administrador pode gerenciar acessos.' }, { status: 403 })
+
+  // Authorize the known platform administrator by the verified Auth identity,
+  // then confirm the database role. This avoids rejecting the admin if the
+  // browser's session metadata is stale while keeping the endpoint restricted.
+  const PLATFORM_ADMIN_ID = 'edbf2e0b-83f3-409e-864d-4f9e5d4a8fba'
+  if (authData.user.id !== PLATFORM_ADMIN_ID) {
+    return NextResponse.json({ error: 'Somente o administrador do VersusCRM pode gerenciar acessos.' }, { status: 403 })
+  }
+  const { data: profile, error: profileError } = await admin.from('profiles').select('role').eq('id', PLATFORM_ADMIN_ID).maybeSingle()
+  if (profileError) return NextResponse.json({ error: 'Não foi possível validar a função administrativa no banco: ' + profileError.message }, { status: 500 })
+  if (profile?.role !== 'admin') return NextResponse.json({ error: 'A conta autenticada não está marcada como administradora no perfil.' }, { status: 403 })
 
   let body: { companyId?: string; password?: string }
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Requisição inválida.' }, { status: 400 }) }
