@@ -13,7 +13,9 @@
 <a class="link" href="solicitacoes-proprietario.html"><span>▤</span><span>Solicitações</span></a>
 <div class="group"><a class="link active" href="perfil-site.html"><span>⚙</span><span>Configurar Site</span></a></div>
 </nav></aside><main><h1>Perfil do site</h1><p>Configure as informações institucionais e os canais de contato exibidos no site.</p><section class="card"><div class="grid">
-<div><label>Empresa / Imobiliária</label><input id="siteName"></div><div><label>CRECI</label><input id="siteCreci"></div><div><label>Telefone</label><input id="sitePhone"></div><div><label>WhatsApp</label><input id="siteWhatsapp"></div><div><label>E-mail</label><input id="siteEmail" type="email"></div><div><label>Instagram</label><input id="siteInstagram"></div><div><label>Facebook</label><input id="siteFacebook"></div><div><label>YouTube</label><input id="siteYoutube"></div><div class="full"><label>Endereço</label><input id="siteAddress"></div><div class="full"><label>Logo (URL)</label><input id="siteLogoUrl" placeholder="https://..."></div><div class="full"><label>Foto do site</label><p>Foto da seção “Quem está por trás”. Ideal 800 × 1000 px, JPG/PNG/WebP, até 8 MB.</p><div class="photo"><input id="photoFile" type="file" accept="image/jpeg,image/png,image/webp"><div class="preview"><img id="photoPreview"></div></div></div><div class="full"><label>Sobre a imobiliária</label><textarea id="siteAbout"></textarea></div></div><div class="actions"><button id="save">Salvar perfil do site</button></div></section></main><div id="msg"></div>
+<div><label>Empresa / Imobiliária</label><input id="siteName"></div><div><label>CRECI</label><input id="siteCreci"></div><div><label>Telefone</label><input id="sitePhone"></div><div><label>WhatsApp</label><input id="siteWhatsapp"></div><div><label>E-mail</label><input id="siteEmail" type="email"></div><div><label>Instagram</label><input id="siteInstagram"></div><div><label>Facebook</label><input id="siteFacebook"></div><div><label>YouTube</label><input id="siteYoutube"></div><div class="full"><label>Endereço</label><input id="siteAddress"></div><div class="full"><label>Logo (URL)</label><input id="siteLogoUrl" placeholder="https://..."></div><div class="full"><label>Foto do site</label><p>Foto da seção “Quem está por trás”. Ideal 800 × 1000 px, JPG/PNG/WebP, até 8 MB.</p><div class="photo"><input id="photoFile" type="file" accept="image/jpeg,image/png,image/webp"><div class="preview"><img id="photoPreview"></div></div></div>
+<div class="full"><label>Foto da capa do site</label><p>Imagem principal do topo do site. Tamanho ideal: 1920 × 650 px (proporção aproximada 3:1). JPG, PNG ou WebP, até 8 MB.</p><div class="photo"><input id="coverFile" type="file" accept="image/jpeg,image/png,image/webp"><div class="preview" style="width:216px;height:74px"><img id="coverPreview"></div></div></div>
+<div class="full"><label>Imagem para compartilhamento (WhatsApp e redes sociais)</label><p>Imagem que aparece quando o link do site é compartilhado. Tamanho ideal: 1200 × 630 px (proporção 1,91:1). JPG, PNG ou WebP, até 8 MB.</p><div class="photo"><input id="shareFile" type="file" accept="image/jpeg,image/png,image/webp"><div class="preview" style="width:180px;height:95px"><img id="sharePreview"></div></div></div><div class="full"><label>Sobre a imobiliária</label><textarea id="siteAbout"></textarea></div></div><div class="actions"><button id="save">Salvar perfil do site</button></div></section></main><div id="msg"></div>
 <script>
 const U=window.__VERSUS_CONFIG.supabaseUrl,K=window.__VERSUS_CONFIG.supabaseAnonKey,S=supabase.createClient(U,K);
 const companyId=window.__VERSUS_TENANT__.companyId;
@@ -45,27 +47,27 @@ async function boot(){
   Object.entries(map).forEach(([id,col])=>{const el=document.getElementById(id);if(el)el.value=data?.[col]??''});
   const companyName=String(cfg.tenantName||data?.name||'Imobiliária').trim();const parts=companyName.split(/\\s+/);const first=parts.shift()||companyName;const rest=parts.join(' ')||'IMÓVEIS';document.getElementById('topBrand').innerHTML=first+'<small>'+rest+'</small>';document.querySelector('#sideBrand strong').textContent=first;document.querySelector('#sideBrand small').textContent=rest;
   if(data?.site_photo_url){photoPreview.src=data.site_photo_url;photoPreview.style.display='block'}
+  if(data?.site_cover_url){coverPreview.src=data.site_cover_url;coverPreview.style.display='block'}
+  if(data?.site_share_image_url){sharePreview.src=data.site_share_image_url;sharePreview.style.display='block'}
   }catch(e){console.error('Falha ao carregar perfil do site:',e);msg('Não foi possível carregar os dados: '+(e.message||'erro de conexão'))}
 }
-photoFile.onchange=()=>{const f=photoFile.files?.[0];if(!f)return;if(f.size>8*1024*1024){msg('A foto deve ter no máximo 8 MB');photoFile.value='';return}photoPreview.src=URL.createObjectURL(f);photoPreview.style.display='block'};
+function previewUpload(input,preview){input.onchange=()=>{const f=input.files?.[0];if(!f)return;if(!['image/jpeg','image/png','image/webp'].includes(f.type)){msg('Use JPG, PNG ou WebP');input.value='';return}if(f.size>8*1024*1024){msg('A imagem deve ter no máximo 8 MB');input.value='';return}preview.src=URL.createObjectURL(f);preview.style.display='block'}}
+previewUpload(photoFile,photoPreview);previewUpload(coverFile,coverPreview);previewUpload(shareFile,sharePreview);
+async function uploadTenantImage(input,currentUrl){const f=input.files?.[0];if(!f)return currentUrl||null;const ext=(f.name.split('.').pop()||'jpg').toLowerCase();const storagePath=companyId+'/'+Date.now()+'-'+input.id+'.'+ext;const upl=await S.storage.from('crm-site-assets').upload(storagePath,f,{contentType:f.type,upsert:true});if(upl.error)throw upl.error;return S.storage.from('crm-site-assets').getPublicUrl(storagePath).data.publicUrl}
 save.onclick=async()=>{
   save.disabled=true;save.textContent='Salvando...';
   try{
-    const cur=await S.from('crm_companies').select('site_photo_url').eq('id',companyId).maybeSingle();
+    const cur=await S.from('crm_companies').select('site_photo_url,site_cover_url,site_share_image_url').eq('id',companyId).maybeSingle();
     if(cur.error)throw cur.error;
-    let photo=cur.data?.site_photo_url||null;
-    const f=photoFile.files?.[0];
-    if(f){
-      const ext=(f.name.split('.').pop()||'jpg').toLowerCase();
-      const storagePath=companyId+'/'+Date.now()+'.'+ext;
-      const upl=await S.storage.from('crm-site-assets').upload(storagePath,f,{contentType:f.type,upsert:true});
-      if(upl.error)throw upl.error;
-      photo=S.storage.from('crm-site-assets').getPublicUrl(storagePath).data.publicUrl;
-    }
+    const photo=await uploadTenantImage(photoFile,cur.data?.site_photo_url);
+    const cover=await uploadTenantImage(coverFile,cur.data?.site_cover_url);
+    const share=await uploadTenantImage(shareFile,cur.data?.site_share_image_url);
     const row={
       name:siteName.value.trim(),
       logo_url:siteLogoUrl.value.trim()||null,
       site_photo_url:photo,
+      site_cover_url:cover,
+      site_share_image_url:share,
       contact_phone:sitePhone.value.trim()||null,
       whatsapp:siteWhatsapp.value.trim()||null,
       contact_email:siteEmail.value.trim()||null,
