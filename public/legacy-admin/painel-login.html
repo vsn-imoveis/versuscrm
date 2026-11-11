@@ -557,41 +557,5 @@ async function openManualLead(){
 }
 
 S.auth.onAuthStateChange((event,s)=>{if(event==='SIGNED_OUT'){login();return;}if(event==='SIGNED_IN'&&s?.user?.id&&window.__panelUserId!==s.user.id){void panel(s);}});window.addEventListener('hashchange',async()=>{if(location.hash==='#clientes'&&window.__panelUserId){if(document.getElementById('clientsApp'))openClientsSection();else{const {data:{session}}=await S.auth.getSession();if(session)await panel(session)}}else if(!location.hash&&window.__panelUserId){if(document.getElementById('reportApp'))backToPropertyReport();else{const {data:{session}}=await S.auth.getSession();if(session)await panel(session)}}});boot();</script><script id="vsn-sidebar-controller">(function(){const b=document.getElementById('vsnSidebarToggle');if(!b)return;const key='vsnAdminSidebarCollapsed';function set(v){document.body.classList.toggle('vsn-sidebar-collapsed',v);b.setAttribute('aria-expanded',String(!v));b.setAttribute('aria-label',v?'Expandir menu lateral':'Recolher menu lateral');b.title=v?'Expandir menu':'Recolher menu';}let saved=false;try{saved=localStorage.getItem(key)==='1'}catch(e){}set(saved);b.addEventListener('click',()=>{const v=!document.body.classList.contains('vsn-sidebar-collapsed');set(v);try{localStorage.setItem(key,v?'1':'0')}catch(e){}});})();</script><script id="vsn-sidebar-page-height-fix">(function(){const side=document.querySelector('.admin-sidebar');if(!side)return;let raf=0;function fit(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const root=document.documentElement;const body=document.body;const top=parseFloat(getComputedStyle(root).getPropertyValue('--vsn-sidebar-top'))||98;const main=document.querySelector('main.wrap, main, #app, .wrap');const mainBottom=main?main.getBoundingClientRect().bottom+window.scrollY:0;const docBottom=Math.max(root.scrollHeight,body.scrollHeight,mainBottom,window.innerHeight);const h=Math.max(window.innerHeight-top,docBottom-top);root.style.setProperty('--vsn-sidebar-document-height',Math.ceil(h)+'px');side.style.height=Math.ceil(h)+'px';side.style.minHeight=Math.ceil(h)+'px';});}fit();window.addEventListener('resize',fit,{passive:true});window.addEventListener('load',fit,{once:true});window.addEventListener('orientationchange',fit,{passive:true});if(window.ResizeObserver){const main=document.querySelector('main.wrap, main, #app, .wrap');if(main)new ResizeObserver(fit).observe(main);}if(window.MutationObserver){new MutationObserver(fit).observe(document.body,{childList:true,subtree:true});}})();</script>
-<style id="versus-embedded-navigation-css">
-#app.versus-embedded-host{padding:0!important;max-width:none!important}
-#app .versus-embedded-toolbar{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#fff;border:1px solid #e1e6e9;border-radius:12px 12px 0 0}
-#app .versus-embedded-toolbar strong{font-size:13px;color:#0b2940}
-#app .versus-embedded-toolbar button{border:0;border-radius:8px;background:#061d2d;color:#fff;padding:8px 13px;font-weight:700;cursor:pointer}
-#app iframe.versus-embedded-frame{display:block;width:100%;height:calc(100vh - 170px);min-height:620px;border:1px solid #e1e6e9;border-top:0;border-radius:0 0 12px 12px;background:#f6f8fa}
-</style>
-<script id="versus-embedded-navigation-script">
-(function(){
-  const app=document.getElementById('app');
-  if(!app)return;
-  const slug=window.__VERSUS_CONFIG&&window.__VERSUS_CONFIG.slug;
-  let frame=null;
-  function openScreen(url,label){
-    const target=new URL(url,location.href);
-    if(target.origin!==location.origin||!target.pathname.startsWith('/'+encodeURIComponent(slug)+'/admin/'))return false;
-    target.searchParams.set('embed','1');
-    app.classList.add('versus-embedded-host');
-    app.innerHTML='<div class="versus-embedded-toolbar"><strong></strong><button type="button">Voltar ao painel</button></div><iframe class="versus-embedded-frame" title="Tela administrativa"></iframe>';
-    app.querySelector('.versus-embedded-toolbar strong').textContent=label||'Painel administrativo';
-    app.querySelector('button').addEventListener('click',function(){openScreen('/'+encodeURIComponent(slug)+'/admin/painel-login.html','Painel de Imóveis');});
-    frame=app.querySelector('iframe');
-    frame.src=target.toString();
-    return true;
-  }
-  document.addEventListener('click',function(event){
-    const anchor=event.target.closest&&event.target.closest('a[href]');
-    if(!anchor||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||anchor.target==='_blank')return;
-    if(anchor.hasAttribute('data-settings-nav')||anchor.getAttribute('href')?.includes('#'))return;
-    let target;try{target=new URL(anchor.href,location.href)}catch(e){return;}
-    if(target.origin!==location.origin||!target.pathname.startsWith('/'+encodeURIComponent(slug)+'/admin/'))return;
-    if(!target.pathname.endsWith('.html'))return;
-    event.preventDefault();event.stopPropagation();
-    openScreen(target,anchor.textContent.trim());
-  },true);
-})();
-</script>
+
 </body></html>
