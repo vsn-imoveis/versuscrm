@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   const photoLimit = Number(body.photoLimit)
   const accountStatus = body.accountStatus === 'inactive' ? 'inactive' : 'active'
   const subscriptionStatus = body.subscriptionStatus === 'inactive' ? 'inactive' : 'active'
-  if (!companyId || !name || !contactName || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || ![monthlyPrice, propertyLimit, photoLimit].every(Number.isFinite) || monthlyPrice < 0 || propertyLimit < 1 || photoLimit < 1) {
+  if (!companyId || !name || !contactName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || ![monthlyPrice, propertyLimit, photoLimit].every(Number.isFinite) || monthlyPrice < 0 || propertyLimit < 1 || photoLimit < 1) {
     return NextResponse.json({ error: 'Confira os dados, e-mail, mensalidade e limites informados.' }, { status: 400 })
   }
 
