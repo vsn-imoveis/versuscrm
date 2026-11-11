@@ -147,30 +147,26 @@ export default function Page() {
     setSaving(true)
     if (editingCompany) {
       setNotice('Salvando alterações do cliente...')
-      const { error: companyError } = await supabase.from('crm_companies').update({
-        name,
-        contact_name: contact,
-        contact_email: contactEmail,
-        contact_phone: form.contact_phone.trim() || null,
-        status: form.account_status,
-        max_properties: properties,
-        max_photos_per_property: photos,
-      }).eq('id', editingCompany.id)
-      if (companyError) {
-        setNotice('Não foi possível atualizar os dados do cliente: ' + companyError.message)
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      if (!currentSession?.access_token) {
+        setNotice('Sua sessão administrativa expirou. Entre novamente.')
         setSaving(false)
         return
       }
-      const { error: subscriptionError } = await supabase.from('crm_subscriptions').update({
-        monthly_price: price,
-        property_limit: properties,
-        photo_limit: photos,
-        status: form.subscription_status,
-      }).eq('company_id', editingCompany.id)
-      if (subscriptionError) {
-        setNotice('Os dados do cliente foram atualizados, mas houve erro ao atualizar a assinatura: ' + subscriptionError.message)
+      const response = await fetch('/api/admin/update-client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentSession.access_token}` },
+        body: JSON.stringify({
+          companyId: editingCompany.id, name, contactName: contact, email: contactEmail,
+          phone: form.contact_phone.trim() || null, accountStatus: form.account_status,
+          subscriptionStatus: form.subscription_status, monthlyPrice: price,
+          propertyLimit: properties, photoLimit: photos,
+        }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        setNotice('Não foi possível atualizar o cliente: ' + (result.error || 'falha inesperada'))
         setSaving(false)
-        await loadData()
         return
       }
       setModal(false)
