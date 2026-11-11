@@ -119,7 +119,7 @@ export async function GET(request: NextRequest, context: Context) {
   // Legacy VSN pages use relative HTML links. Make every internal admin link
   // explicitly tenant-scoped so it never resolves outside the current slug.
   html = html.replace(/\bhref=(["'])((?:\.\/)?[A-Za-z0-9_-]+\.html(?:[?#][^"']*)?)\1/gi,
-    (_match, quote, target) => \`href="\${tenantAdminBase}\${target.replace(/^\.\//, '')}"\`);
+    (_match, quote, target) => 'href="' + tenantAdminBase + target.replace(/^\.\//, '') + '"');
 
 
   return new NextResponse(html, {
