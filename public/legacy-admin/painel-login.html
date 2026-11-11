@@ -211,8 +211,13 @@ function switchProfileTab(tab){
   if(tab==='admin') loadUserAdmin();
   if(tab==='site') loadSiteProfile();
 }
+function canManageTenantSiteSettings(){
+  const role=String(window.__VERSUS_CONFIG?.membershipRole||currentProfile?.role||'').toLowerCase();
+  return ['owner','admin'].includes(role) || currentProfile?.role==='admin';
+}
 async function openSettingsSection(tab){
-  if(currentProfile?.role!=='admin')return false;
+  if(tab==='site'&&!canManageTenantSiteSettings())return false;
+  if(tab!=='site'&&currentProfile?.role!=='admin')return false;
   if(tab==='site'){
     A.innerHTML='<div id="siteSettingsPage">'+
       '<div class="head"><div><h1>Perfil do site</h1><p>Configure as informações institucionais e os canais de contato exibidos no site.</p></div></div>'+
@@ -339,7 +344,7 @@ async function removeTeamMember(userId){
 function renderUserAdmin(){loadUserAdmin();}
 
 async function loadSiteProfile(){
-  if(currentProfile?.role!=='admin')return;
+  if(!canManageTenantSiteSettings())return;
   const {data,error}=await S.from('crm_companies').select('*').eq('id',window.__VERSUS_CONFIG.companyId).maybeSingle();
   if(error){toast('Não foi possível carregar o perfil do site: '+error.message,'err');return}
   const map={siteName:'name',siteLogoUrl:'logo_url',sitePhone:'contact_phone',siteWhatsapp:'whatsapp',siteEmail:'contact_email',siteCreci:'creci',siteInstagram:'instagram_url',siteFacebook:'facebook_url',siteYoutube:'youtube_url',siteAddress:'public_address',siteAbout:'about_text'};
@@ -349,7 +354,7 @@ async function loadSiteProfile(){
   const share=document.getElementById('siteSharePreview');const shareUrl=data?.site_share_image_url||'/logo-vsn-share.svg';if(share){share.src=shareUrl;share.style.display='block';share.onerror=function(){if(this.src!==location.origin+'/logo-vsn-share.svg'){this.src='/logo-vsn-share.svg'}}}
 }
 async function saveSiteProfile(){
-  if(currentProfile?.role!=='admin')return;
+  if(!canManageTenantSiteSettings())return;
   const btn=document.querySelector('#siteSettingsPage .profile-actions .red');
   if(btn){btn.disabled=true;btn.textContent='Salvando...'}
   try{
