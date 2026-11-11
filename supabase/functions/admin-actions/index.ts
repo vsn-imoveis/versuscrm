@@ -114,7 +114,18 @@ Deno.serve(async req => {
    if(prof){if(created&&userId)await db.auth.admin.deleteUser(userId);return out({error:"Falha ao criar perfil: "+prof.message},500);}
    const {error:link}=await db.from("crm_memberships").insert({company_id:companyId,user_id:userId,role:"owner"});
    if(link){if(created&&userId)await db.auth.admin.deleteUser(userId);return out({error:"Falha ao vincular usuário: "+link.message},500);}
-   return out({ok:true,email,role:"owner",profileCreated:true,accessCreated:true,initialPassword});
+   // Initialize every application permission for the new tenant owner.
+   const {data:catalog,error:catalogError}=await db.from("permissions").select("key");
+   if(catalogError||!catalog?.length){await db.from("crm_memberships").delete().eq("company_id",companyId).eq("user_id",userId);if(created&&userId)await db.auth.admin.deleteUser(userId);return out({error:"Não foi possível carregar as permissões dos módulos: "+(catalogError?.message||"catálogo vazio")},500);}
+   const permissionKeys=[...new Set(catalog.map((x:any)=>x.key).filter((x:any)=>typeof x==="string"&&x.length))];
+   const {data:existingPermissions,error:existingError}=await db.from("user_permissions").select("permission_key").eq("user_id",String(userId));
+   if(existingError){await db.from("crm_memberships").delete().eq("company_id",companyId).eq("user_id",userId);if(created&&userId)await db.auth.admin.deleteUser(userId);return out({error:"Não foi possível consultar permissões existentes: "+existingError.message},500);}
+   const existingKeys=new Set((existingPermissions||[]).map((x:any)=>x.permission_key));
+   const {error:enableError}=await db.from("user_permissions").update({allowed:true}).eq("user_id",String(userId)).in("permission_key",permissionKeys);
+   if(enableError){await db.from("crm_memberships").delete().eq("company_id",companyId).eq("user_id",userId);if(created&&userId)await db.auth.admin.deleteUser(userId);return out({error:"Não foi possível habilitar permissões: "+enableError.message},500);}
+   const missing=permissionKeys.filter((key:string)=>!existingKeys.has(key)).map((permission_key:string)=>({user_id:String(userId),permission_key,allowed:true}));
+   if(missing.length){const {error:insertError}=await db.from("user_permissions").insert(missing);if(insertError){await db.from("crm_memberships").delete().eq("company_id",companyId).eq("user_id",userId);if(created&&userId)await db.auth.admin.deleteUser(userId);return out({error:"Não foi possível gravar permissões: "+insertError.message},500);}}
+   return out({ok:true,email,role:"owner",permissionsEnabled:permissionKeys.length,profileCreated:true,accessCreated:true,initialPassword});
   }
   if(action==="manage-access") {
    const companyId=String(b.companyId||"").trim(),password=String(b.password||"");
