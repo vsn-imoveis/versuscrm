@@ -577,10 +577,9 @@ S.auth.onAuthStateChange((event,s)=>{if(event==='SIGNED_OUT'){login();return;}if
     app.classList.add('versus-embedded-host');
     app.innerHTML='<div class="versus-embedded-toolbar"><strong></strong><button type="button">Voltar ao painel</button></div><iframe class="versus-embedded-frame" title="Tela administrativa"></iframe>';
     app.querySelector('.versus-embedded-toolbar strong').textContent=label||'Painel administrativo';
-    app.querySelector('button').addEventListener('click',function(){window.location.href='/'+encodeURIComponent(slug)+'/admin/painel-login.html';});
+    app.querySelector('button').addEventListener('click',function(){openScreen('/'+encodeURIComponent(slug)+'/admin/painel-login.html','Painel de Imóveis');});
     frame=app.querySelector('iframe');
     frame.src=target.toString();
-    history.pushState({versusEmbedded:true,url:target.toString(),label:label||'Painel administrativo'},'',target.pathname+target.search);
     return true;
   }
   document.addEventListener('click',function(event){
@@ -593,10 +592,6 @@ S.auth.onAuthStateChange((event,s)=>{if(event==='SIGNED_OUT'){login();return;}if
     event.preventDefault();event.stopPropagation();
     openScreen(target,anchor.textContent.trim());
   },true);
-  window.addEventListener('popstate',function(event){
-    if(event.state&&event.state.versusEmbedded){openScreen(event.state.url,event.state.label);}
-    else if(location.pathname.endsWith('/admin/painel-login.html'))window.location.reload();
-  });
 })();
 </script>
 </body></html>
