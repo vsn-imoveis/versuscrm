@@ -106,8 +106,19 @@ body.vsn-sidebar-collapsed .sidebar-sub a:before{content:none!important}
   }
   const allowedRoles=['owner','admin','manager','agent','member'];
   if(!tenantMembershipError&&tenantMembership&&allowedRoles.includes(String(tenantMembership.role||'').toLowerCase())){
-    window.__VERSUS_CONFIG.membershipRole=tenantMembership.role;
-    window.__vsnMembershipRole=tenantMembership.role;
+    // One canonical tenant context, created only after successful login + membership validation.
+    const tenantContext=Object.freeze({
+      slug:window.__VERSUS_CONFIG.slug,
+      companyId:tenantMembership.company_id,
+      name:window.__VERSUS_CONFIG.tenantName,
+      role:String(tenantMembership.role).toLowerCase(),
+      userId:session.user.id
+    });
+    window.__VERSUS_TENANT__=tenantContext;
+    try{sessionStorage.setItem('versus.tenant',JSON.stringify(tenantContext))}catch(_){}
+    window.__VERSUS_CONFIG.membershipRole=tenantContext.role;
+    window.__vsnMembershipRole=tenantContext.role;
+    window.__vsnCompanyId=tenantContext.companyId;
   }else{
     document.body.classList.remove('panel-authenticated');
     await S.auth.signOut();
