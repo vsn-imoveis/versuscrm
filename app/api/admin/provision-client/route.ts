@@ -181,5 +181,52 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Não foi possível vincular o acesso à empresa. Cadastro revertido: ' + membershipError.message }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, companyId, slug: company.slug, companyName: company.name, email, role: 'owner', profileCreated: true, accessCreated: true, initialPassword })
+  // Every newly provisioned company owner starts with every application
+  // permission enabled. Keep this explicit per-user so the tenant is ready
+  // immediately, independently of the role defaults used by the team UI.
+  const { data: permissionCatalog, error: permissionCatalogError } = await admin
+    .from('permissions').select('key')
+  if (permissionCatalogError || !permissionCatalog?.length) {
+    await admin.from('crm_memberships').delete().eq('company_id', companyId).eq('user_id', userId)
+    if (createdUser && userId) await admin.auth.admin.deleteUser(userId)
+    await rollbackCompany()
+    return NextResponse.json({ error: 'Não foi possível carregar as permissões dos módulos. O cadastro foi revertido: ' + (permissionCatalogError?.message || 'nenhuma permissão cadastrada') }, { status: 500 })
+  }
+
+  const permissionKeys = [...new Set(permissionCatalog.map(item => item.key).filter((key): key is string => Boolean(key)))]
+  const { data: existingUserPermissions, error: existingPermissionsError } = await admin
+    .from('user_permissions').select('permission_key').eq('user_id', String(userId))
+  if (existingPermissionsError) {
+    await admin.from('crm_memberships').delete().eq('company_id', companyId).eq('user_id', userId)
+    if (createdUser && userId) await admin.auth.admin.deleteUser(userId)
+    await rollbackCompany()
+    return NextResponse.json({ error: 'Não foi possível preparar as permissões do proprietário. O cadastro foi revertido: ' + existingPermissionsError.message }, { status: 500 })
+  }
+
+  const existingPermissionKeys = new Set((existingUserPermissions || []).map(item => item.permission_key))
+  const permissionsToInsert = permissionKeys
+    .filter(permissionKey => !existingPermissionKeys.has(permissionKey))
+    .map(permission_key => ({ user_id: String(userId), permission_key, allowed: true }))
+
+  const { error: enableExistingPermissionsError } = await admin
+    .from('user_permissions').update({ allowed: true })
+    .eq('user_id', String(userId)).in('permission_key', permissionKeys)
+  if (enableExistingPermissionsError) {
+    await admin.from('crm_memberships').delete().eq('company_id', companyId).eq('user_id', userId)
+    if (createdUser && userId) await admin.auth.admin.deleteUser(userId)
+    await rollbackCompany()
+    return NextResponse.json({ error: 'Não foi possível habilitar as permissões do proprietário. O cadastro foi revertido: ' + enableExistingPermissionsError.message }, { status: 500 })
+  }
+
+  if (permissionsToInsert.length) {
+    const { error: insertPermissionsError } = await admin.from('user_permissions').insert(permissionsToInsert)
+    if (insertPermissionsError) {
+      await admin.from('crm_memberships').delete().eq('company_id', companyId).eq('user_id', userId)
+      if (createdUser && userId) await admin.auth.admin.deleteUser(userId)
+      await rollbackCompany()
+      return NextResponse.json({ error: 'Não foi possível concluir as permissões do proprietário. O cadastro foi revertido: ' + insertPermissionsError.message }, { status: 500 })
+    }
+  }
+
+  return NextResponse.json({ ok: true, companyId, slug: company.slug, companyName: company.name, email, role: 'owner', permissionsEnabled: permissionKeys.length, profileCreated: true, accessCreated: true, initialPassword })
 }
