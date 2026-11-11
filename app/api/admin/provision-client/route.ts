@@ -75,6 +75,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Confira nome, endereço, contato, e-mail, mensalidade e limites.' }, { status: 400 })
   }
 
+  // Check both unique constraints before inserting. The name index is based
+  // on lower(trim(name)), so use a case-insensitive lookup and return a useful
+  // conflict response instead of exposing a raw Postgres duplicate-key error.
+  const { data: existingCompanyByName, error: nameLookupError } = await admin
+    .from('crm_companies').select('id,name,slug').ilike('name', name).maybeSingle()
+  if (nameLookupError) return NextResponse.json({ error: 'Não foi possível verificar se o cliente já existe: ' + nameLookupError.message }, { status: 500 })
+  if (existingCompanyByName) {
+    return NextResponse.json({
+      error: `Já existe um cliente cadastrado com o nome "${existingCompanyByName.name}". Abra o cadastro existente para editar os dados.`,
+      code: 'COMPANY_NAME_EXISTS',
+      company: existingCompanyByName,
+    }, { status: 409 })
+  }
+
   // The platform administrator creates the company FIRST. Only after the
   // database returns its persisted ID do we create the subscription and login.
   const { data: existingCompany, error: slugLookupError } = await admin
