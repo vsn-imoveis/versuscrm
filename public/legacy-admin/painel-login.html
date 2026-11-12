@@ -633,4 +633,34 @@ async function openManualLead(){
 
 S.auth.onAuthStateChange((event,s)=>{if(event==='SIGNED_OUT'){login();return;}if(event==='SIGNED_IN'&&s?.user?.id&&window.__panelUserId!==s.user.id){void panel(s);}});window.addEventListener('hashchange',async()=>{if(location.hash==='#clientes'&&window.__panelUserId){if(document.getElementById('clientsApp'))openClientsSection();else{const {data:{session}}=await S.auth.getSession();if(session)await panel(session)}}else if(!location.hash&&window.__panelUserId){if(document.getElementById('reportApp'))backToPropertyReport();else{const {data:{session}}=await S.auth.getSession();if(session)await panel(session)}}});boot();</script><script id="vsn-sidebar-controller">(function(){const b=document.getElementById('vsnSidebarToggle');if(!b)return;const key='vsnAdminSidebarCollapsed';function set(v){document.body.classList.toggle('vsn-sidebar-collapsed',v);b.setAttribute('aria-expanded',String(!v));b.setAttribute('aria-label',v?'Expandir menu lateral':'Recolher menu lateral');b.title=v?'Expandir menu':'Recolher menu';}let saved=false;try{saved=localStorage.getItem(key)==='1'}catch(e){}set(saved);b.addEventListener('click',()=>{const v=!document.body.classList.contains('vsn-sidebar-collapsed');set(v);try{localStorage.setItem(key,v?'1':'0')}catch(e){}});})();</script><script id="vsn-sidebar-page-height-fix">(function(){const side=document.querySelector('.admin-sidebar');if(!side)return;let raf=0;function fit(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const root=document.documentElement;const body=document.body;const top=parseFloat(getComputedStyle(root).getPropertyValue('--vsn-sidebar-top'))||98;const main=document.querySelector('main.wrap, main, #app, .wrap');const mainBottom=main?main.getBoundingClientRect().bottom+window.scrollY:0;const docBottom=Math.max(root.scrollHeight,body.scrollHeight,mainBottom,window.innerHeight);const h=Math.max(window.innerHeight-top,docBottom-top);root.style.setProperty('--vsn-sidebar-document-height',Math.ceil(h)+'px');side.style.height=Math.ceil(h)+'px';side.style.minHeight=Math.ceil(h)+'px';});}fit();window.addEventListener('resize',fit,{passive:true});window.addEventListener('load',fit,{once:true});window.addEventListener('orientationchange',fit,{passive:true});if(window.ResizeObserver){const main=document.querySelector('main.wrap, main, #app, .wrap');if(main)new ResizeObserver(fit).observe(main);}if(window.MutationObserver){new MutationObserver(fit).observe(document.body,{childList:true,subtree:true});}})();</script>
 
+<style id="versus-login-mobile-layout">
+/* A tela de login não deve herdar o recuo do menu administrativo. */
+body:has(#email) main.wrap,
+body:has(#email) .wrap{
+  left:0!important;
+  right:0!important;
+  width:100%!important;
+  max-width:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  box-sizing:border-box!important;
+}
+body:has(#email) #app{
+  width:100%!important;
+  max-width:480px!important;
+  min-width:0!important;
+  margin:0 auto!important;
+}
+body:has(#email) #app>.card{
+  width:100%!important;
+  max-width:440px!important;
+  margin:clamp(20px,8vh,70px) auto 24px!important;
+  box-sizing:border-box!important;
+}
+@media(max-width:600px){
+  body:has(#email) main.wrap,
+  body:has(#email) .wrap{padding:18px 14px!important}
+  body:has(#email) #app>.card{padding:22px 20px!important}
+}
+</style>
 </body></html>
