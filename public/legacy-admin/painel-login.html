@@ -121,7 +121,7 @@ function tenantUrl(href){
  if(!slug)return null;
  return '/'+encodeURIComponent(slug)+'/admin/'+file+u.search+u.hash;
 }
-function setActive(anchor){document.querySelectorAll('.sidebar-menu a[href]').forEach(function(a){a.classList.toggle('active',a===anchor||a.parentElement===anchor?.parentElement)})}
+function setActive(anchor){document.querySelectorAll('.sidebar-menu a[href]').forEach(function(a){a.classList.toggle('active',a===anchor)})}
 function hideAllViews(){var report=document.getElementById('reportApp');if(report)report.style.display='none';var dash=document.getElementById('dashboard');if(dash)dash.style.display='none';var clients=document.getElementById('clientsApp');if(clients)clients.hidden=true;document.querySelectorAll('#app iframe#versusContentFrame,iframe#versusContentFrame').forEach(function(frame){frame.remove()});window.__versusContentFrame=null;}
 function openScreen(url,anchor){
  var app=document.getElementById('app');if(!app)return;
