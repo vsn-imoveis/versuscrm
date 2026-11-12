@@ -164,10 +164,19 @@ function searchProperties(applyFilters=false){
 
   const allMatching=list.slice();
   if(isLaunch){
+    allPropertiesPage=1;
+    const featuredTitle=document.querySelector('#comprar .featured-head h2');
+    const allTitle=document.querySelector('#todos-imoveis .featured-head h2');
+    if(featuredTitle)featuredTitle.textContent='Lançamentos em destaque';
+    if(allTitle)allTitle.textContent='Todos os lançamentos';
     renderLaunches(list.slice(0,3),'propertyCards');
     renderLaunches(list.slice((allPropertiesPage-1)*ALL_PROPERTIES_PAGE_SIZE,allPropertiesPage*ALL_PROPERTIES_PAGE_SIZE),'allPropertyCards');
     const pager=document.getElementById('allPropertiesPagination');if(pager)pager.innerHTML='';
   }else{
+    const featuredTitle=document.querySelector('#comprar .featured-head h2');
+    const allTitle=document.querySelector('#todos-imoveis .featured-head h2');
+    if(featuredTitle)featuredTitle.textContent='Imóveis em destaque';
+    if(allTitle)allTitle.textContent='Todos os imóveis';
     renderProperties(list.filter(p=>p.featured===true),'propertyCards');
     allMatchingProperties=allMatching;
     allPropertiesPage=1;
