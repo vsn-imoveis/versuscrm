@@ -410,7 +410,7 @@ async function loadUserAdmin(){
  el.innerHTML='<p class="muted">Carregando usuários desta imobiliária...</p>';
  try{
   const result=await teamAdminAction('team-list');adminUsers=result.members||[];
-  const roleLabels={owner:'Proprietário',admin:'Administrador',manager:'Gerente',agent:'Corretor',member:'Membro'};
+  const roleLabels={owner:'Dono da imobiliária',admin:'Administrador',manager:'Gerente',agent:'Corretor',member:'Membro'};
   const options=(selected,allowAdmin)=>['admin','manager','agent','member'].filter(role=>allowAdmin||role!=='admin').map(role=>'<option value="'+role+'" '+(selected===role?'selected':'')+'>'+roleLabels[role]+'</option>').join('');
   const rows=adminUsers.map(u=>{
    const protectedMember=u.role==='owner'||u.user_id===result.currentUserId;
