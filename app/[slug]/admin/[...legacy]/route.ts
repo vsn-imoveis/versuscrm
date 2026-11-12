@@ -140,6 +140,55 @@ export async function GET(request: NextRequest, context: Context) {
 
 
 
+  if (requestedFile === "painel-login.html") {
+    html = html.replace("</head>", `<style id="versus-mobile-menu-drawer">
+      @media(max-width:760px){
+        body.versus-mobile-menu-open:after{content:"";position:fixed;inset:72px 0 0 0;background:rgba(2,15,25,.48);z-index:3890}
+        body>.top{z-index:3900!important;position:sticky!important;top:0!important}
+        body>.admin-sidebar{z-index:4000!important}
+        #vsnSidebarToggle{z-index:4100!important}
+        body>#app.wrap{z-index:1!important}
+        body:not(.vsn-sidebar-collapsed)>.admin-sidebar{width:min(82vw,300px)!important;box-shadow:12px 0 32px rgba(0,0,0,.28)!important}
+        body:not(.vsn-sidebar-collapsed) #vsnSidebarToggle{left:calc(min(82vw,300px) - 16px)!important}
+        body.vsn-sidebar-collapsed:after{display:none}
+      }
+    </style></head>`);
+    html = html.replace("</body>", `<script id="versus-mobile-menu-controller">
+      (function(){
+        var button=document.getElementById("vsnSidebarToggle");
+        var menu=document.querySelector(".admin-sidebar");
+        if(!button||!menu)return;
+        function mobile(){return window.matchMedia("(max-width:760px)").matches}
+        function setClosed(){
+          if(!mobile())return;
+          document.body.classList.add("vsn-sidebar-collapsed");
+          document.body.classList.remove("versus-mobile-menu-open");
+          button.setAttribute("aria-expanded","false");
+          button.setAttribute("aria-label","Abrir menu lateral");
+        }
+        function sync(){
+          if(!mobile()){document.body.classList.remove("versus-mobile-menu-open");return}
+          var open=!document.body.classList.contains("vsn-sidebar-collapsed");
+          document.body.classList.toggle("versus-mobile-menu-open",open);
+          button.setAttribute("aria-expanded",String(open));
+          button.setAttribute("aria-label",open?"Fechar menu lateral":"Abrir menu lateral");
+        }
+        button.addEventListener("click",function(){requestAnimationFrame(sync)});
+        document.addEventListener("click",function(event){
+          if(!mobile()||document.body.classList.contains("vsn-sidebar-collapsed"))return;
+          if(event.target===document.body||event.target===document.documentElement)return;
+          var rect=menu.getBoundingClientRect();
+          if(event.clientX>rect.right && event.clientY>72)setClosed();
+        },true);
+        menu.addEventListener("click",function(event){
+          if(event.target.closest("a"))setClosed();
+        });
+        window.addEventListener("resize",sync);
+        setClosed();
+      })();
+    </script></body>`);
+  }
+
   if (request.nextUrl.searchParams.get("versus_content") === "1") {
     html = html.replace("</head>", `<style id="versus-content-only">
       html,body{min-height:100%;height:auto!important;margin:0!important}
