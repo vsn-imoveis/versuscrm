@@ -41,12 +41,31 @@ async function loadProperty(tenantSlug: string, requested: string): Promise<SeoP
     if (error) console.error("[property-seo]", { tenantSlug, requested, code: error.code, message: error.message });
     return data && typeof data === "object" ? data as SeoProperty : null;
   }
-  const { data, error } = await supabase.rpc("get_public_crm_properties", { p_slug: tenantSlug });
+  // This listing RPC intentionally returns only IDs and timestamps. Resolve each
+  // published ID through the tenant-scoped detail RPC before comparing SEO slugs.
+  const { data: indexRows, error } = await supabase.rpc("get_public_crm_properties", { p_slug: tenantSlug });
   if (error) {
     console.error("[property-seo-slug]", { tenantSlug, requested, code: error.code, message: error.message });
     return null;
   }
-  const rows = Array.isArray(data) ? data as SeoProperty[] : [];
+  const ids = Array.isArray(indexRows)
+    ? indexRows.map((row: { id?: string }) => row?.id).filter((id): id is string => typeof id === "string")
+    : [];
+  const rows: SeoProperty[] = [];
+  // Tenant plan caps inventory at 100 properties; small batches avoid a burst of RPC calls.
+  for (let offset = 0; offset < ids.length; offset += 10) {
+    const batch = await Promise.all(ids.slice(offset, offset + 10).map(async (propertyId) => {
+      const result = await supabase.rpc("get_public_crm_property", {
+        p_slug: tenantSlug, p_property_id: propertyId,
+      });
+      if (result.error) {
+        console.error("[property-seo-detail]", { tenantSlug, propertyId, code: result.error.code, message: result.error.message });
+        return null;
+      }
+      return result.data && typeof result.data === "object" ? result.data as SeoProperty : null;
+    }));
+    rows.push(...batch.filter((property): property is SeoProperty => Boolean(property)));
+  }
   const exact = rows.find((property) => propertySeoSlug(property) === requested);
   if (exact) return exact;
 
