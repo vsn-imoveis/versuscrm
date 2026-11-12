@@ -184,7 +184,7 @@ async function loadSiteSettings(){
     const waUrl=digits?(digits.startsWith('55')?'https://wa.me/'+digits:'https://wa.me/55'+digits):'';
     const phone=document.getElementById('siteFooterPhone');
     if(phone)phone.textContent=phoneNumber;
-    ['siteFooterWhatsApp','siteHeaderWhatsApp','siteFloatingWhatsApp'].forEach(id=>{const link=document.getElementById(id);if(!link)return;if(waUrl){link.href=waUrl;link.hidden=false;link.style.display='';}else{link.removeAttribute('href');link.hidden=true;link.style.display='none';}});
+    ['siteFooterWhatsApp','siteHeaderWhatsApp','siteFloatingWhatsApp'].forEach(id=>{const link=document.getElementById(id);if(!link)return;if(waUrl){link.hidden=false;link.style.display='';if(id==='siteFloatingWhatsApp'){link.href='#';link.removeAttribute('target');link.addEventListener('click',event=>{event.preventDefault();openModal()});}else{link.href=waUrl;link.target='_blank';}}else{link.removeAttribute('href');link.hidden=true;link.style.display='none';}});
     const email=document.getElementById('siteFooterEmail'), emailLink=document.getElementById('siteFooterEmailLink');
     if(email)email.textContent=s.email||'';
     if(emailLink&&s.email)emailLink.href='mailto:'+s.email;
