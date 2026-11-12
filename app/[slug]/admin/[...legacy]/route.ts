@@ -140,17 +140,16 @@ export async function GET(request: NextRequest, context: Context) {
 
 
 
-  if (requestedFile === "painel-login.html") {
+  {
     html = html.replace("</head>", `<style id="versus-mobile-menu-drawer">
       @media(max-width:760px){
         body.versus-mobile-menu-open:after{content:"";position:fixed;inset:72px 0 0 0;background:rgba(2,15,25,.48);z-index:3890}
-        body>.top{z-index:3900!important;position:sticky!important;top:0!important}
-        body>.admin-sidebar{z-index:4000!important}
-        #vsnSidebarToggle{z-index:4100!important}
-        body>#app.wrap{z-index:1!important}
-        body:not(.vsn-sidebar-collapsed)>.admin-sidebar{width:min(82vw,300px)!important;box-shadow:12px 0 32px rgba(0,0,0,.28)!important}
-        body:not(.vsn-sidebar-collapsed) #vsnSidebarToggle{left:calc(min(82vw,300px) - 16px)!important}
-        body.vsn-sidebar-collapsed:after{display:none}
+        .admin-sidebar{position:fixed!important;top:72px!important;left:0!important;bottom:0!important;height:auto!important;min-height:0!important;max-height:none!important;width:min(82vw,300px)!important;overflow-y:auto!important;z-index:4000!important;transform:translateX(-105%);transition:transform .22s ease,box-shadow .22s ease;box-shadow:none!important}
+        body.versus-mobile-menu-open .admin-sidebar{transform:translateX(0);box-shadow:12px 0 32px rgba(0,0,0,.28)!important}
+        body.versus-mobile-menu-open #vsnSidebarToggle{z-index:4100!important}
+        #vsnSidebarToggle{position:fixed!important;left:12px!important;top:84px!important;transform:none!important;z-index:4100!important}
+        body.versus-mobile-menu-open #vsnSidebarToggle{left:min(calc(82vw + 8px),308px)!important}
+        body.versus-mobile-menu-open:after{cursor:pointer}
       }
     </style></head>`);
     html = html.replace("</body>", `<script id="versus-mobile-menu-controller">
@@ -159,32 +158,42 @@ export async function GET(request: NextRequest, context: Context) {
         var menu=document.querySelector(".admin-sidebar");
         if(!button||!menu)return;
         function mobile(){return window.matchMedia("(max-width:760px)").matches}
-        function setClosed(){
-          if(!mobile())return;
-          document.body.classList.add("vsn-sidebar-collapsed");
+        function closeMenu(){
           document.body.classList.remove("versus-mobile-menu-open");
+          document.body.classList.add("vsn-sidebar-collapsed");
           button.setAttribute("aria-expanded","false");
           button.setAttribute("aria-label","Abrir menu lateral");
+          button.title="Abrir menu";
         }
-        function sync(){
-          if(!mobile()){document.body.classList.remove("versus-mobile-menu-open");return}
-          var open=!document.body.classList.contains("vsn-sidebar-collapsed");
-          document.body.classList.toggle("versus-mobile-menu-open",open);
-          button.setAttribute("aria-expanded",String(open));
-          button.setAttribute("aria-label",open?"Fechar menu lateral":"Abrir menu lateral");
+        function openMenu(){
+          document.body.classList.remove("vsn-sidebar-collapsed");
+          document.body.classList.add("versus-mobile-menu-open");
+          button.setAttribute("aria-expanded","true");
+          button.setAttribute("aria-label","Fechar menu lateral");
+          button.title="Fechar menu";
         }
-        button.addEventListener("click",function(){requestAnimationFrame(sync)});
+        if(mobile())closeMenu();
+        button.addEventListener("click",function(event){
+          if(!mobile())return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          if(document.body.classList.contains("versus-mobile-menu-open"))closeMenu();
+          else openMenu();
+        },true);
         document.addEventListener("click",function(event){
-          if(!mobile()||document.body.classList.contains("vsn-sidebar-collapsed"))return;
-          if(event.target===document.body||event.target===document.documentElement)return;
-          var rect=menu.getBoundingClientRect();
-          if(event.clientX>rect.right && event.clientY>72)setClosed();
+          if(!mobile()||!document.body.classList.contains("versus-mobile-menu-open"))return;
+          if(!menu.contains(event.target)&&!button.contains(event.target))closeMenu();
         },true);
         menu.addEventListener("click",function(event){
-          if(event.target.closest("a"))setClosed();
+          if(mobile()&&event.target.closest("a"))closeMenu();
         });
-        window.addEventListener("resize",sync);
-        setClosed();
+        window.addEventListener("resize",function(){
+          if(!mobile()){
+            document.body.classList.remove("versus-mobile-menu-open");
+            document.body.classList.remove("vsn-sidebar-collapsed");
+          }else closeMenu();
+        });
+        document.addEventListener("keydown",function(event){if(event.key==="Escape"&&mobile())closeMenu()});
       })();
     </script></body>`);
   }
