@@ -19,6 +19,7 @@
 <script>
 const U=window.__VERSUS_CONFIG.supabaseUrl,K=window.__VERSUS_CONFIG.supabaseAnonKey,S=supabase.createClient(U,K);
 const companyId=window.__VERSUS_TENANT__.companyId;
+// VersusCRM: perfil do site com upload explícito das três imagens por imobiliária.
 const map={siteName:'name',siteLogoUrl:'logo_url',sitePhone:'contact_phone',siteWhatsapp:'whatsapp',siteEmail:'contact_email',siteCreci:'creci',siteInstagram:'instagram_url',siteFacebook:'facebook_url',siteYoutube:'youtube_url',siteAddress:'public_address',siteAbout:'about_text'};
 const msg=(s)=>{const e=document.getElementById('msg');e.textContent=s;e.style.display='block';setTimeout(()=>e.style.display='none',3000)};
 async function boot(){
