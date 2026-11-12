@@ -216,3 +216,17 @@ body {
   background: #fff; color: var(--vsn-text); font-weight: 700; cursor: pointer;
 }
 .vsn-secondary-button:hover { background: #f1f4f6; }
+
+
+/* VersusCRM — comportamento responsivo transversal do painel */
+html, body { width: 100%; max-width: 100%; overflow-x: clip; }
+img, video, iframe { max-width: 100%; }
+button, input, select, textarea { max-width: 100%; }
+@media (max-width: 768px) {
+  body { min-width: 0; }
+  main, [role="main"] { min-width: 0; }
+  .vsn-page { overflow-x: clip; }
+  table { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  input, select, textarea { font-size: 16px; }
+  button, [role="button"], a { touch-action: manipulation; }
+}
