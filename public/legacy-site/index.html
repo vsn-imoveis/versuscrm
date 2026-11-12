@@ -86,7 +86,7 @@ function renderLaunches(list,target){
     return;
   }
   cards.innerHTML=list.map(item=>{
-    const photo=Array.isArray(item.photos)&&item.photos[0]&&/^https?:\\/\\//i.test(item.photos[0])?item.photos[0]:'/hero-v12.jpg';
+    const photo=Array.isArray(item.photos)&&String(item.photos[0]||'').indexOf('http')===0?item.photos[0]:'/hero-v12.jpg';
     const name=escapeHtml(item.name||'Lançamento imobiliário');
     const place=escapeHtml([item.neighborhood,item.city].filter(Boolean).join(' · ')||item.address||'');
     const type=escapeHtml(item.property_type||'Lançamento');
