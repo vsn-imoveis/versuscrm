@@ -68,8 +68,10 @@ async function loadProperty(tenantSlug: string, requested: string): Promise<SeoP
     const candidate = propertySeoSlug(property);
     const maxLength = Math.max(candidate.length, requested.length) || 1;
     return { property, score: 1 - distance(candidate, requested) / maxLength };
-  }).filter((item) => item.score >= 0.84).sort((a, b) => b.score - a.score);
-  if (ranked.length && (ranked.length === 1 || ranked[0].score - ranked[1].score >= 0.04)) {
+  }).filter((item) => item.score >= 0.70).sort((a, b) => b.score - a.score);
+  // Older links may contain truncated/misspelled SEO slugs. Accept a stronger fuzzy
+  // match only when it is clearly better than every other property in this tenant.
+  if (ranked.length && (ranked.length === 1 || ranked[0].score - ranked[1].score >= 0.08)) {
     return ranked[0].property;
   }
   return null;
