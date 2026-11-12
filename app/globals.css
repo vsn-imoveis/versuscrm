@@ -230,3 +230,41 @@ button, input, select, textarea { max-width: 100%; }
   input, select, textarea { font-size: 16px; }
   button, [role="button"], a { touch-action: manipulation; }
 }
+
+
+/* Responsividade transversal do painel VersusCRM */
+html,body{width:100%;max-width:100%;overflow-x:clip}
+body{min-width:320px}
+img,video,iframe{max-width:100%;height:auto}
+button,input,select,textarea{max-width:100%;font:inherit}
+input,select,textarea{min-width:0}
+table{max-width:100%}
+@media(max-width:1024px){
+  .vsn-page{min-width:0}
+  .vsn-card{min-width:0}
+  [data-slot="sidebar-inset"]{min-width:0;max-width:100%}
+}
+@media(max-width:768px){
+  body{min-width:320px}
+  main,[role="main"],[data-slot="sidebar-inset"]{min-width:0;max-width:100%}
+  [data-slot="sidebar"]{max-width:min(84vw,300px)}
+  [data-slot="sidebar-trigger"]{min-width:40px;min-height:40px}
+  .vsn-page{overflow-x:clip}
+  .vsn-card{border-radius:12px}
+  table{display:block;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  input,select,textarea{font-size:16px}
+  button,[role="button"],a{touch-action:manipulation}
+  .vsn-primary-button,.vsn-secondary-button{min-height:42px}
+  form{min-width:0;max-width:100%}
+  form [class*="grid"]{min-width:0}
+  form label{min-width:0}
+}
+@media(max-width:520px){
+  .vsn-page{padding-left:0;padding-right:0}
+  .vsn-card{padding-left:12px;padding-right:12px}
+  .vsn-primary-button,.vsn-secondary-button{width:100%}
+  [data-slot="dialog-content"],[role="dialog"]{width:calc(100vw - 24px);max-width:calc(100vw - 24px);max-height:88dvh;overflow-y:auto}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
