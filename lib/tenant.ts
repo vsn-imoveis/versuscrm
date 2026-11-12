@@ -1,7 +1,9 @@
+import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export async function getPublicTenant(slug: string) {
+// Reutiliza a consulta do tenant entre generateMetadata e a página na mesma renderização.
+export const getPublicTenant = cache(async (slug: string) => {
   const normalizedSlug = String(slug ?? "").trim().toLowerCase();
   // Dynamic [slug] routes must never treat static assets or framework paths as tenants.
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) return null;
@@ -37,7 +39,7 @@ export async function getPublicTenant(slug: string) {
     public_address: string | null; about_text: string | null;
     site_photo_url: string | null; site_cover_url: string | null; site_share_image_url: string | null;
   };
-}
+});
 
 export async function requireTenantMember(slug: string) {
   const supabase = await createSupabaseServerClient();
