@@ -1,0 +1,29 @@
+name: Migrate legacy property images (upload only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upload-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout Preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: perf/pagespeed-mobile
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Copy legacy images to VersusCRM Storage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$SUPABASE_URL" || (echo "Missing repository secret SUPABASE_URL" && exit 1)
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || (echo "Missing repository secret SUPABASE_SERVICE_ROLE_KEY" && exit 1)
+          node scripts/migrate-legacy-property-storage.mjs --upload-only
