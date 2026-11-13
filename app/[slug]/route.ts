@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { notFound } from "next/navigation";
 import { getPublicTenant } from "@/lib/tenant";
 
 export const runtime = "nodejs";
@@ -18,7 +17,7 @@ function escapeHtml(value: string) {
 export async function GET(_request: Request, { params }: Context) {
   const { slug } = await params;
   const tenant = await getPublicTenant(slug);
-  if (!tenant) notFound();
+  if (!tenant) return new Response("Imobiliária não encontrada.", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey =
@@ -62,16 +61,14 @@ export async function GET(_request: Request, { params }: Context) {
   const description = escapeHtml(
     tenant.about_text || `Encontre imóveis selecionados por ${tenant.name}.`,
   );
+  const titleStart = html.indexOf("<title>");
+  const titleEnd = html.indexOf("</title>", titleStart);
+  if (titleStart >= 0 && titleEnd >= 0) {
+    html = html.slice(0, titleStart) + `<title>${escapeHtml(tenant.name)}</title>` + html.slice(titleEnd + 8);
+  }
   html = html
-    .replace(/<title>[^<]*<\\/title>/i, `<title>${escapeHtml(tenant.name)}</title>`)
-    .replace(
-      /<meta name="description" content="[^"]*">/i,
-      `<meta name="description" content="${description}">`,
-    )
-    .replace(
-      /<link rel="canonical" href="[^"]*">/i,
-      `<link rel="canonical" href="/${encodeURIComponent(tenant.slug)}">`,
-    );
+    .replace(/<meta name="description" content="[^"]*">/i, `<meta name="description" content="${description}">`)
+    .replace(/<link rel="canonical" href="[^"]*">/i, `<link rel="canonical" href="/${encodeURIComponent(tenant.slug)}">`);
 
   return new Response(html, {
     headers: {
