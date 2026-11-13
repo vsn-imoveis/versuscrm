@@ -310,12 +310,20 @@ loadSiteSettings();
   if(!window.supabase?.createClient){
     if(window.__versusTenantAuthLoading)return;
     window.__versusTenantAuthLoading=true;
-    const script=document.createElement('script');
-    script.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-    script.async=true;
-    script.onload=()=>{window.__versusTenantAuthLoading=false;initTenantAuthHeader()};
-    script.onerror=()=>{window.__versusTenantAuthLoading=false;console.warn('Autenticação do cabeçalho indisponível; o restante do site continua funcionando.')};
-    document.head.appendChild(script);
+    const loadAuthLibrary=()=>{
+      if(window.__versusTenantAuthLibraryRequested)return;
+      window.__versusTenantAuthLibraryRequested=true;
+      const script=document.createElement('script');
+      script.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      script.async=true;
+      script.onload=()=>{window.__versusTenantAuthLoading=false;initTenantAuthHeader()};
+      script.onerror=()=>{window.__versusTenantAuthLoading=false;window.__versusTenantAuthLibraryRequested=false;console.warn('Autenticação do cabeçalho indisponível; o restante do site continua funcionando.')};
+      document.head.appendChild(script);
+    };
+    // A autenticação do cabeçalho não bloqueia a navegação pública.
+    // Carregue a biblioteca após o primeiro ciclo de renderização, sem atrasar a página.
+    if('requestIdleCallback' in window)window.requestIdleCallback(loadAuthLibrary,{timeout:2500});
+    else window.setTimeout(loadAuthLibrary,1200);
     return;
   }
   window.__versusTenantAuthHeaderInitialized=true;
