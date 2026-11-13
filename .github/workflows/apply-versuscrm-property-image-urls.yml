@@ -1,0 +1,38 @@
+name: Apply VersusCRM property image URLs
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_database_update:
+        description: "Confirm replacing legacy image URLs in public.properties"
+        required: true
+        type: choice
+        options:
+          - "NO"
+          - "YES"
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    if: ${{ inputs.confirm_database_update == 'YES' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout validated Preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: perf/pagespeed-mobile
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Replace legacy URLs after verified upload
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$SUPABASE_URL" || (echo "Missing repository secret SUPABASE_URL" && exit 1)
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || (echo "Missing repository secret SUPABASE_SERVICE_ROLE_KEY" && exit 1)
+          node scripts/migrate-legacy-property-storage.mjs --apply
