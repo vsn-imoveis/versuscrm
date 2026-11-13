@@ -695,10 +695,19 @@ async function uploadPhotos(id,files,onProgress){
    const ext=(list[index].name.split('.').pop()||'jpg').toLowerCase();
    const companyId=window.__vsnCompanyId;
    const storagePath=companyId+'/'+id+'/'+stamp+'.'+ext;
-   const upload=await S.storage.from('crm-property-photos').upload(storagePath,prepared.main,{contentType:prepared.main.type||'image/webp',upsert:false});
+   const bucket=S.storage.from('crm-property-photos');
+   const upload=await bucket.upload(storagePath,prepared.main,{contentType:prepared.main.type||'image/jpeg',upsert:false});
    if(upload.error)throw upload.error;
-   const publicUrl=S.storage.from('crm-property-photos').getPublicUrl(storagePath).data.publicUrl;
-   results[index]={url:publicUrl,thumb:publicUrl};
+   const publicUrl=bucket.getPublicUrl(storagePath).data.publicUrl;
+   const thumbPath=companyId+'/'+id+'/'+stamp+'-thumb.webp';
+   const thumbUpload=await bucket.upload(thumbPath,prepared.thumb,{contentType:'image/webp',upsert:false});
+   if(thumbUpload.error){
+     const cleanup=await bucket.remove([storagePath]);
+     if(cleanup.error)console.error('[Versus] limpeza da foto original falhou:',cleanup.error);
+     throw thumbUpload.error;
+   }
+   const thumbUrl=bucket.getPublicUrl(thumbPath).data.publicUrl;
+   results[index]={url:publicUrl,thumb:thumbUrl};
    done++;if(onProgress)onProgress(done,list.length);
  };
  const workers=[];const concurrency=Math.min(4,list.length);
