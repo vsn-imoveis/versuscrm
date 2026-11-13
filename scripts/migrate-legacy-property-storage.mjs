@@ -1,21 +1,27 @@
 /**
- * Migra imagens do antigo Storage VSN para o Storage único do VersusCRM.
+ * Migração em duas fases das imagens antigas para o Storage único do VersusCRM.
  *
- * Execução:
- *   SUPABASE_URL=https://<project>.supabase.co \
- *   SUPABASE_SERVICE_ROLE_KEY=<server-only-secret> \
+ * DRY RUN (somente leitura):
  *   node scripts/migrate-legacy-property-storage.mjs
  *
- * O modo padrão é DRY RUN. Para gravar:
- *   ... node scripts/migrate-legacy-property-storage.mjs --apply
+ * Fase 1 - copiar arquivos, sem alterar public.properties:
+ *   node scripts/migrate-legacy-property-storage.mjs --upload-only
  *
- * A migração só altera URLs que apontam para o projeto Supabase legado.
- * URLs de fornecedores externos (Foxter/QuintoAndar) são preservadas.
+ * Fase 2 - validar destino e atualizar URLs no banco compartilhado:
+ *   node scripts/migrate-legacy-property-storage.mjs --apply
+ *
+ * Requer SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY do projeto VersusCRM.
+ * Nunca configure as credenciais do projeto legado neste script.
  */
 const LEGACY_HOST = "jpdfynaioepcmgqlqlht.supabase.co";
 const DESTINATION_BUCKET = "crm-property-photos";
 const PAGE_SIZE = 100;
 const APPLY = process.argv.includes("--apply");
+const UPLOAD_ONLY = process.argv.includes("--upload-only");
+
+if (APPLY && UPLOAD_ONLY) {
+  throw new Error("Use apenas um modo: --upload-only ou --apply.");
+}
 
 const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -23,8 +29,12 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 if (!SUPABASE_URL || !SERVICE_KEY) {
   throw new Error("Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (somente no ambiente local/servidor).");
 }
-if (SUPABASE_URL.includes(LEGACY_HOST)) {
-  throw new Error("SUPABASE_URL deve apontar para o projeto do VersusCRM, não para o projeto legado.");
+const destinationHost = new URL(SUPABASE_URL).hostname;
+if (destinationHost === LEGACY_HOST || !destinationHost.endsWith(".supabase.co")) {
+  throw new Error("SUPABASE_URL deve apontar para o projeto Supabase do VersusCRM.");
+}
+if (!destinationHost.startsWith("xmwkakimyifmspzoziji.")) {
+  throw new Error(`Projeto de destino inesperado (${destinationHost}). Esperado: xmwkakimyifmspzoziji.supabase.co`);
 }
 
 const headers = {
@@ -49,32 +59,41 @@ function destinationFor(sourceUrl, propertyId) {
     .split("/")
     .filter(Boolean)
     .join("/");
-  if (!suffix || suffix.includes("..")) {
+  if (!suffix || suffix.split("/").includes("..")) {
     throw new Error(`Caminho de imagem inválido para o imóvel ${propertyId}`);
   }
-  const relative = suffix.replace(new RegExp(`^(?:properties/)?${propertyId}/`, "i"), "");
-  return `properties/${propertyId}/${relative || suffix.split("/").pop()}`;
+  const relative = suffix.replace(new RegExp(`^(?:properties/)?${String(propertyId).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/`, "i"), "");
+  const safeRelative = relative || suffix.split("/").pop();
+  return `properties/${propertyId}/${safeRelative}`;
 }
 
-function publicUrl(objectPath) {
-  return `${SUPABASE_URL}/storage/v1/object/public/${DESTINATION_BUCKET}/${objectPath
-    .split("/")
-    .map(encodeURIComponent)
-    .join("/")}`;
+function objectUrl(objectPath, isPublic = false) {
+  const endpoint = isPublic ? "object/public" : "object";
+  const encodedPath = objectPath.split("/").map(encodeURIComponent).join("/");
+  return `${SUPABASE_URL}/storage/v1/${endpoint}/${DESTINATION_BUCKET}/${encodedPath}`;
 }
 
-async function downloadAndUpload(sourceUrl, objectPath) {
+async function destinationExists(objectPath) {
+  const response = await fetch(objectUrl(objectPath, true), { method: "HEAD" });
+  if (response.status === 404) return false;
+  if (!response.ok) {
+    throw new Error(`Verificação do destino falhou (${response.status}) para ${objectPath}`);
+  }
+  return true;
+}
+
+async function copyAndVerify(sourceUrl, objectPath) {
+  if (await destinationExists(objectPath)) {
+    return objectUrl(objectPath, true);
+  }
+
   const source = await fetch(sourceUrl);
   if (!source.ok) throw new Error(`Download ${source.status}: ${sourceUrl}`);
   const contentType = source.headers.get("content-type") || "application/octet-stream";
   const bytes = await source.arrayBuffer();
   if (!bytes.byteLength) throw new Error(`Arquivo vazio: ${sourceUrl}`);
 
-  const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${DESTINATION_BUCKET}/${objectPath
-    .split("/")
-    .map(encodeURIComponent)
-    .join("/")}`;
-  const uploaded = await fetch(uploadUrl, {
+  const uploaded = await fetch(objectUrl(objectPath), {
     method: "POST",
     headers: {
       ...headers,
@@ -87,7 +106,11 @@ async function downloadAndUpload(sourceUrl, objectPath) {
   if (!uploaded.ok) {
     throw new Error(`Upload ${uploaded.status}: ${await uploaded.text()}`);
   }
-  return publicUrl(objectPath);
+
+  if (!(await destinationExists(objectPath))) {
+    throw new Error(`Arquivo enviado, mas não foi possível validar a URL pública: ${objectPath}`);
+  }
+  return objectUrl(objectPath, true);
 }
 
 async function updateProperty(propertyId, photos, thumbnails) {
@@ -98,7 +121,7 @@ async function updateProperty(propertyId, photos, thumbnails) {
       headers: {
         ...headers,
         "Content-Type": "application/json",
-        Prefer: "return=minimal",
+        Prefer: "return=representation",
       },
       body: JSON.stringify({ photos, photo_thumbnails: thumbnails }),
     },
@@ -106,13 +129,19 @@ async function updateProperty(propertyId, photos, thumbnails) {
   if (!response.ok) {
     throw new Error(`Atualização do imóvel ${propertyId} falhou: ${response.status} ${await response.text()}`);
   }
+  const updated = await response.json();
+  if (!Array.isArray(updated) || updated.length !== 1) {
+    throw new Error(`Atualização do imóvel ${propertyId} não confirmou exatamente uma linha.`);
+  }
 }
 
 let offset = 0;
 let scanned = 0;
-let migratedProperties = 0;
-let migratedFiles = 0;
+let propertiesWithLegacyFiles = 0;
+let copiedFiles = 0;
+let updatedProperties = 0;
 let failedProperties = 0;
+let remainingLegacyReferences = 0;
 
 while (true) {
   const url = new URL(`${SUPABASE_URL}/rest/v1/properties`);
@@ -130,27 +159,34 @@ while (true) {
     scanned += 1;
     const photos = Array.isArray(property.photos) ? property.photos : [];
     const thumbnails = Array.isArray(property.photo_thumbnails) ? property.photo_thumbnails : [];
-    const legacyUrls = [...photos, ...thumbnails].filter(isLegacyStorageUrl);
+    const legacyUrls = [...new Set([...photos, ...thumbnails].filter(isLegacyStorageUrl))];
     if (!legacyUrls.length) continue;
 
-    if (!APPLY) {
+    propertiesWithLegacyFiles += 1;
+    if (!APPLY && !UPLOAD_ONLY) {
       console.log(`[DRY RUN] ${property.id}: ${legacyUrls.length} arquivo(s) antigos`);
+      remainingLegacyReferences += legacyUrls.length;
       continue;
     }
 
     try {
       const migrated = new Map();
       for (const sourceUrl of legacyUrls) {
-        if (migrated.has(sourceUrl)) continue;
         const objectPath = destinationFor(sourceUrl, property.id);
-        migrated.set(sourceUrl, await downloadAndUpload(sourceUrl, objectPath));
-        migratedFiles += 1;
+        migrated.set(sourceUrl, await copyAndVerify(sourceUrl, objectPath));
+        copiedFiles += 1;
       }
-      const nextPhotos = photos.map(url => migrated.get(url) || url);
-      const nextThumbnails = thumbnails.map(url => migrated.get(url) || url);
+
+      if (UPLOAD_ONLY) {
+        console.log(`[COPIADO/VALIDADO - SEM ALTERAR BANCO] ${property.id}: ${migrated.size} arquivo(s)`);
+        continue;
+      }
+
+      const nextPhotos = photos.map(value => migrated.get(value) || value);
+      const nextThumbnails = thumbnails.map(value => migrated.get(value) || value);
       await updateProperty(property.id, nextPhotos, nextThumbnails);
-      migratedProperties += 1;
-      console.log(`[OK] ${property.id}: ${migrated.size} arquivo(s) migrado(s)`);
+      updatedProperties += 1;
+      console.log(`[URLS ATUALIZADAS] ${property.id}: ${migrated.size} arquivo(s)`);
     } catch (error) {
       failedProperties += 1;
       console.error(`[ERRO] ${property.id}: ${error instanceof Error ? error.message : error}`);
@@ -162,13 +198,18 @@ while (true) {
 }
 
 console.log(JSON.stringify({
-  mode: APPLY ? "APPLY" : "DRY_RUN",
+  mode: APPLY ? "APPLY_DATABASE_URLS" : UPLOAD_ONLY ? "UPLOAD_ONLY_NO_DATABASE_WRITES" : "DRY_RUN_READ_ONLY",
+  destinationProject: destinationHost,
   scannedProperties: scanned,
-  migratedProperties,
-  migratedFiles,
+  propertiesWithLegacyFiles,
+  copiedAndVerifiedFiles: copiedFiles,
+  updatedProperties,
   failedProperties,
+  remainingLegacyReferences: APPLY ? "recheck with DRY RUN after completion" : remainingLegacyReferences,
 }, null, 2));
 
-if (!APPLY && scanned > 0) {
-  console.log("Nenhum dado foi alterado. Revise a lista e execute novamente com --apply para migrar.");
+if (UPLOAD_ONLY) {
+  console.log("Fase 1 concluída: arquivos copiados e validados. Nenhuma linha de public.properties foi alterada.");
+} else if (!APPLY) {
+  console.log("Nenhum dado foi alterado. Use --upload-only para copiar arquivos sem trocar URLs.");
 }
