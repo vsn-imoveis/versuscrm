@@ -74,12 +74,28 @@ function objectUrl(objectPath, isPublic = false) {
 }
 
 async function destinationExists(objectPath) {
-  const response = await fetch(objectUrl(objectPath, true), { method: "HEAD" });
-  if (response.status === 404) return false;
+  // Storage list endpoint is authenticated and supports exact object checks.
+  // HEAD against the public URL can return 400 for missing objects and is not
+  // a reliable existence check across Supabase Storage deployments.
+  const parts = objectPath.split("/");
+  const fileName = parts.pop();
+  const prefix = parts.join("/");
+  const response = await fetch(
+    `${SUPABASE_URL}/storage/v1/object/list/${DESTINATION_BUCKET}`,
+    {
+      method: "POST",
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prefix, search: fileName, limit: 100, offset: 0 }),
+    },
+  );
   if (!response.ok) {
-    throw new Error(`Verificação do destino falhou (${response.status}) para ${objectPath}`);
+    throw new Error(`Consulta do Storage falhou (${response.status}): ${await response.text()}`);
   }
-  return true;
+  const objects = await response.json();
+  return Array.isArray(objects) && objects.some(item => item.name === fileName);
 }
 
 async function copyAndVerify(sourceUrl, objectPath) {
@@ -209,7 +225,12 @@ console.log(JSON.stringify({
 }, null, 2));
 
 if (UPLOAD_ONLY) {
-  console.log("Fase 1 concluída: arquivos copiados e validados. Nenhuma linha de public.properties foi alterada.");
+  if (failedProperties > 0) {
+    console.error("Fase 1 incompleta: houve falhas na cópia/validação. Nenhuma linha de public.properties foi alterada.");
+    process.exitCode = 1;
+  } else {
+    console.log("Fase 1 concluída: arquivos copiados e validados. Nenhuma linha de public.properties foi alterada.");
+  }
 } else if (!APPLY) {
   console.log("Nenhum dado foi alterado. Use --upload-only para copiar arquivos sem trocar URLs.");
 }
