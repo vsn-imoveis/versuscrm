@@ -3,6 +3,15 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
+
+  // Sites públicos de imobiliárias e seus arquivos estáticos não dependem
+  // da sessão administrativa. Evita uma chamada de rede ao Supabase antes
+  // de entregar o HTML inicial ao visitante e ao Lighthouse.
+  const pathname = request.nextUrl.pathname;
+  const isPublicTenantHome = /^\\/[a-z0-9]+(?:-[a-z0-9]+)*\\/?$/.test(pathname);
+  const isLegacyPublicAsset = pathname.startsWith("/legacy-site/");
+  if (isPublicTenantHome || isLegacyPublicAsset) return response;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return response;
