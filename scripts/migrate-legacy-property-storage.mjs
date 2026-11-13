@@ -52,7 +52,8 @@ function destinationFor(sourceUrl, propertyId) {
   if (!suffix || suffix.includes("..")) {
     throw new Error(`Caminho de imagem inválido para o imóvel ${propertyId}`);
   }
-  return `properties/${propertyId}/${suffix.replace(/^properties\/[0-9a-f-]+\//i, "")}`;
+  const relative = suffix.replace(new RegExp(`^(?:properties/)?${propertyId}/`, "i"), "");
+  return `properties/${propertyId}/${relative || suffix.split("/").pop()}`;
 }
 
 function publicUrl(objectPath) {
