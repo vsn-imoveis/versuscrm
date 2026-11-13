@@ -715,7 +715,7 @@ async function uploadPhotos(id,files,onProgress){
  const settled=await Promise.allSettled(workers);
  const failed=settled.find(x=>x.status==='rejected');
  if(failed){
-  const cleanup=await removePropertyPhotoFiles(results.filter(Boolean).map(x=>x.url),id);
+  const cleanup=await removePropertyPhotoFiles(results.filter(Boolean).flatMap(x=>[x.url,x.thumb]),id);
   if(cleanup.error)console.error('[Versus] limpeza de uploads parciais falhou:',cleanup.error);
   throw failed.reason;
  }
