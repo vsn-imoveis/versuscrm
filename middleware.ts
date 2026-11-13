@@ -8,7 +8,7 @@ export async function middleware(request: NextRequest) {
   // da sessão administrativa. Evita uma chamada de rede ao Supabase antes
   // de entregar o HTML inicial ao visitante e ao Lighthouse.
   const pathname = request.nextUrl.pathname;
-  const isPublicTenantHome = /^\\/[a-z0-9]+(?:-[a-z0-9]+)*\\/?$/.test(pathname);
+  const isPublicTenantHome = /^\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/.test(pathname);
   const isLegacyPublicAsset = pathname.startsWith("/legacy-site/");
   if (isPublicTenantHome || isLegacyPublicAsset) return response;
 
