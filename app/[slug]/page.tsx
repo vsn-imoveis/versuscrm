@@ -55,12 +55,6 @@ export default async function TenantHomePage({ params }: Props) {
 
   return (
     <main style={{ width: "100%", minHeight: "100dvh", margin: 0, padding: 0, overflow: "hidden" }}>
-      <link
-        rel="preload"
-        as="image"
-        href={tenant.site_cover_url || "/hero-v12.jpg"}
-        fetchPriority="high"
-      />
       <iframe
         title={tenant.name}
         src={`/legacy-site/index.html?${query.toString()}`}
