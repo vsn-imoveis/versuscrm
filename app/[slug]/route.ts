@@ -9,9 +9,10 @@ export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ slug: string }> };
 
 function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (char) => ({
+  const entities: Record<string, string> = {
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  })[char] ?? char);
+  };
+  return value.replace(/[&<>"']/g, (char) => entities[char] ?? char);
 }
 
 export async function GET(_request: Request, { params }: Context) {
