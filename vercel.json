@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "pages/api/import-property-link.js": {
+      "maxDuration": 30
+    }
+  }
+}
