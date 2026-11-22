@@ -279,9 +279,21 @@ module.exports=async function(req,res){
  try{
   const raw=String(req.body?.url||"").trim();let u;try{u=new URL(raw);}catch(_){return send(res,400,{error:"Informe um link válido."});}
   if(!["http:","https:"].includes(u.protocol)||u.username||u.password)return send(res,400,{error:"O link deve usar HTTP ou HTTPS."});
-  function safeTarget(target){const h=target.hostname.toLowerCase();if(!["http:","https:"].includes(target.protocol)||target.username||target.password||h==="localhost"||h.endsWith(".localhost")||h==="127.0.0.1"||h==="::1"||h==="0.0.0.0"||/^(10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h))throw new Error("O link redirecionou para um endereço não permitido.");}
-  async function fetchHtml(target,redirects=0){safeTarget(target);if(redirects>5)throw new Error("O anúncio redirecionou muitas vezes.");const client=target.protocol==="https:"?https:http;return await new Promise((resolve,reject)=>{const rq=client.get(target,{headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36","Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language":"pt-BR,pt;q=0.9,en;q=0.8"},timeout:15000},rp=>{if(rp.statusCode>=300&&rp.statusCode<400&&rp.headers.location){rp.resume();let next;try{next=new URL(rp.headers.location,target);}catch(_){return reject(new Error("O site enviou um redirecionamento inválido."));}return fetchHtml(next,redirects+1).then(resolve,reject);}if(rp.statusCode<200||rp.statusCode>=300){rp.resume();return reject(new Error("O portal bloqueou ou recusou a leitura (HTTP "+rp.statusCode+")."));}if(!String(rp.headers["content-type"]||"").toLowerCase().includes("html")){rp.resume();return reject(new Error("O link não retornou uma página HTML."));}let d="";rp.setEncoding("utf8");rp.on("data",c=>{d+=c;if(d.length>4000000)rq.destroy(new Error("Página muito grande para importar."));});rp.on("end",()=>resolve(d));});rq.on("timeout",()=>rq.destroy(new Error("Tempo limite ao acessar o anúncio.")));rq.on("error",reject);});}
-  safeTarget(u);const html=await fetchHtml(u);
+  async function fetchHtml(target,redirects=0){
+   if(redirects>5)throw new Error("O anúncio redirecionou muitas vezes.");
+   const resolved=await resolvePublicTarget(target);
+   const client=target.protocol==="https:"?https:http;
+   return await new Promise((resolve,reject)=>{
+    const rq=client.get(target,{headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36","Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language":"pt-BR,pt;q=0.9,en;q=0.8"},timeout:12000,lookup:(_hostname,_options,callback)=>callback(null,resolved.address,resolved.family)},rp=>{
+     if(rp.statusCode>=300&&rp.statusCode<400&&rp.headers.location){rp.resume();let next;try{next=new URL(rp.headers.location,target);}catch(_){return reject(new Error("O site enviou um redirecionamento inválido."));}return fetchHtml(next,redirects+1).then(resolve,reject);}
+     if(rp.statusCode<200||rp.statusCode>=300){rp.resume();return reject(new Error("O portal bloqueou ou recusou a leitura (HTTP "+rp.statusCode+")."));}
+     if(!String(rp.headers["content-type"]||"").toLowerCase().includes("html")){rp.resume();return reject(new Error("O link não retornou uma página HTML."));}
+     let d="";rp.setEncoding("utf8");rp.on("data",c=>{d+=c;if(d.length>4000000)rq.destroy(new Error("Página muito grande para importar."));});rp.on("end",()=>resolve(d));
+    });
+    rq.on("timeout",()=>rq.destroy(new Error("Tempo limite ao acessar o anúncio.")));rq.on("error",reject);
+   });
+  }
+  const html=await fetchHtml(u);
   const nodes=embeddedData(html);
   const p=propertyNode(nodes);
   const o=Array.isArray(p.offers)?p.offers[0]:(p.offers||{});
@@ -374,5 +386,5 @@ module.exports=async function(req,res){
    return send(res,422,{error:"A página abriu, mas o portal não entregou dados estruturados suficientes. Pode carregar os dados por JavaScript ou exigir integração específica."});
   }
   return send(res,200,result);
- }catch(e){return send(res,422,{error:e.message||"Não foi possível ler o anúncio. O site pode bloquear acessos automáticos."});}
+ }catch(e){console.error("[import-property-link] Falha ao importar anúncio:",e);return send(res,502,{error:e.message||"Não foi possível ler o anúncio. O portal pode bloquear acessos automáticos."});}
 };
