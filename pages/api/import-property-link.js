@@ -279,29 +279,9 @@ module.exports=async function(req,res){
  try{
   const raw=String(req.body?.url||"").trim();let u;try{u=new URL(raw);}catch(_){return send(res,400,{error:"Informe um link válido."});}
   if(!["http:","https:"].includes(u.protocol)||u.username||u.password)return send(res,400,{error:"O link deve usar HTTP ou HTTPS."});
-  function isPrivateAddress(address){
-   const ip=String(address||"").toLowerCase().split("%")[0];
-   if(net.isIPv4(ip)){
-    const [a,b,c]=ip.split(".").map(Number);
-    return a===0||a===10||a===127||a>=224||(a===100&&b>=64&&b<=127)||(a===169&&b===254)||(a===172&&b>=16&&b<=31)||(a===192&&(b===168||(b===0&&c===0)||(b===0&&c===2)))||(a===198&&(b===18||b===19||b===51&&c===100))||(a===203&&b===0&&c===113);
-   }
-   if(net.isIPv6(ip)){
-    if(ip==="::"||ip==="::1"||ip.startsWith("fc")||ip.startsWith("fd")||/^fe[89ab]/.test(ip)||ip.startsWith("ff")||ip.startsWith("2001:db8:"))return true;
-    const mapped=ip.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    if(mapped)return isPrivateAddress(mapped[1]);
-   }
-   return false;
-  }
-  async function safeTarget(target){
-   const h=target.hostname.toLowerCase().replace(/^\[|\]$/g,"");
-   if(!["http:","https:"].includes(target.protocol)||target.username||target.password||h==="localhost"||h.endsWith(".localhost"))throw new Error("O link redirecionou para um endereço não permitido.");
-   let records;
-   try{records=await dns.lookup(h,{all:true,verbatim:true});}catch(_){throw new Error("Não foi possível validar o endereço do portal.");}
-   if(!records.length||records.some(record=>isPrivateAddress(record.address)))throw new Error("O link redirecionou para um endereço não permitido.");
-   return records[0];
-  }
-  async function fetchHtml(target,redirects=0){if(redirects>5)throw new Error("O anúncio redirecionou muitas vezes.");const resolved=await safeTarget(target);const client=target.protocol==="https:"?https:http;return await new Promise((resolve,reject)=>{const rq=client.get(target,{headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36","Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language":"pt-BR,pt;q=0.9,en;q=0.8"},timeout:15000,lookup:(_hostname,_options,callback)=>callback(null,resolved.address,resolved.family)},rp=>{if(rp.statusCode>=300&&rp.statusCode<400&&rp.headers.location){rp.resume();let next;try{next=new URL(rp.headers.location,target);}catch(_){return reject(new Error("O site enviou um redirecionamento inválido."));}return fetchHtml(next,redirects+1).then(resolve,reject);}if(rp.statusCode<200||rp.statusCode>=300){rp.resume();return reject(new Error("O portal bloqueou ou recusou a leitura (HTTP "+rp.statusCode+")."));}if(!String(rp.headers["content-type"]||"").toLowerCase().includes("html")){rp.resume();return reject(new Error("O link não retornou uma página HTML."));}let d="";rp.setEncoding("utf8");rp.on("data",c=>{d+=c;if(d.length>4000000)rq.destroy(new Error("Página muito grande para importar."));});rp.on("end",()=>resolve(d));});rq.on("timeout",()=>rq.destroy(new Error("Tempo limite ao acessar o anúncio.")));rq.on("error",reject);});}
-  const html=await fetchHtml(u);
+  function safeTarget(target){const h=target.hostname.toLowerCase();if(!["http:","https:"].includes(target.protocol)||target.username||target.password||h==="localhost"||h.endsWith(".localhost")||h==="127.0.0.1"||h==="::1"||h==="0.0.0.0"||/^(10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h))throw new Error("O link redirecionou para um endereço não permitido.");}
+  async function fetchHtml(target,redirects=0){safeTarget(target);if(redirects>5)throw new Error("O anúncio redirecionou muitas vezes.");const client=target.protocol==="https:"?https:http;return await new Promise((resolve,reject)=>{const rq=client.get(target,{headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36","Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language":"pt-BR,pt;q=0.9,en;q=0.8"},timeout:15000},rp=>{if(rp.statusCode>=300&&rp.statusCode<400&&rp.headers.location){rp.resume();let next;try{next=new URL(rp.headers.location,target);}catch(_){return reject(new Error("O site enviou um redirecionamento inválido."));}return fetchHtml(next,redirects+1).then(resolve,reject);}if(rp.statusCode<200||rp.statusCode>=300){rp.resume();return reject(new Error("O portal bloqueou ou recusou a leitura (HTTP "+rp.statusCode+")."));}if(!String(rp.headers["content-type"]||"").toLowerCase().includes("html")){rp.resume();return reject(new Error("O link não retornou uma página HTML."));}let d="";rp.setEncoding("utf8");rp.on("data",c=>{d+=c;if(d.length>4000000)rq.destroy(new Error("Página muito grande para importar."));});rp.on("end",()=>resolve(d));});rq.on("timeout",()=>rq.destroy(new Error("Tempo limite ao acessar o anúncio.")));rq.on("error",reject);});}
+  safeTarget(u);const html=await fetchHtml(u);
   const nodes=embeddedData(html);
   const p=propertyNode(nodes);
   const o=Array.isArray(p.offers)?p.offers[0]:(p.offers||{});
