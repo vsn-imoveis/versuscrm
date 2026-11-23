@@ -122,7 +122,9 @@ export async function POST(request: NextRequest) {
     if (reactivateError) return NextResponse.json({ error: reactivateError.message }, { status: 400 });
     const { error: updateContactError } = await admin
       .from("crm_contacts")
-      .update({ name: nome, email, phone: celular, status: "active", updated_at: new Date().toISOString() })
+      // Contact lifecycle uses new/contacted/qualified/inactive/converted,
+      // not the active status used by crm_owner_accounts.
+      .update({ name: nome, email, phone: celular, updated_at: new Date().toISOString() })
       .eq("company_id", companyId)
       .eq("id", existingAccount.contact_id);
     if (updateContactError) return NextResponse.json({ error: updateContactError.message }, { status: 400 });
@@ -138,7 +140,7 @@ export async function POST(request: NextRequest) {
       phone: celular,
       contact_type: "owner",
       source: "admin",
-      status: "active",
+      status: "new",
       created_by: requester.id,
     })
     .select("id")
