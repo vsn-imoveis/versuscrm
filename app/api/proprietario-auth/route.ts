@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createClient(url, secretKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data: contacts, error: contactError } = await admin.from("crm_contacts").select("id,name,email,phone").eq("company_id", tenant.id).ilike("email", email).limit(2);
+  const { data: contacts, error: contactError } = await admin.from("crm_contacts").select("id,name,email,phone").eq("company_id", tenant.id).eq("contact_type", "owner").ilike("email", email).limit(2);
   if (contactError) return NextResponse.json({ error: "Não foi possível validar o cadastro. Tente novamente." }, { status: 500 });
   if (!contacts || contacts.length !== 1) return NextResponse.json({ message: "Solicitação recebida." });
   const contact = contacts[0];
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   const { data: existingAccount } = await admin.from("crm_owner_accounts").select("id").eq("company_id", tenant.id).eq("contact_id", contact.id).maybeSingle();
   if (existingAccount) return NextResponse.json({ error: "Este contato já possui uma conta vinculada. Use Entrar ou Esqueci minha senha." }, { status: 409 });
 
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, { data: { full_name: nome, phone: celular, account_type: "property_owner" } });
+  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: new URL("/" + encodeURIComponent(slug) + "/proprietario/", request.url).toString(), data: { full_name: nome, phone: celular, account_type: "property_owner" } });
   if (inviteError || !invited.user) {
     return NextResponse.json({ error: "Não foi possível enviar o convite. Se você já possui uma conta, entre ou recupere sua senha." }, { status: 409 });
   }
