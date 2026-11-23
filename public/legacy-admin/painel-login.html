@@ -159,6 +159,7 @@ function openScreen(url,anchor){
    if(typeof openSettingsSection==='function')openSettingsSection('site');
    history.pushState({versusMenu:'site-settings'},'',location.pathname+'#configuracoes-site');
  }else{
+   var dashboardHead=document.querySelector('#app > .head');if(dashboardHead)dashboardHead.style.display='none';
    if(!window.__versusContentFrame){var frame=document.createElement('iframe');frame.id='versusContentFrame';frame.title='Conteúdo administrativo';frame.style.cssText='display:block;width:100%;height:100%;min-height:100%;border:0;background:#f5f6f8';app.appendChild(frame);window.__versusContentFrame=frame}
    parsed.searchParams.set('versus_content','1');window.__versusContentFrame.src=parsed.pathname+parsed.search+parsed.hash;
    history.pushState({versusMenu:file},'',location.pathname);
