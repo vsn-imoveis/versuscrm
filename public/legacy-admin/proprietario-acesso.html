@@ -42,8 +42,11 @@
  $('tenantBrand').textContent=tenantName;
  $('tenantBrand').title='Voltar ao site de '+tenantName;
  $('tenantBrand').setAttribute('aria-label','Voltar ao site de '+tenantName);
- $('tenantBrand').href='/'+encodeURIComponent(slug);
- $('backToSite').href='/'+encodeURIComponent(slug);
+ const tenantHome=new URL('/'+encodeURIComponent(slug)+'/', window.location.origin).href;
+ $('tenantBrand').setAttribute('href',tenantHome);
+ $('backToSite').setAttribute('href',tenantHome);
+ $('tenantBrand').addEventListener('click',function(event){event.preventDefault();window.location.assign(tenantHome);});
+ $('backToSite').addEventListener('click',function(event){event.preventDefault();window.location.assign(tenantHome);});
  $('backToSite').textContent='← Voltar ao site';
  function message(t,type='ok'){const el=$('msg');el.textContent=t;el.className='message show '+type;}
  function setMode(m){
