@@ -417,49 +417,63 @@ load();
 
  (async function initTenantAuthHeader(){
    const host=document.querySelector('.header-actions');
-   if(!host||!login||!window.supabase?.createClient||typeof db==='undefined'||!tenantSlug)return;
+   if(!host||!login||typeof db==='undefined'||!tenantSlug)return;
    const client=db;
    let companyId=null;
    try{
      const tenantResult=await client.rpc('get_public_tenant_by_slug',{p_slug:tenantSlug});
+     if(tenantResult.error)throw tenantResult.error;
      const tenant=Array.isArray(tenantResult.data)?tenantResult.data[0]:tenantResult.data;
      if(tenant?.status==='active')companyId=tenant.id;
-   }catch(error){console.warn('[site-auth] Não foi possível resolver tenant:',error);}
-   if(!companyId)return;
-   const {data:{session}}=await client.auth.getSession();
+   }catch(error){console.warn('[site-auth] Falha ao identificar tenant do imóvel:',error);}
+   if(!companyId){login.hidden=false;return;}
+   const style=document.createElement('style');
+   style.textContent='.site-auth-controls{display:flex;align-items:center;gap:12px}.site-auth-profile{display:inline-flex;align-items:center;gap:9px;padding:7px 13px;border-radius:28px;background:#fff;color:#10283a;font:600 13px Manrope,Arial,sans-serif;text-decoration:none;white-space:nowrap}.site-auth-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#f5ead7;display:inline-grid;place-items:center;font-weight:800;color:#10283a}.site-auth-bell,.site-auth-logout{height:42px;min-width:44px;padding:0 13px;border:1px solid #385064;border-radius:12px;background:transparent;color:#fff;cursor:pointer}.site-auth-bell{border-radius:50%;width:48px;font-size:19px}.site-auth-logout{font-size:13px;font-weight:700}@media(max-width:650px){.site-auth-controls{gap:6px}.site-auth-profile{padding:5px}.site-auth-avatar{width:31px;height:31px}.site-auth-logout{padding:0 9px;min-width:auto}}';
+   document.head.appendChild(style);
+   const esc=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+   let renderVersion=0;
    async function render(currentSession){
+     const version=++renderVersion;
      host.querySelectorAll('.site-auth-controls').forEach(node=>node.remove());
      if(!currentSession?.user){login.hidden=false;return;}
-     const membershipResult=await client.from('crm_memberships').select('role')
-       .eq('company_id',companyId).eq('user_id',currentSession.user.id).limit(1);
-     const membership=membershipResult.data?.[0];
-     if(membershipResult.error||!membership){login.hidden=false;return;}
+     let membership=null;
+     try{
+       const result=await client.from('crm_memberships').select('role')
+         .eq('company_id',companyId).eq('user_id',currentSession.user.id).limit(1);
+       if(result.error)throw result.error;
+       membership=result.data?.[0]||null;
+     }catch(error){console.warn('[site-auth] Falha ao validar vínculo do usuário:',error);}
+     if(version!==renderVersion)return;
+     if(!membership){login.hidden=false;return;}
      let profile={};
-     const profileResult=await client.from('profiles').select('full_name,avatar_url')
-       .eq('id',currentSession.user.id).maybeSingle();
-     if(!profileResult.error)profile=profileResult.data||{};
+     try{
+       const result=await client.from('profiles').select('full_name,avatar_url')
+         .eq('id',currentSession.user.id).maybeSingle();
+       if(!result.error)profile=result.data||{};
+     }catch(_){}
+     if(version!==renderVersion)return;
      const display=profile.full_name||currentSession.user.user_metadata?.full_name||currentSession.user.email?.split('@')[0]||'Minha conta';
-     const firstName=display.trim().split(/\s+/)[0]||'Minha conta';
-     const esc=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+     const firstName=display.trim().split(/\\s+/)[0]||'Minha conta';
      const photo=profile.avatar_url?'<img class="site-auth-avatar" src="'+esc(profile.avatar_url)+'" alt="">':'<span class="site-auth-avatar">'+esc(firstName.charAt(0).toUpperCase())+'</span>';
      const group=document.createElement('div');group.className='site-auth-controls';
      const profileLink=document.createElement('a');profileLink.className='site-auth-profile';
-     profileLink.href='/'+encodeURIComponent(tenantSlug)+'/admin';
-     profileLink.setAttribute('aria-label','Abrir painel da imobiliária');
+     profileLink.href='/'+encodeURIComponent(tenantSlug)+'/admin';profileLink.setAttribute('aria-label','Abrir painel administrativo');
      profileLink.innerHTML=photo+'<span>'+esc(firstName)+'</span>';
-     const bell=document.createElement('button');bell.type='button';bell.className='site-auth-bell';
-     bell.setAttribute('aria-label','Notificações');bell.title='Notificações';bell.textContent='🔔';
-     bell.addEventListener('click',()=>{location.href='/'+encodeURIComponent(tenantSlug)+'/admin';});
+     const bell=document.createElement('button');bell.type='button';bell.className='site-auth-bell';bell.setAttribute('aria-label','Notificações');bell.title='Notificações';bell.textContent='🔔';
+     bell.addEventListener('click',()=>{window.location.href='/'+encodeURIComponent(tenantSlug)+'/admin/solicitacoes-proprietario.html';});
      const logout=document.createElement('button');logout.type='button';logout.className='site-auth-logout';logout.textContent='Sair';
-     logout.addEventListener('click',async()=>{logout.disabled=true;const result=await client.auth.signOut();if(result.error){logout.disabled=false;alert('Não foi possível sair: '+result.error.message);}});
-     group.append(profileLink,bell,logout);login.hidden=true;host.appendChild(group);
+     logout.addEventListener('click',async()=>{logout.disabled=true;logout.textContent='Saindo...';const result=await client.auth.signOut();if(result.error){logout.disabled=false;logout.textContent='Sair';alert('Não foi possível sair: '+result.error.message);}});
+     group.append(profileLink,bell,logout);
+     if(version!==renderVersion||!host.isConnected)return;
+     login.hidden=true;
+     host.appendChild(group);
    }
-   const style=document.createElement('style');
-   style.textContent='.site-auth-controls{display:flex;align-items:center;gap:12px}.site-auth-profile{display:inline-flex;align-items:center;gap:9px;padding:7px 13px;border-radius:28px;background:#fff;color:#10283a;font:600 13px Manrope,Arial,sans-serif;text-decoration:none;white-space:nowrap}.site-auth-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#f5ead7;display:inline-grid;place-items:center;font-weight:800;color:#10283a}.site-auth-bell,.site-auth-logout{height:42px;min-width:44px;padding:0 13px;border:1px solid #385064;border-radius:12px;background:transparent;color:#fff;cursor:pointer}.site-auth-bell{border-radius:50%;width:48px;font-size:19px}.site-auth-logout{font-size:13px;font-weight:700}';
-   document.head.appendChild(style);
-   await render(session||null);
+   try{
+     const {data,error}=await client.auth.getSession();
+     if(error)throw error;
+     await render(data?.session||null);
+   }catch(error){console.warn('[site-auth] Não foi possível ler a sessão no imóvel:',error);login.hidden=false;}
    client.auth.onAuthStateChange((_event,nextSession)=>{void render(nextSession||null);});
- })();
-})();
+ })();})();
 </script>
 <div class="access-overlay" id="accessModal" role="dialog" aria-modal="true" aria-labelledby="accessTitle" onclick="if(event.target===this)closeAccessModal()"><div class="access-box"><button class="access-close" type="button" aria-label="Fechar" onclick="closeAccessModal()">×</button><h2 id="accessTitle">Acessar minha conta</h2><p>Escolha como deseja acessar sua conta.</p><div class="access-options"><button type="button" onclick="goTenantLogin('')">Sou corretor</button><button type="button" class="secondary" onclick="goTenantLogin('proprietario')">Sou proprietário</button></div></div></div><script>function goTenantLogin(tipo){const slug=new URLSearchParams(window.location.search).get("slug");if(!slug){console.error("[property-login] Parâmetro slug ausente na URL do imóvel");alert("Não foi possível identificar a imobiliária deste imóvel. Volte ao site e tente novamente.");return}const target="/"+encodeURIComponent(slug)+"/admin/painel-login.html"+(tipo?"?tipo="+encodeURIComponent(tipo):"");window.location.assign(target)}function openAccessModal(){const modal=document.getElementById("accessModal");if(modal){modal.classList.add("open");document.body.style.overflow="hidden"}}function closeAccessModal(){const modal=document.getElementById("accessModal");if(modal){modal.classList.remove("open");document.body.style.overflow=""}}</script></body></html>
