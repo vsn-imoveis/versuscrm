@@ -203,7 +203,7 @@ export async function GET(request: NextRequest, context: Context) {
     html = html.replace("</head>", `<style id="versus-content-only">
       html,body{min-height:100%;height:auto!important;margin:0!important;padding:0!important;width:100%!important;overflow-x:hidden!important}
       /* O shell externo do VersusCRM mantém cabeçalho e menu. Dentro do iframe fica somente a tela selecionada. */
-      .admin-main>.admin-top,.admin-top,.admin-sidebar,.vsn-sidebar-toggle,#vsnSidebarToggle,.admin-main>header,body>header,body>aside{display:none!important;visibility:hidden!important}
+      .admin-main>.admin-top,.admin-top,.top,body>.top,.admin-sidebar,body>.admin-sidebar,.vsn-sidebar-toggle,#vsnSidebarToggle,.admin-main>header,body>header,body>aside{display:none!important;visibility:hidden!important}
       .admin-main{margin:0!important;padding:0!important;width:100%!important;min-width:0!important}
       .admin-main>.wrap,.wrap,#app,section#app{display:block!important;margin:0!important;padding:22px!important;width:100%!important;max-width:none!important;min-height:calc(100vh - 44px)!important;box-sizing:border-box!important}
       body.vsn-sidebar-collapsed{--vsn-sidebar-width:0px}
