@@ -51,13 +51,16 @@ export async function POST(request: NextRequest) {
   const admin = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const [{ data: membership, error: membershipError }, { data: company, error: companyError }] = await Promise.all([
+  // A autorização é sempre vinculada ao usuário autenticado e à empresa atual.
+  // limit(1) evita que vínculos duplicados legados façam maybeSingle() falhar
+  // e a normalização protege contra diferenças de caixa/espaços no campo role.
+  const [{ data: memberships, error: membershipError }, { data: company, error: companyError }] = await Promise.all([
     admin
       .from("crm_memberships")
       .select("role")
       .eq("company_id", companyId)
       .eq("user_id", requester.id)
-      .maybeSingle(),
+      .limit(1),
     admin
       .from("crm_companies")
       .select("status")
@@ -65,10 +68,23 @@ export async function POST(request: NextRequest) {
       .maybeSingle(),
   ]);
 
-  if (membershipError || !membership || !["owner", "admin", "manager"].includes(membership.role)) {
+  const membershipRole = String(memberships?.[0]?.role ?? "").trim().toLowerCase();
+  const canManageOwners = !membershipError && ["owner", "admin", "manager"].includes(membershipRole);
+
+  if (!canManageOwners) {
+    console.error("[proprietario-cadastro] membership negada", {
+      companyId,
+      userId: requester.id,
+      membershipError: membershipError?.message ?? null,
+      membershipRole: membershipRole || null,
+    });
     return NextResponse.json({ error: "Você não tem permissão para cadastrar proprietários nesta imobiliária." }, { status: 403 });
   }
   if (companyError || !company || company.status !== "active") {
+    console.error("[proprietario-cadastro] empresa inválida", {
+      companyId,
+      companyError: companyError?.message ?? null,
+    });
     return NextResponse.json({ error: "A imobiliária está inativa ou não foi encontrada." }, { status: 403 });
   }
 
