@@ -144,6 +144,19 @@ function openScreen(url,anchor){
  var parsed=new URL(url,location.href);
  var slug=window.__VERSUS_TENANT__?.slug||window.__VERSUS_CONFIG?.slug;
  if(!slug)return;
+ var file=parsed.pathname.split('/').pop();
+ var hash=parsed.hash;
+ // Clientes, Usuários e Configurar Site são seções do próprio painel.
+ // Não carregar painel-login.html dentro de um iframe dele mesmo.
+ if(file==='painel-login.html'&&['#clientes','#usuarios','#configuracoes-site'].includes(hash)){
+   hideAllViews();
+   history.pushState({versusMenu:hash,versusUrl:parsed.pathname+hash},'',location.pathname+hash);
+   setActive(anchor);
+   if(hash==='#clientes'&&typeof openClientsSection==='function')openClientsSection();
+   else if(hash==='#usuarios'&&typeof openUserManagement==='function')openUserManagement();
+   else if(hash==='#configuracoes-site'&&typeof openSettingsSection==='function')openSettingsSection('site');
+   return;
+ }
  hideAllViews();
  var head=document.querySelector('#app > .head');if(head)head.style.display='none';
  var frame=document.createElement('iframe');
