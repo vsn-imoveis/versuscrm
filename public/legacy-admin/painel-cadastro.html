@@ -285,7 +285,7 @@ function ensureLocationHiddenFields(x={}){
  [n,c,st].forEach(el=>{if(el&&!el.dataset.locationAutoBound){el.addEventListener('change',resolvePropertyLocation);el.addEventListener('blur',resolvePropertyLocation);el.dataset.locationAutoBound='1';}});
  if(!String(x.region||'').trim()&&!String(x.sub_neighborhood||'').trim())resolvePropertyLocation();
 }
-async function loadTowerOptions(x={}){const select=document.getElementById('tower');if(!select)return;const saved=String(x.tower||'').trim();select.innerHTML='<option value="">Selecione</option>';if(saved)select.add(new Option(saved,saved));select.value=saved;}
+async function loadTowerOptions(x={}){const select=document.getElementById('tower');if(!select)return;const saved=String(x.tower||'').trim();select.innerHTML='<option value="">Carregando torres...</option>';try{const {data,error}=await S.from('tower').select('code,name,sort_order').eq('active',true).order('sort_order',{ascending:true});if(error)throw error;select.innerHTML='<option value="">Selecione</option>';let matched='';(data||[]).forEach(row=>{const code=String(row.code??'').trim(),name=String(row.name??'').trim();if(!code&&!name)return;const option=new Option(name||code,code||name);select.add(option);if(saved&&(saved===code||saved===name))matched=code||name;});if(saved&&!matched){select.add(new Option(saved,saved));matched=saved;}select.value=matched;}catch(error){console.error('Erro ao carregar torres:',error);select.innerHTML='<option value="">Não foi possível carregar</option>';if(saved)select.add(new Option(saved,saved));}}
 
 function newProp(x={}){
   const pageY=window.scrollY;
