@@ -36,7 +36,7 @@ async function boot(){
     const session=authData?.session;
     if(!session?.user){msg('Sessão não encontrada. Saia e entre novamente.');return}
     const tenant=window.__VERSUS_TENANT__;
-    if(!tenant||tenant.slug!==cfg.slug||tenant.companyId!==companyId||tenant.userId!==session.user.id){
+    if(!tenant||tenant.slug!==cfg.slug||tenant.companyId!==companyId||(tenant.userId&&tenant.userId!==session.user.id)){
       msg('Acesso negado: contexto da imobiliária não validado.');return;
     }
     const role=tenant.role;
