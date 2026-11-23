@@ -402,8 +402,7 @@ load();
 </script><script id="site-brand-script">
 (function(){
  const params=new URLSearchParams(location.search);
- const pathParts=location.pathname.split('/').filter(Boolean);
- const tenantSlug=decodeURIComponent(pathParts[0]||'');
+ const tenantSlug=params.get('slug')||'';
  const name=params.get('name')||'Imóveis';
  const parts=name.trim().split(/\s+/);const main=parts.shift()||name;const sub=parts.join(' ')||'IMÓVEIS';
  const brand=document.getElementById('siteBrandName'),link=document.getElementById('siteBrand');
