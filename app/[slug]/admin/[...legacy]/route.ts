@@ -29,6 +29,7 @@ const allowedScreens = new Set([
   "listar-lancamentos.html",
   "perfil-site.html",
   "proprietario.html",
+  "proprietario-acesso.html",
   "solicitacoes-proprietario.html",
   "vendedor.html",
 ]);
