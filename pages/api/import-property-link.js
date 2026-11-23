@@ -273,7 +273,7 @@ function imageValues(nodes){
 }
 function num(v){if(v===null||v===undefined||v==="")return null;if(typeof v==="number")return v;const s=String(v).replace(/[^\d,.-]/g,"");if(!s)return null;let n;if(s.includes(",")&&s.includes("."))n=Number(s.lastIndexOf(",")>s.lastIndexOf(".")?s.replace(/\./g,"").replace(",","."):s.replace(/,/g,""));else n=Number(s.replace(",","."));return Number.isFinite(n)?n:null;}
 function find(t,re){const m=String(t||"").match(re);return m?m[1].trim():"";}
-module.exports=async function(req,res){
+export default async function handler(req,res){
  if(req.method!=="POST")return send(res,405,{error:"Método não permitido."});
  if(req.body?.action==="import_images")return importImages(req,res);
  try{
