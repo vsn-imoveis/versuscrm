@@ -77,7 +77,7 @@ body{margin:0;color:#0b2940;background:#fff;font-family:Manrope,Arial,sans-serif
 }
 </style></style><link rel="stylesheet" href="/legacy-site/responsive-mobile.css"></head>
 <body>
-<header class="site-header"><a id="siteBrand" class="brand" href="/" aria-label="Imobiliária"><b id="siteBrandName">VSN</b><small id="siteBrandSub">IMÓVEIS</small></a><div class="header-search"><input id="headerSearch" placeholder="Buscar imóvel — Bairro, cidade, código ou condomínio" onkeydown="if(event.key==='Enter')doHeaderSearch()"><button onclick="doHeaderSearch()" aria-label="Buscar"><i class="fa fa-search"></i></button></div><div class="header-actions"><a class="header-btn gold" href="#contato">Fale comigo</a><a class="header-btn login" href="/"><i class="fa fa-sign-in" aria-hidden="true"></i> Entrar</a></div></header>
+<header class="site-header"><a id="siteBrand" class="brand" href="/" aria-label="Imobiliária"><b id="siteBrandName">VSN</b><small id="siteBrandSub">IMÓVEIS</small></a><div class="header-search"><input id="headerSearch" placeholder="Buscar imóvel — Bairro, cidade, código ou condomínio" onkeydown="if(event.key==='Enter')doHeaderSearch()"><button onclick="doHeaderSearch()" aria-label="Buscar"><i class="fa fa-search"></i></button></div><div class="header-actions"><a class="header-btn gold" href="#contato">Fale comigo</a><a class="header-btn login" id="siteLoginButton" href="/"><i class="fa fa-sign-in" aria-hidden="true"></i> Entrar</a></div></header>
 <div class="wrap"><div id="app"><div style="padding:60px 0">Carregando imóvel...</div></div>
 </div>
 <div id="financeModal" class="finance-modal" onclick="if(event.target===this)closeFinance()"><div class="finance-box"><div class="finance-head"><div><h2>Simule sua entrada e financiamento</h2><p id="financeProperty"></p></div><button class="finance-close" onclick="closeFinance()" aria-label="Fechar">×</button></div><div class="finance-fields"><div class="finance-field"><label for="financePropertyValue">Valor do apartamento</label><input id="financePropertyValue" type="text" inputmode="numeric" autocomplete="off" placeholder="Ex.: R$ 350.000,00"></div><div class="finance-field"><label for="financeIncome">Sua renda mensal bruta</label><input id="financeIncome" type="text" inputmode="numeric" autocomplete="off" placeholder="Ex.: R$ 8.000,00"></div><div class="finance-field"><label for="financeEntry">Valor de entrada</label><input id="financeEntry" type="text" inputmode="numeric" autocomplete="off" placeholder="20% do imóvel"></div></div><div class="finance-note">A entrada já vem preenchida com 20% do valor do apartamento. Você pode alterar esse valor. A renda é usada para calcular a capacidade estimada de financiamento e verificar se o imóvel cabe no limite de parcela de 30%.</div><div id="financeResults" class="finance-results"></div><div class="finance-footer">Estimativa para comparação inicial, considerando SAC em até 35 anos e referência de comprometimento de renda de 30%. Não inclui seguros, tarifas, TR/IPCA, avaliação, ITBI, registro e outros custos. A taxa e a aprovação dependem do perfil, relacionamento, imóvel e análise de crédito de cada banco. No Inter, a taxa informada é + IPCA e o banco informa entrada a partir de 25%; por isso, com 20% de entrada ele será sinalizado como fora do limite. Fonte das taxas: páginas dos bancos e levantamento de mercado atualizado em setembro de 2026.</div></div></div><div id="presenter" class="presenter"><button class="pbtn pclose" onclick="closePresenter()">×</button><button class="pbtn pprev" onclick="move(-1)">‹</button><img id="presenterImage"><button class="pbtn pnext" onclick="move(1)">›</button><div id="presenterCount" class="pcount"></div></div>
@@ -410,4 +410,52 @@ load();
  const search=document.getElementById('headerSearch');if(search)search.placeholder='Buscar imóvel — Bairro, cidade, código ou condomínio';
  const contact=document.querySelector('.header-btn.gold');if(contact)contact.href='#contato';const login=document.querySelector('.header-btn.login');if(login)login.href='/'+encodeURIComponent(tenantSlug)+'/admin/login';document.querySelectorAll('a.back').forEach(a=>a.href='/'+encodeURIComponent(tenantSlug)+'/imoveis');
 })();
-</script></body></html>
+
+<script id="tenant-auth-header">
+(function initTenantAuthHeader(){
+  if(window.__versusTenantAuthHeaderInitialized)return;
+  if(!tenantSlug||!companyId)return;
+  if(!window.supabase?.createClient)return;
+  window.__versusTenantAuthHeaderInitialized=true;
+  const client=db;
+  const host=document.querySelector('.header-actions');
+  const login=document.querySelector('.header-btn.login');
+  if(!host||!login)return;
+  login.id='siteLoginButton';
+  const css=document.createElement('style');
+  css.textContent='.site-auth-controls{display:flex;align-items:center;gap:12px;color:#fff;font-family:inherit}.site-auth-profile{display:inline-flex;align-items:center;gap:9px;padding:7px 13px;border:0;border-radius:28px;background:#fff;color:#10283a;font:600 13px Manrope,Arial,sans-serif;cursor:pointer;white-space:nowrap;text-decoration:none}.site-auth-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#f5ead7;display:grid;place-items:center;font-weight:800;color:#10283a}.site-auth-bell,.site-auth-logout{height:42px;min-width:44px;padding:0 13px;border:1px solid #385064;border-radius:12px;background:transparent;color:#fff;font-size:20px;cursor:pointer}.site-auth-logout{font-size:13px;font-weight:700}.site-auth-bell{border-radius:50%;width:48px;padding:0}.site-auth-controls a{text-decoration:none}@media(max-width:650px){.site-auth-controls{gap:6px}.site-auth-profile{padding:5px}.site-auth-avatar{width:31px;height:31px}.site-auth-logout{padding:0 9px;min-width:auto}}';
+  document.head.appendChild(css);
+  const esc=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  let renderVersion=0;
+  async function render(session){
+    const version=++renderVersion;
+    if(!session?.user){host.querySelectorAll('.site-auth-controls').forEach(node=>node.remove());login.hidden=false;return;}
+    let membership=null;
+    try{
+      const result=await client.from('crm_memberships').select('role')
+        .eq('company_id',companyId).eq('user_id',session.user.id).maybeSingle();
+      membership=result.data||null;
+    }catch(_){}
+    if(version!==renderVersion)return;
+    if(!membership){host.querySelectorAll('.site-auth-controls').forEach(node=>node.remove());login.hidden=false;return;}
+    login.hidden=true;
+    let profile={};
+    try{const result=await client.from('profiles').select('role,full_name,avatar_url').eq('id',session.user.id).maybeSingle();profile=result.data||{};}catch(_){}
+    if(version!==renderVersion)return;
+    const display=profile.full_name||session.user.user_metadata?.full_name||session.user.email?.split('@')[0]||'Minha conta';
+    const firstName=display.trim().split(/\s+/)[0]||'Minha conta';
+    const photo=profile.avatar_url?'<img class="site-auth-avatar" src="'+esc(profile.avatar_url)+'" alt="">':'<span class="site-auth-avatar">'+esc(firstName.charAt(0).toUpperCase())+'</span>';
+    const group=document.createElement('div');group.className='site-auth-controls';
+    const profileLink=document.createElement('a');profileLink.className='site-auth-profile';profileLink.href='/'+encodeURIComponent(tenantSlug)+'/admin';profileLink.setAttribute('aria-label','Abrir painel administrativo');profileLink.innerHTML=photo+'<span>'+esc(firstName)+'</span>';
+    const bell=document.createElement('button');bell.type='button';bell.className='site-auth-bell';bell.setAttribute('aria-label','Notificações');bell.title='Notificações';bell.textContent='🔔';
+    bell.addEventListener('click',()=>{window.location.href='/'+encodeURIComponent(tenantSlug)+'/admin/solicitacoes-proprietario.html';});
+    const logout=document.createElement('button');logout.type='button';logout.className='site-auth-logout';logout.textContent='Sair';
+    logout.addEventListener('click',async()=>{logout.disabled=true;logout.textContent='Saindo...';const result=await client.auth.signOut();if(result.error){logout.disabled=false;logout.textContent='Sair';alert('Não foi possível sair: '+result.error.message);}});
+    group.append(profileLink,bell,logout);
+    if(!host.isConnected)return;
+    const current=host.querySelector('.site-auth-controls');if(current)current.replaceWith(group);else host.appendChild(group);
+  }
+  client.auth.getSession().then(({data})=>render(data?.session||null)).catch(()=>{});
+  client.auth.onAuthStateChange((_event,session)=>{void render(session||null);});
+})();
+</script></script></body></html>
