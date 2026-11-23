@@ -75,7 +75,20 @@ body{margin:0;color:#0b2940;background:#fff;font-family:Manrope,Arial,sans-serif
   }
   .finance-bank{width:100%;min-width:0}
 }
-</style></style><link rel="stylesheet" href="/legacy-site/responsive-mobile.css"></head>
+</style></style><link rel="stylesheet" href="/legacy-site/responsive-mobile.css"><style id="property-access-modal-styles">
+.access-overlay{position:fixed;inset:0;z-index:10050;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(3,18,29,.68);backdrop-filter:blur(3px)}
+.access-overlay.open{display:flex}
+.access-box{position:relative;width:min(100%,440px);padding:34px 30px 30px;border-radius:18px;background:#fff;box-shadow:0 24px 80px rgba(0,0,0,.28);color:#10283a;font-family:inherit}
+.access-box h2{margin:0 34px 10px 0;font-size:25px;font-weight:800;color:#10283a}
+.access-box p{margin:0 0 24px;color:#657482;font-size:15px;line-height:1.5}
+.access-close{position:absolute;top:12px;right:14px;width:36px;height:36px;border:0;border-radius:50%;background:#f1f3f5;color:#263746;font-size:25px;line-height:1;cursor:pointer}
+.access-options{display:grid;grid-template-columns:1fr;gap:12px}
+.access-options button{width:100%;min-height:50px;padding:12px 18px;border:1px solid var(--gold,#d3aa62);border-radius:10px;background:var(--gold,#d3aa62);color:#10283a;font:700 15px inherit;cursor:pointer}
+.access-options button.secondary{background:#fff;color:#10283a}
+.access-options button:hover{filter:brightness(.96)}
+@media(max-width:480px){.access-box{padding:30px 22px 24px}.access-box h2{font-size:22px}}
+</style>
+</head>
 <body>
 <header class="site-header"><a id="siteBrand" class="brand" href="/" aria-label="Imobiliária"><b id="siteBrandName">VSN</b><small id="siteBrandSub">IMÓVEIS</small></a><div class="header-search"><input id="headerSearch" placeholder="Buscar imóvel — Bairro, cidade, código ou condomínio" onkeydown="if(event.key==='Enter')doHeaderSearch()"><button onclick="doHeaderSearch()" aria-label="Buscar"><i class="fa fa-search"></i></button></div><div class="header-actions"><a class="header-btn gold" href="#contato">Fale comigo</a><button class="header-btn login" id="siteLoginButton" type="button" onclick="openAccessModal()"><i class="fa fa-sign-in" aria-hidden="true"></i> Entrar</button></div></header>
 <div class="wrap"><div id="app"><div style="padding:60px 0">Carregando imóvel...</div></div>
