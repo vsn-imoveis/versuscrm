@@ -201,14 +201,13 @@ export async function GET(request: NextRequest, context: Context) {
 
   if (request.nextUrl.searchParams.get("versus_content") === "1") {
     html = html.replace("</head>", `<style id="versus-content-only">
-      html,body{min-height:100%;height:auto!important;margin:0!important}
-      body{padding-left:0!important}
-      /* A tela legada é somente o conteúdo do painel: nunca renderizar seu cabeçalho ou menu próprios. */
-      .top,.side,.sidebar,aside,body>header,.admin-topbar,.admin-header,.admin-sidebar,#vsnSidebarToggle,.top-toggle{display:none!important;visibility:hidden!important}
-      html,body{padding:0!important;margin:0!important;width:100%!important;min-height:100%!important;overflow-x:hidden!important}
-      body>main,main,main.wrap,main#app,#app,.wrap{display:block!important;margin:0!important;padding:22px!important;width:100%!important;max-width:none!important;min-height:100vh!important;box-sizing:border-box!important}
+      html,body{min-height:100%;height:auto!important;margin:0!important;padding:0!important;width:100%!important;overflow-x:hidden!important}
+      /* O shell externo do VersusCRM mantém cabeçalho e menu. Dentro do iframe fica somente a tela selecionada. */
+      .admin-main>.admin-top,.admin-top,.admin-sidebar,.vsn-sidebar-toggle,#vsnSidebarToggle,.admin-main>header,body>header,body>aside{display:none!important;visibility:hidden!important}
+      .admin-main{margin:0!important;padding:0!important;width:100%!important;min-width:0!important}
+      .admin-main>.wrap,.wrap,#app,section#app{display:block!important;margin:0!important;padding:22px!important;width:100%!important;max-width:none!important;min-height:calc(100vh - 44px)!important;box-sizing:border-box!important}
       body.vsn-sidebar-collapsed{--vsn-sidebar-width:0px}
-      @media(max-width:760px){body{padding:0!important}body>main,main.wrap,main#app,#app,.wrap{margin:0!important;padding:16px!important;width:100%!important}}
+      @media(max-width:760px){.admin-main>.wrap,.wrap,#app,section#app{margin:0!important;padding:16px!important;width:100%!important}}
     </style></head>`);
   }
 
