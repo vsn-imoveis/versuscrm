@@ -11,9 +11,13 @@ function privateAddress(address) {
   return a===0||a===10||a===127||a>=224||(a===100&&b>=64&&b<=127)||(a===169&&b===254)||(a===172&&b>=16&&b<=31)||(a===192&&(b===168||b===0||b===2))||(a===198&&(b===18||b===19||b===51&&c===100))||(a===203&&b===0&&c===113);
  }
  if(net.isIPv6(ip)){
-  if(ip==="::"||ip==="::1"||ip.startsWith("fc")||ip.startsWith("fd")||/^fe[89ab]/.test(ip)||ip.startsWith("ff")||!/^2[0-9a-f]{3}:/i.test(ip))return true;
-  const mapped=ip.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  const mapped=ip.match(/^(?:::ffff:|0:0:0:0:0:ffff:)(\d+\.\d+\.\d+\.\d+)$/i);
   if(mapped)return privateAddress(mapped[1]);
+  if(ip==="::"||ip==="::1"||ip.startsWith("fc")||ip.startsWith("fd")||/^fe[89ab]/i.test(ip)||ip.startsWith("ff"))return true;
+  const first=parseInt(ip.split(":")[0]||"0",16);
+  if(!Number.isFinite(first)||first<0x2000||first>=0x4000)return true;
+  if(/^2001:db8:/i.test(ip))return true;
+  return false;
  }
  return true;
 }
@@ -21,8 +25,9 @@ async function resolvePublicTarget(target){
  const host=target.hostname.toLowerCase().replace(/^\[|\]$/g,"");
  if(!["http:","https:"].includes(target.protocol)||target.username||target.password||host==="localhost"||host.endsWith(".localhost"))throw new Error("Endereço de imagem não permitido.");
  const records=await dns.lookup(host,{all:true,verbatim:true});
- if(!records.length||records.some(r=>privateAddress(r.address)))throw new Error("O endereço da imagem não é público.");
- return records[0];
+ const publicRecords=records.filter(r=>!privateAddress(r.address));
+ if(!publicRecords.length)throw new Error("O endereço da imagem não é público ou não possui IP público.");
+ return publicRecords[0];
 }
 async function downloadImage(target, redirects=0){
  if(redirects>3)throw new Error("A imagem redirecionou muitas vezes.");
