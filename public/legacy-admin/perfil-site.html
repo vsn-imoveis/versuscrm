@@ -39,7 +39,16 @@ async function boot(){
     if(!tenant||tenant.slug!==cfg.slug||tenant.companyId!==companyId||(tenant.userId&&tenant.userId!==session.user.id)){
       msg('Acesso negado: contexto da imobiliária não validado.');return;
     }
-    const role=tenant.role;
+    // A rota pode não receber o cookie SSR mesmo quando o painel já tem sessão
+    // no navegador. Por isso, a autorização deve ser confirmada com a sessão real
+    // do Supabase no browser, consultando o vínculo desta conta com esta empresa.
+    const {data:membership,error:membershipError}=await S.from('crm_memberships')
+      .select('role').eq('company_id',companyId).eq('user_id',session.user.id).maybeSingle();
+    if(membershipError)throw membershipError;
+    const {data:ownerAccount,error:ownerError}=await S.from('crm_owner_accounts')
+      .select('user_id').eq('company_id',companyId).eq('user_id',session.user.id).eq('status','active').maybeSingle();
+    if(ownerError)throw ownerError;
+    const role=membership?.role||(ownerAccount?'owner':null);
     if(!['owner','admin'].includes(role)){msg('Acesso restrito a administradores.');return}
     const {data:prof}=await S.from('profiles').select('full_name').eq('id',session.user.id).maybeSingle();
   document.getElementById('topUser').textContent=(prof?.full_name||session.user.email||'Usuário').split(/\s+/)[0];
