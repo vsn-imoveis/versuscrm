@@ -401,61 +401,67 @@ async function load(){
 load();
 </script><script id="site-brand-script">
 (function(){
- const name=new URLSearchParams(location.search).get('name')||'Imóveis';
+ const params=new URLSearchParams(location.search);
+ const pathParts=location.pathname.split('/').filter(Boolean);
+ const tenantSlug=decodeURIComponent(pathParts[0]||'');
+ const name=params.get('name')||'Imóveis';
  const parts=name.trim().split(/\s+/);const main=parts.shift()||name;const sub=parts.join(' ')||'IMÓVEIS';
  const brand=document.getElementById('siteBrandName'),link=document.getElementById('siteBrand');
- if(brand)brand.textContent=main;const brandSub=document.getElementById('siteBrandSub');if(brandSub)brandSub.textContent=sub;
+ if(brand)brand.textContent=main;
+ const brandSub=document.getElementById('siteBrandSub');if(brandSub)brandSub.textContent=sub;
  if(link){link.href='/'+encodeURIComponent(tenantSlug);link.setAttribute('aria-label',name);}
  document.title=document.title.replace(/VSN Imóveis/g,name);
  const search=document.getElementById('headerSearch');if(search)search.placeholder='Buscar imóvel — Bairro, cidade, código ou condomínio';
- const contact=document.querySelector('.header-btn.gold');if(contact)contact.href='#contato';const login=document.querySelector('.header-btn.login');if(login)login.href='/'+encodeURIComponent(tenantSlug)+'/admin/login';document.querySelectorAll('a.back').forEach(a=>a.href='/'+encodeURIComponent(tenantSlug)+'/imoveis');
-})();
+ const contact=document.querySelector('.header-btn.gold');if(contact)contact.href='#contato';
+ const login=document.querySelector('.header-btn.login');
+ if(login)login.href='/'+encodeURIComponent(tenantSlug)+'/admin/login';
+ document.querySelectorAll('a.back').forEach(a=>a.href='/'+encodeURIComponent(tenantSlug)+'/imoveis');
 
-<script id="tenant-auth-header">
-(function initTenantAuthHeader(){
-  if(window.__versusTenantAuthHeaderInitialized)return;
-  if(!tenantSlug||!companyId)return;
-  if(!window.supabase?.createClient)return;
-  window.__versusTenantAuthHeaderInitialized=true;
-  const client=db;
-  const host=document.querySelector('.header-actions');
-  const login=document.querySelector('.header-btn.login');
-  if(!host||!login)return;
-  login.id='siteLoginButton';
-  const css=document.createElement('style');
-  css.textContent='.site-auth-controls{display:flex;align-items:center;gap:12px;color:#fff;font-family:inherit}.site-auth-profile{display:inline-flex;align-items:center;gap:9px;padding:7px 13px;border:0;border-radius:28px;background:#fff;color:#10283a;font:600 13px Manrope,Arial,sans-serif;cursor:pointer;white-space:nowrap;text-decoration:none}.site-auth-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#f5ead7;display:grid;place-items:center;font-weight:800;color:#10283a}.site-auth-bell,.site-auth-logout{height:42px;min-width:44px;padding:0 13px;border:1px solid #385064;border-radius:12px;background:transparent;color:#fff;font-size:20px;cursor:pointer}.site-auth-logout{font-size:13px;font-weight:700}.site-auth-bell{border-radius:50%;width:48px;padding:0}.site-auth-controls a{text-decoration:none}@media(max-width:650px){.site-auth-controls{gap:6px}.site-auth-profile{padding:5px}.site-auth-avatar{width:31px;height:31px}.site-auth-logout{padding:0 9px;min-width:auto}}';
-  document.head.appendChild(css);
-  const esc=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-  let renderVersion=0;
-  async function render(session){
-    const version=++renderVersion;
-    if(!session?.user){host.querySelectorAll('.site-auth-controls').forEach(node=>node.remove());login.hidden=false;return;}
-    let membership=null;
-    try{
-      const result=await client.from('crm_memberships').select('role')
-        .eq('company_id',companyId).eq('user_id',session.user.id).maybeSingle();
-      membership=result.data||null;
-    }catch(_){}
-    if(version!==renderVersion)return;
-    if(!membership){host.querySelectorAll('.site-auth-controls').forEach(node=>node.remove());login.hidden=false;return;}
-    login.hidden=true;
-    let profile={};
-    try{const result=await client.from('profiles').select('role,full_name,avatar_url').eq('id',session.user.id).maybeSingle();profile=result.data||{};}catch(_){}
-    if(version!==renderVersion)return;
-    const display=profile.full_name||session.user.user_metadata?.full_name||session.user.email?.split('@')[0]||'Minha conta';
-    const firstName=display.trim().split(/\s+/)[0]||'Minha conta';
-    const photo=profile.avatar_url?'<img class="site-auth-avatar" src="'+esc(profile.avatar_url)+'" alt="">':'<span class="site-auth-avatar">'+esc(firstName.charAt(0).toUpperCase())+'</span>';
-    const group=document.createElement('div');group.className='site-auth-controls';
-    const profileLink=document.createElement('a');profileLink.className='site-auth-profile';profileLink.href='/'+encodeURIComponent(tenantSlug)+'/admin/painel-login.html';profileLink.setAttribute('aria-label','Abrir painel administrativo');profileLink.innerHTML=photo+'<span>'+esc(firstName)+'</span>';
-    const bell=document.createElement('button');bell.type='button';bell.className='site-auth-bell';bell.setAttribute('aria-label','Notificações');bell.title='Notificações';bell.textContent='🔔';
-    bell.addEventListener('click',()=>{window.location.href='/'+encodeURIComponent(tenantSlug)+'/admin/solicitacoes-proprietario.html';});
-    const logout=document.createElement('button');logout.type='button';logout.className='site-auth-logout';logout.textContent='Sair';
-    logout.addEventListener('click',async()=>{logout.disabled=true;logout.textContent='Saindo...';const result=await client.auth.signOut();if(result.error){logout.disabled=false;logout.textContent='Sair';alert('Não foi possível sair: '+result.error.message);}});
-    group.append(profileLink,bell,logout);
-    if(!host.isConnected)return;
-    const current=host.querySelector('.site-auth-controls');if(current)current.replaceWith(group);else host.appendChild(group);
-  }
-  client.auth.getSession().then(({data})=>render(data?.session||null)).catch(()=>{});
-  client.auth.onAuthStateChange((_event,session)=>{void render(session||null);});
+ (async function initTenantAuthHeader(){
+   const host=document.querySelector('.header-actions');
+   if(!host||!login||!window.supabase?.createClient||!window.db)return;
+   const client=window.db;
+   let companyId=null;
+   try{
+     const tenantResult=await client.rpc('get_public_tenant_by_slug',{p_slug:tenantSlug});
+     const tenant=Array.isArray(tenantResult.data)?tenantResult.data[0]:tenantResult.data;
+     if(tenant?.status==='active')companyId=tenant.id;
+   }catch(error){console.warn('[site-auth] Não foi possível resolver tenant:',error);}
+   if(!companyId)return;
+   const {data:{session}}=await client.auth.getSession();
+   async function render(currentSession){
+     host.querySelectorAll('.site-auth-controls').forEach(node=>node.remove());
+     if(!currentSession?.user){login.hidden=false;return;}
+     const membershipResult=await client.from('crm_memberships').select('role')
+       .eq('company_id',companyId).eq('user_id',currentSession.user.id).limit(1);
+     const membership=membershipResult.data?.[0];
+     if(membershipResult.error||!membership){login.hidden=false;return;}
+     let profile={};
+     const profileResult=await client.from('profiles').select('full_name,avatar_url')
+       .eq('id',currentSession.user.id).maybeSingle();
+     if(!profileResult.error)profile=profileResult.data||{};
+     const display=profile.full_name||currentSession.user.user_metadata?.full_name||currentSession.user.email?.split('@')[0]||'Minha conta';
+     const firstName=display.trim().split(/\s+/)[0]||'Minha conta';
+     const esc=v=>String(v||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+     const photo=profile.avatar_url?'<img class="site-auth-avatar" src="'+esc(profile.avatar_url)+'" alt="">':'<span class="site-auth-avatar">'+esc(firstName.charAt(0).toUpperCase())+'</span>';
+     const group=document.createElement('div');group.className='site-auth-controls';
+     const profileLink=document.createElement('a');profileLink.className='site-auth-profile';
+     profileLink.href='/'+encodeURIComponent(tenantSlug)+'/admin';
+     profileLink.setAttribute('aria-label','Abrir painel da imobiliária');
+     profileLink.innerHTML=photo+'<span>'+esc(firstName)+'</span>';
+     const bell=document.createElement('button');bell.type='button';bell.className='site-auth-bell';
+     bell.setAttribute('aria-label','Notificações');bell.title='Notificações';bell.textContent='🔔';
+     bell.addEventListener('click',()=>{location.href='/'+encodeURIComponent(tenantSlug)+'/admin';});
+     const logout=document.createElement('button');logout.type='button';logout.className='site-auth-logout';logout.textContent='Sair';
+     logout.addEventListener('click',async()=>{logout.disabled=true;const result=await client.auth.signOut();if(result.error){logout.disabled=false;alert('Não foi possível sair: '+result.error.message);}});
+     group.append(profileLink,bell,logout);login.hidden=true;host.appendChild(group);
+   }
+   const style=document.createElement('style');
+   style.textContent='.site-auth-controls{display:flex;align-items:center;gap:12px}.site-auth-profile{display:inline-flex;align-items:center;gap:9px;padding:7px 13px;border-radius:28px;background:#fff;color:#10283a;font:600 13px Manrope,Arial,sans-serif;text-decoration:none;white-space:nowrap}.site-auth-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#f5ead7;display:inline-grid;place-items:center;font-weight:800;color:#10283a}.site-auth-bell,.site-auth-logout{height:42px;min-width:44px;padding:0 13px;border:1px solid #385064;border-radius:12px;background:transparent;color:#fff;cursor:pointer}.site-auth-bell{border-radius:50%;width:48px;font-size:19px}.site-auth-logout{font-size:13px;font-weight:700}';
+   document.head.appendChild(style);
+   await render(session||null);
+   client.auth.onAuthStateChange((_event,nextSession)=>{void render(nextSession||null);});
+ })();
 })();
-</script></script></body></html>
+</script>
+</body></html>
