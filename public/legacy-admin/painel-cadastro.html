@@ -404,61 +404,62 @@ function setupAutoTitle(){
 function clearDraft(){}function addressData(){const f=document.getElementById("propertyForm");return{cep:f.elements.cep?.value.trim()||"",address:f.elements.address?.value.trim()||"",number:f.elements.number?.value.trim()||"",neighborhood:f.elements.neighborhood?.value.trim()||"",city:f.elements.city?.value.trim()||"",state:f.elements.state?.value.trim()||""}}async function lookupCondoBase(){
  const d=addressData(),msg=document.getElementById("condomsg"),field=document.getElementById("condominium_name");
  if(!d.number||!S)return false;
- const clean=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g," ").replace(/\\s+/g," ").trim();
- const digits=s=>String(s||"").replace(/\\D/g,"");
- const addr=clean(d.address),number=String(d.number).trim(),city=clean(d.city||"São Paulo"),state=clean(d.state||"SP"),neigh=clean(d.neighborhood),cep=digits(d.cep);
+ const clean=v=>String(v||"").toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim();
+ const digits=v=>String(v||"").replace(/\D/g,"");
+ const address=clean(d.address),number=digits(d.number),city=clean(d.city||"São Paulo"),state=clean(d.state||"SP"),neighborhood=clean(d.neighborhood),cep=digits(d.cep);
  const seq=(window.__condoLookupSeq||0)+1;window.__condoLookupSeq=seq;
- if(msg)msg.innerHTML='<span style="color:var(--blue)">Consultando a catálogo desta imobiliária pelo CEP e número...</span>';
+ if(msg)msg.innerHTML='<span style="color:var(--blue)">Consultando a base global de condomínios...</span>';
  try{
-   // Consulta somente a tabela principal. Não depende de tabela auxiliar nem de serviço externo.
-   const q=await S.from("crm_condominiums").select("id,name,address,neighborhood,city,state,construction_year,builder,details").eq("company_id",window.__vsnCompanyId).eq("city",d.city||"São Paulo").eq("state",d.state||"SP").limit(1000);
+   let rows=[];
+   const base=()=>S.from("condominiums").select("id,name,address,number,neighborhood,city,state,cep,features,construction_year,delivery_year,units,towers,floors,builder");
+   if(cep){
+     const q=await base().eq("cep",d.cep).eq("number",d.number).eq("city",d.city||"São Paulo").eq("state",d.state||"SP").limit(100);
+     if(q.error)throw q.error;rows=q.data||[];
+   }
+   if(!rows.length&&d.address){
+     const street=String(d.address).trim().replace(/[%_,]/g," ").replace(/\s+/g," ");
+     const q=await base().ilike("address","%"+street+"%").eq("number",d.number).eq("city",d.city||"São Paulo").eq("state",d.state||"SP").limit(100);
+     if(q.error)throw q.error;rows=q.data||[];
+   }
    if(seq!==window.__condoLookupSeq)return false;
-   if(q.error)throw q.error;
-   const rows=q.data||[];
-   let matches=[];
-   // Prioridade máxima: CEP + número exatos, ignorando hífen/pontuação no CEP.
-   if(cep)matches=rows.filter(x=>digits(x.details?.cep)===cep&&digits(x.details?.number)===digits(number));
-   // Se CEP não estiver cadastrado no condomínio, usar rua + número e validar cidade/UF.
-   if(!matches.length&&addr)matches=rows.filter(x=>clean(x.address)===addr&&digits(x.details?.number)===digits(number));
-   // Se houver mais de um resultado plausível, não escolher arbitrariamente.
-   if(matches.length>1&&neigh){
-     const byNeighborhood=matches.filter(x=>clean(x.neighborhood)===neigh);
+   let matches=rows.filter(x=>digits(x.number)===number);
+   if(address)matches=matches.filter(x=>clean(x.address)===address||clean(x.address).includes(address)||address.includes(clean(x.address)));
+   if(cep) {
+     const byCep=matches.filter(x=>digits(x.cep)===cep);
+     if(byCep.length)matches=byCep;
+   }
+   if(neighborhood&&matches.length>1){
+     const byNeighborhood=matches.filter(x=>clean(x.neighborhood)===neighborhood);
      if(byNeighborhood.length)matches=byNeighborhood;
    }
+   matches=[...new Map(matches.map(x=>[x.id,x])).values()];
    if(matches.length!==1){
      window.__condoEnrichment={};
      if(field)field.value="";
      document.querySelectorAll('input[name="condo_feat"]').forEach(el=>el.checked=false);
      if(msg)msg.innerHTML=matches.length>1
-       ?'<span class="help">Encontrei mais de um condomínio para esse CEP e número. Confira o bairro/endereço para evitar selecionar o registro errado.</span>'
-       :'<span class="help">Não encontrei condomínio com esse CEP e número na catálogo desta imobiliária. Nenhuma pesquisa externa foi realizada.</span>';
+       ?'<span class="help">Encontrei mais de um condomínio com esse endereço. Confira o CEP e o bairro para identificar o correto.</span>'
+       :'<span class="help">Não encontrei correspondência na base global. Confira endereço, número e CEP.</span>';
      return false;
    }
    const row=matches[0];
    if(field)field.value=row.name||"";
-   if(row.address&&document.getElementById("address")&&!d.address)document.getElementById("address").value=row.address;
+   if(row.address&&!d.address)document.getElementById("address").value=row.address;
    if(row.neighborhood&&!d.neighborhood)document.getElementById("neighborhood").value=row.neighborhood;
    if(row.city)document.getElementById("city").value=row.city;
    if(row.state)document.getElementById("state").value=row.state;
    if(row.cep&&!d.cep)document.getElementById("cep").value=row.cep;
-   applyCondoEnrichment({
-     ...row,
-     condominium_name:row.name,
-     condominium_features:row.features||[],
-     condominium_construction_year:row.construction_year,
-     condominium_delivery_year:row.delivery_year,
-     condominium_units:row.units,
-     condominium_builder:row.builder
-   });
-   if(msg)msg.innerHTML='<span style="color:var(--green);font-weight:700">✓ Condomínio e características carregados do catálogo desta imobiliária.</span>';
+   applyCondoEnrichment({features:row.features||[],condominium_construction_year:row.construction_year,condominium_delivery_year:row.delivery_year,condominium_units:row.units,towers:row.towers,floors:row.floors,condominium_builder:row.builder});
+   if(msg)msg.innerHTML='<span style="color:var(--green);font-weight:700">✓ Condomínio e características carregados da base global.</span>';
    return true;
  }catch(e){
    if(seq!==window.__condoLookupSeq)return false;
-   console.error("[VSN] lookupCondoBase",e);
-   if(msg)msg.innerHTML='<span class="help">Erro ao consultar o catálogo de condomínios desta imobiliária.</span>';
+   console.error("[VersusCRM] lookupCondoBase",e);
+   if(msg)msg.innerHTML='<span class="help">Erro ao consultar a base global de condomínios.</span>';
    return false;
  }
-}function clearCondoSelection(){const field=document.getElementById("condominium_name"),msg=document.getElementById("condomsg");if(field){field.value="";field.focus();}window.__condoEnrichment={};window.__pendingCondo=null;if(msg)msg.innerHTML="<span class=\"help\">Digite o novo condomínio e salve o imóvel. A identificação automática continua desativada na edição.</span>";}function autoCondo(){if(editId)return;clearTimeout(window.__condoTimer);window.__condoTimer=setTimeout(lookupCondoBase,450)}function setupCondo(){const f=document.getElementById("propertyForm");const a=f.elements.address,n=f.elements.number,c=f.elements.cep;if(a)a.addEventListener("input",autoCondo);if(c){c.addEventListener("input",autoCondo);c.addEventListener("blur",autoCondo)}if(n){n.addEventListener("input",autoCondo);n.addEventListener("blur",autoCondo)}}function applyCondoEnrichment(data){window.__condoEnrichment=data||{};const values=new Set(Array.isArray(data?.features)?data.features:[]);document.querySelectorAll('input[name="condo_feat"]').forEach(el=>{el.checked=values.has(el.value)});const parts=[];if(data?.condominium_delivery_year)parts.push("Entrega: "+data.condominium_delivery_year);if(data?.condominium_construction_year)parts.push("Construção: "+data.condominium_construction_year);if(data?.condominium_units)parts.push("Unidades: "+data.condominium_units);if(data?.towers)parts.push("Torres: "+data.towers);if(data?.floors)parts.push("Andares: "+data.floors);if(data?.condominium_builder)parts.push("Construtora: "+data.condominium_builder);const msg=document.getElementById("condomsg");if(msg&&parts.length){msg.insertAdjacentHTML("beforeend",'<div style="margin-top:10px;padding:10px;border:1px solid #d8e1e7;background:#f7fafc;border-radius:10px"><b>Dados encontrados do condomínio:</b><br><span style="font-size:12px;color:#5f6b73">'+esc(parts.join(" · "))+'</span></div>')}}async function identifyCondo(force=false){
+}
+function clearCondoSelection(){const field=document.getElementById("condominium_name"),msg=document.getElementById("condomsg");if(field){field.value="";field.focus();}window.__condoEnrichment={};window.__pendingCondo=null;if(msg)msg.innerHTML="<span class=\"help\">Digite o novo condomínio e salve o imóvel. A identificação automática continua desativada na edição.</span>";}function autoCondo(){if(editId)return;clearTimeout(window.__condoTimer);window.__condoTimer=setTimeout(lookupCondoBase,450)}function setupCondo(){const f=document.getElementById("propertyForm");const a=f.elements.address,n=f.elements.number,c=f.elements.cep;if(a)a.addEventListener("input",autoCondo);if(c){c.addEventListener("input",autoCondo);c.addEventListener("blur",autoCondo)}if(n){n.addEventListener("input",autoCondo);n.addEventListener("blur",autoCondo)}}function applyCondoEnrichment(data){window.__condoEnrichment=data||{};const values=new Set(Array.isArray(data?.features)?data.features:[]);document.querySelectorAll('input[name="condo_feat"]').forEach(el=>{el.checked=values.has(el.value)});const parts=[];if(data?.condominium_delivery_year)parts.push("Entrega: "+data.condominium_delivery_year);if(data?.condominium_construction_year)parts.push("Construção: "+data.condominium_construction_year);if(data?.condominium_units)parts.push("Unidades: "+data.condominium_units);if(data?.towers)parts.push("Torres: "+data.towers);if(data?.floors)parts.push("Andares: "+data.floors);if(data?.condominium_builder)parts.push("Construtora: "+data.condominium_builder);const msg=document.getElementById("condomsg");if(msg&&parts.length){msg.insertAdjacentHTML("beforeend",'<div style="margin-top:10px;padding:10px;border:1px solid #d8e1e7;background:#f7fafc;border-radius:10px"><b>Dados encontrados do condomínio:</b><br><span style="font-size:12px;color:#5f6b73">'+esc(parts.join(" · "))+'</span></div>')}}async function identifyCondo(force=false){
  const d=addressData(),msg=document.getElementById("condomsg"),field=document.getElementById("condominium_name");
  if(!d.address||!d.number){if(force)toast("Preencha Endereço e Número para consultar o catálogo desta imobiliária.","err");return}
  window.__pendingCondo=null;
