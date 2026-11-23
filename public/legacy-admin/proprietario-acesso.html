@@ -38,9 +38,13 @@
  if(!slug||!url||!key){$('msg').textContent='Não foi possível identificar a imobiliária. Verifique o endereço.';$('msg').className='message show error';return;}
  const sb=window.supabase.createClient(url,key);
  let mode='login';
- $('tenantBrand').textContent=(cfg.tenantName||'Imobiliária').split(/\s+/)[0];
+ const tenantName=String(cfg.tenantName||'Imobiliária').trim()||'Imobiliária';
+ $('tenantBrand').textContent=tenantName;
+ $('tenantBrand').title='Voltar ao site de '+tenantName;
+ $('tenantBrand').setAttribute('aria-label','Voltar ao site de '+tenantName);
  $('tenantBrand').href='/'+encodeURIComponent(slug);
  $('backToSite').href='/'+encodeURIComponent(slug);
+ $('backToSite').textContent='← Voltar ao site';
  function message(t,type='ok'){const el=$('msg');el.textContent=t;el.className='message show '+type;}
  function setMode(m){
   mode=m;$('tabLogin').classList.toggle('active',m==='login');$('tabSignup').classList.toggle('active',m==='signup');
