@@ -470,13 +470,24 @@ function renderUserAdmin(){loadUserAdmin();}
 
 async function loadSiteProfile(){
   if(!canManageTenantSiteSettings())return;
-  const {data,error}=await S.from('crm_companies').select('*').eq('id',window.__VERSUS_CONFIG.companyId).maybeSingle();
-  if(error){toast('Não foi possível carregar o perfil do site: '+error.message,'err');return}
+  const slug=window.__VERSUS_CONFIG?.slug;
+  let data=null;
+  // Usa a mesma leitura pública por slug que alimenta o site. Assim as imagens
+  // já publicadas aparecem mesmo quando a leitura direta da tabela é filtrada por RLS.
+  const publicResult=await S.rpc('get_public_tenant_by_slug',{p_slug:slug});
+  if(!publicResult.error){data=Array.isArray(publicResult.data)?publicResult.data[0]:publicResult.data}
+  if(!data){
+    const direct=await S.from('crm_companies').select('*').eq('id',window.__VERSUS_CONFIG.companyId).maybeSingle();
+    if(direct.error){toast('Não foi possível carregar o perfil do site: '+direct.error.message,'err');return}
+    data=direct.data;
+  }
+  if(!data){toast('Não foi possível localizar as configurações públicas desta imobiliária.','err');return}
   const map={siteName:'name',siteLogoUrl:'logo_url',sitePhone:'contact_phone',siteWhatsapp:'whatsapp',siteEmail:'contact_email',siteCreci:'creci',siteInstagram:'instagram_url',siteFacebook:'facebook_url',siteYoutube:'youtube_url',siteAddress:'public_address',siteAbout:'about_text'};
-  Object.keys(map).forEach(id=>{const el=document.getElementById(id);if(el)el.value=(data&&data[map[id]])||''});
-  const p=document.getElementById('sitePhotoPreview');if(p&&data?.site_photo_url){p.src=data.site_photo_url;p.style.display='block'}
-  const cover=document.getElementById('siteCoverPreview');const coverUrl=data?.site_cover_url||'';if(cover&&coverUrl){cover.src=coverUrl;cover.style.display='block'}
-  const share=document.getElementById('siteSharePreview');const shareUrl=data?.site_share_image_url||'/logo-vsn-share.svg';if(share){share.src=shareUrl;share.style.display='block';share.onerror=function(){if(this.src!==location.origin+'/logo-vsn-share.svg'){this.src='/logo-vsn-share.svg'}}}
+  Object.keys(map).forEach(id=>{const el=document.getElementById(id);if(el)el.value=(data[map[id]])||''});
+  const setPreview=(id,url,fallback)=>{const img=document.getElementById(id);if(!img)return;img.onerror=function(){this.style.display='none'};img.onload=function(){this.style.display='block'};img.src=url||fallback||'';if(!url&&!fallback)img.style.display='none'};
+  setPreview('sitePhotoPreview',data.site_photo_url);
+  setPreview('siteCoverPreview',data.site_cover_url);
+  setPreview('siteSharePreview',data.site_share_image_url,'/logo-vsn-share.svg');
 }
 async function saveSiteProfile(){
   if(!canManageTenantSiteSettings())return;
@@ -484,9 +495,10 @@ async function saveSiteProfile(){
   if(btn){btn.disabled=true;btn.textContent='Salvando...'}
   try{
     const companyId=window.__VERSUS_CONFIG.companyId;
-    const current=await S.from('crm_companies').select('site_photo_url,site_cover_url,site_share_image_url').eq('id',companyId).maybeSingle();
+    const current=await S.rpc('get_public_tenant_by_slug',{p_slug:window.__VERSUS_CONFIG.slug});
     if(current.error)throw current.error;
-    let sitePhotoUrl=current.data?.site_photo_url||null,siteCoverUrl=current.data?.site_cover_url||null,siteShareImageUrl=current.data?.site_share_image_url||null;
+    const currentData=Array.isArray(current.data)?current.data[0]:current.data;
+    let sitePhotoUrl=currentData?.site_photo_url||null,siteCoverUrl=currentData?.site_cover_url||null,siteShareImageUrl=currentData?.site_share_image_url||null;
     const files=[['siteShareFile','share',v=>siteShareImageUrl=v],['siteCoverFile','cover',v=>siteCoverUrl=v],['sitePhotoFile','photo',v=>sitePhotoUrl=v]];
     for(const [input,prefix,setValue] of files){
       const file=document.getElementById(input)?.files?.[0];if(!file)continue;
