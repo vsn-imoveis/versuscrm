@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Área do Proprietário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#061d2d;--gold:#d3aa62;--muted:#6c7881}*{box-sizing:border-box}body{margin:0;background:#f4f6f7;color:#102b40;font-family:Manrope,Arial,sans-serif;min-height:100vh}.top{height:76px;background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 max(24px,calc((100% - 1100px)/2));color:white}.brand{font:40px Georgia,serif;color:var(--gold);text-decoration:none}.brand small{display:block;font:8px Manrope,sans-serif;letter-spacing:4px;text-align:center;color:white;margin-top:3px}.top a.back{color:#fff;font-size:13px;text-decoration:none}.wrap{max-width:1040px;margin:45px auto;padding:0 22px}.intro{margin-bottom:26px}.eyebrow{color:#a57b35;font-size:11px;font-weight:800;letter-spacing:2px}.intro h1{font:800 clamp(28px,4vw,40px) Montserrat,Manrope,sans-serif;margin:10px 0}.intro p{color:var(--muted);line-height:1.65;margin:0}.layout{display:grid;grid-template-columns:1fr 1fr;gap:20px}.panel{background:#fff;border:1px solid #e2e7ea;border-radius:16px;padding:28px;box-shadow:0 10px 30px #0b29400a}.panel h2{font:700 21px Montserrat,Manrope,sans-serif;margin:0 0 8px}.panel>p{font-size:13px;line-height:1.6;color:var(--muted);margin:0 0 20px}.tabs{display:flex;gap:8px;margin-bottom:20px}.tabs button{flex:1;border:1px solid #dce2e6;background:#f7f8f9;padding:11px;border-radius:9px;font-weight:800;cursor:pointer;color:#23394a}.tabs button.active{background:var(--navy);color:white;border-color:var(--navy)}label{display:block;font-size:12px;font-weight:800;margin:13px 0 6px}input{width:100%;padding:13px;border:1px solid #dce2e6;border-radius:9px;font:14px Manrope,Arial;outline:none}input:focus{border-color:var(--gold)}.submit{width:100%;border:0;border-radius:24px;padding:14px;background:var(--gold);color:#102638;font-weight:800;cursor:pointer;margin-top:18px}.hint{font-size:11px;color:#7b8790;line-height:1.5;margin-top:12px}.message{display:none;padding:12px;border-radius:9px;margin:14px 0;font-size:13px;line-height:1.5}.message.show{display:block}.message.error{background:#fff0ef;color:#9b2e27}.message.ok{background:#edf8f0;color:#24653b}.info{background:var(--navy);color:white;border-radius:16px;padding:28px}.info h2{font:700 21px Montserrat;margin:0 0 16px}.step{display:flex;gap:13px;margin:18px 0}.num{width:30px;height:30px;flex:none;border-radius:50%;background:#d3aa62;color:#102638;display:grid;place-items:center;font-weight:900}.step b{display:block;font-size:13px;margin-bottom:4px}.step span{display:block;font-size:12px;line-height:1.6;color:#cbd6dd}.dashboard{display:none}.dashboard.show{display:block}.logout{border:1px solid #dce2e6;background:#fff;padding:10px 16px;border-radius:20px;cursor:pointer;font-weight:800}.pending{background:#fff8e9;border:1px solid #f0d9a9;border-radius:12px;padding:16px;font-size:13px;line-height:1.6;margin-top:18px}@media(max-width:1000px){.layout{grid-template-columns:minmax(0,1fr)}.wrap{width:100%;max-width:720px;margin:30px auto;padding:0 18px}.panel,.info{min-width:0;padding:22px}.intro h1{overflow-wrap:anywhere}.intro p{max-width:100%;overflow-wrap:anywhere}.top{padding:0 20px}}@media(max-width:480px){.wrap{padding:0 12px;margin:24px auto}.panel,.info{padding:18px}.tabs{gap:6px}.tabs button{padding:10px 6px}.top{padding:0 14px}.brand{font-size:34px}}
+</style><link rel="stylesheet" href="../css/responsive-mobile.css"></head>
+<body>
+<header class="top"><a class="brand" id="tenantBrand" href="#">VERSUS<small>PROPRIETÁRIO</small></a><a class="back" id="backToSite" href="#">← Voltar ao site</a></header>
+<main class="wrap">
+<section class="intro"><div class="eyebrow">ÁREA EXCLUSIVA</div><h1>Área do Proprietário</h1><p>Acesse sua conta para acompanhar seus imóveis e solicitações junto à imobiliária.</p></section>
+<section id="authView" class="layout">
+<div class="panel"><div class="tabs"><button id="tabLogin" class="active" type="button">Entrar</button><button id="tabSignup" type="button">Criar conta</button></div>
+<form id="authForm" autocomplete="off"><div id="nameWrap" hidden><label for="name">Nome completo</label><input id="name" autocomplete="off" maxlength="120" placeholder="Nome e Sobrenome"></div>
+<label for="email">E-mail</label><input id="email" type="email" required autocomplete="off" maxlength="254" placeholder="Digite seu melhor e-mail">
+<div id="phoneWrap" hidden><label for="phone">Celular</label><input id="phone" type="tel" autocomplete="tel" placeholder="(11) 99999-9999" maxlength="20"></div>
+<div id="passwordWrap"><label for="password">Senha</label><input id="password" type="password" required minlength="7" autocomplete="current-password"><div id="passwordHint" class="hint">Use sua senha cadastrada. Se esqueceu, utilize a recuperação de senha.</div></div>
+<div id="msg" class="message" role="status"></div><button id="submitBtn" class="submit" type="submit">Entrar na minha conta</button></form>
+<div id="recoverWrap" style="text-align:center;margin-top:15px"><button id="recover" type="button" style="border:0;background:none;color:#526878;text-decoration:underline;cursor:pointer;font-size:12px">Esqueci minha senha</button></div>
+</div>
+<aside class="info"><h2>Como funciona</h2>
+<div class="step"><div class="num">1</div><div><b>Crie sua conta</b><span>Informe seus dados e receba a senha de acesso por e-mail.</span></div></div>
+<div class="step"><div class="num">2</div><div><b>Vincule seu imóvel</b><span>A imobiliária valida o vínculo com o imóvel antes de liberar o gerenciamento.</span></div></div>
+<div class="step"><div class="num">3</div><div><b>Acompanhe as solicitações</b><span>Alterações de cadastro e publicação dependem da aprovação da administração.</span></div></div>
+<p class="hint" style="color:#cbd6dd">O cadastro só é liberado para e-mails já vinculados a um contato proprietário nesta imobiliária. Você receberá um convite seguro por e-mail para definir sua senha.</p></aside>
+</section>
+<section id="dashboard" class="panel dashboard"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2>Olá, <span id="userName">proprietário</span>!</h2><button id="logout" class="logout" type="button">Sair</button></div><p>Sua conta foi autenticada.</p><div id="ownerProperties" aria-live="polite"><div class="pending">Carregando seus imóveis...</div></div><p id="accountEmail" style="margin-top:18px"></p></section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+ const cfg=window.__VERSUS_CONFIG||{};
+ const slug=location.pathname.split('/').filter(Boolean)[0];
+ const url=cfg.supabaseUrl, key=cfg.supabaseAnonKey;
+ const $=id=>document.getElementById(id);
+ if(!slug||!url||!key){$('msg').textContent='Não foi possível identificar a imobiliária. Verifique o endereço.';$('msg').className='message show error';return;}
+ const sb=window.supabase.createClient(url,key);
+ let mode='login';
+ $('tenantBrand').textContent=(cfg.tenantName||'Imobiliária').split(/\s+/)[0];
+ $('tenantBrand').href='/'+encodeURIComponent(slug);
+ $('backToSite').href='/'+encodeURIComponent(slug);
+ function message(t,type='ok'){const el=$('msg');el.textContent=t;el.className='message show '+type;}
+ function setMode(m){
+  mode=m;$('tabLogin').classList.toggle('active',m==='login');$('tabSignup').classList.toggle('active',m==='signup');
+  $('nameWrap').hidden=m!=='signup';$('phoneWrap').hidden=m!=='signup';$('name').required=m==='signup';$('phone').required=m==='signup';
+  $('password').disabled=m==='signup';$('password').required=m==='login';$('passwordWrap').style.display=m==='signup'?'none':'block';
+  $('submitBtn').textContent=m==='signup'?'Solicitar acesso':'Entrar na minha conta';
+  $('recoverWrap').style.display=m==='signup'?'none':'block';$('msg').className='message';
+ }
+ async function verifyOwner(){
+  const {data:{session}}=await sb.auth.getSession();if(!session)return false;
+  const response=await fetch('/api/proprietario-auth',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({action:'verify',slug})});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(result.error||'Esta conta não está vinculada como proprietária a esta imobiliária.');
+  location.replace('/'+encodeURIComponent(slug)+'/admin/proprietario.html');return true;
+ }
+ $('tabLogin').onclick=()=>setMode('login');$('tabSignup').onclick=()=>setMode('signup');
+ $('authForm').addEventListener('submit',async e=>{
+  e.preventDefault();const btn=$('submitBtn');btn.disabled=true;btn.textContent='Aguarde...';
+  try{
+   const email=$('email').value.trim().toLowerCase();
+   if(mode==='signup'){
+    const response=await fetch('/api/proprietario-auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'signup',slug,nome:$('name').value.trim(),email,celular:$('phone').value.trim()})});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||'Não foi possível solicitar o acesso.');
+    message('Solicitação recebida. Se os dados corresponderem a um cadastro de proprietário desta imobiliária, você receberá um convite por e-mail para definir sua senha.');
+   }else{
+    const {error}=await sb.auth.signInWithPassword({email,password:$('password').value});
+    if(error)throw error;
+    await verifyOwner();
+   }
+  }catch(err){message(err.message||'Não foi possível concluir. Tente novamente.','error');}
+  finally{btn.disabled=false;btn.textContent=mode==='signup'?'Solicitar acesso':'Entrar na minha conta';}
+ });
+ $('recover').onclick=async()=>{
+  const email=$('email').value.trim().toLowerCase();if(!email){message('Informe seu e-mail para recuperar a senha.','error');$('email').focus();return;}
+  const btn=$('recover');btn.disabled=true;btn.textContent='Enviando...';
+  try{const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/'+encodeURIComponent(slug)+'/proprietario/'});if(error)throw error;message('Se o e-mail estiver cadastrado, enviaremos as instruções para redefinir sua senha.');}
+  catch(err){message(err.message||'Não foi possível solicitar a recuperação.','error');}
+  finally{btn.disabled=false;btn.textContent='Esqueci minha senha';}
+ };
+ sb.auth.getSession().then(async({data})=>{if(data.session){try{await verifyOwner();}catch(err){await sb.auth.signOut();message(err.message,'error');}}});
+ setMode('login');
+})();
+</script></body></html>
