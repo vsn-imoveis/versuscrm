@@ -188,7 +188,8 @@ function forceAreaTextField(){const form=document.getElementById('propertyForm')
   let imported=0;
   Object.entries(mappings).forEach(([field,key])=>{const value=result[key];if(value!==null&&value!==undefined&&value!==''){set(field,value);imported++;}});
   // Match pelo nome-base: normalized_name da base pode incluir endereço/número após o nome.
-  const condoName=String(result.condominium_name||'').trim();\n  if(condoName){set('condominium_name',condoName);imported++;}
+  const condoName=String(result.condominium_name||'').trim();
+  if(condoName){set('condominium_name',condoName);imported++;}
   if(condoName&&S){
    try{
     const normalizeName=v=>String(v||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
@@ -216,7 +217,9 @@ function forceAreaTextField(){const form=document.getElementById('propertyForm')
     if(candidates.length===1){
      const condo=candidates[0];
      const fillIfBlank=(field,value)=>{const el=form.elements.namedItem(field);if(el&&value!==null&&value!==undefined&&String(value).trim()!==''&&!String(el.value||'').trim()){el.value=String(value);return true;}return false;};
-     fillIfBlank('address',condo.address);fillIfBlank('number',condo.details?.number);fillIfBlank('cep',condo.details?.cep);fillIfBlank('neighborhood',condo.neighborhood);fillIfBlank('city',condo.city);fillIfBlank('state',condo.state);\n     const condoFeatures=Array.isArray(condo.details?.features)?condo.details.features:[];\n     applyCondoEnrichment({features:condoFeatures,condominium_construction_year:condo.construction_year,condominium_builder:condo.builder,condominium_units:condo.details?.units,towers:condo.details?.towers,floors:condo.details?.floors,condominium_delivery_year:condo.details?.delivery_year});
+     fillIfBlank('address',condo.address);fillIfBlank('number',condo.details?.number);fillIfBlank('cep',condo.details?.cep);fillIfBlank('neighborhood',condo.neighborhood);fillIfBlank('city',condo.city);fillIfBlank('state',condo.state);
+     const condoFeatures=Array.isArray(condo.details?.features)?condo.details.features:[];
+     applyCondoEnrichment({features:condoFeatures,condominium_construction_year:condo.construction_year,condominium_builder:condo.builder,condominium_units:condo.details?.units,towers:condo.details?.towers,floors:condo.details?.floors,condominium_delivery_year:condo.details?.delivery_year});
      const msg=document.getElementById('condomsg');
      if(msg)msg.innerHTML='<span class="help" style="color:var(--blue)">Condomínio encontrado no catálogo desta imobiliária. Localização completada com o cadastro existente.</span>';
     }else if(candidates.length>1){
