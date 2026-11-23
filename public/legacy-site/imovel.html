@@ -446,7 +446,7 @@ load();
     const firstName=display.trim().split(/\s+/)[0]||'Minha conta';
     const photo=profile.avatar_url?'<img class="site-auth-avatar" src="'+esc(profile.avatar_url)+'" alt="">':'<span class="site-auth-avatar">'+esc(firstName.charAt(0).toUpperCase())+'</span>';
     const group=document.createElement('div');group.className='site-auth-controls';
-    const profileLink=document.createElement('a');profileLink.className='site-auth-profile';profileLink.href='/'+encodeURIComponent(tenantSlug)+'/admin';profileLink.setAttribute('aria-label','Abrir painel administrativo');profileLink.innerHTML=photo+'<span>'+esc(firstName)+'</span>';
+    const profileLink=document.createElement('a');profileLink.className='site-auth-profile';profileLink.href='/'+encodeURIComponent(tenantSlug)+'/admin/painel-login.html';profileLink.setAttribute('aria-label','Abrir painel administrativo');profileLink.innerHTML=photo+'<span>'+esc(firstName)+'</span>';
     const bell=document.createElement('button');bell.type='button';bell.className='site-auth-bell';bell.setAttribute('aria-label','Notificações');bell.title='Notificações';bell.textContent='🔔';
     bell.addEventListener('click',()=>{window.location.href='/'+encodeURIComponent(tenantSlug)+'/admin/solicitacoes-proprietario.html';});
     const logout=document.createElement('button');logout.type='button';logout.className='site-auth-logout';logout.textContent='Sair';
