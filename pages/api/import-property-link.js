@@ -34,7 +34,7 @@ async function downloadImage(target, redirects=0){
  const resolved=await resolvePublicTarget(target);
  const client=target.protocol==="https:"?https:http;
  return await new Promise((resolve,reject)=>{
-  const request=client.get(target,{headers:{"User-Agent":"Mozilla/5.0 VersusCRM Image Import","Accept":"image/avif,image/webp,image/png,image/jpeg,image/gif,*/*;q=0.5"},timeout:12000,lookup:(_h,_o,cb)=>cb(null,resolved.address,resolved.family)},response=>{
+  const request=client.get(target,{headers:{"User-Agent":"Mozilla/5.0 VersusCRM Image Import","Accept":"image/avif,image/webp,image/png,image/jpeg,image/gif,*/*;q=0.5"},timeout:12000,lookup:(_h,options,cb)=>options&&options.all?cb(null,[resolved]):cb(null,resolved.address,resolved.family)},response=>{
    if(response.statusCode>=300&&response.statusCode<400&&response.headers.location){
     response.resume();let next;try{next=new URL(response.headers.location,target)}catch(_){return reject(new Error("Redirecionamento de imagem inválido."))}
     return downloadImage(next,redirects+1).then(resolve,reject);
@@ -289,7 +289,7 @@ export default async function handler(req,res){
    const resolved=await resolvePublicTarget(target);
    const client=target.protocol==="https:"?https:http;
    return await new Promise((resolve,reject)=>{
-    const rq=client.get(target,{headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36","Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language":"pt-BR,pt;q=0.9,en;q=0.8"},timeout:12000,lookup:(_hostname,_options,callback)=>callback(null,resolved.address,resolved.family)},rp=>{
+    const rq=client.get(target,{headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36","Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language":"pt-BR,pt;q=0.9,en;q=0.8"},timeout:12000,lookup:(_hostname,options,callback)=>options&&options.all?callback(null,[resolved]):callback(null,resolved.address,resolved.family)},rp=>{
      if(rp.statusCode>=300&&rp.statusCode<400&&rp.headers.location){rp.resume();let next;try{next=new URL(rp.headers.location,target);}catch(_){return reject(new Error("O site enviou um redirecionamento inválido."));}return fetchHtml(next,redirects+1).then(resolve,reject);}
      if(rp.statusCode<200||rp.statusCode>=300){rp.resume();return reject(new Error("O portal bloqueou ou recusou a leitura (HTTP "+rp.statusCode+")."));}
      if(!String(rp.headers["content-type"]||"").toLowerCase().includes("html")){rp.resume();return reject(new Error("O link não retornou uma página HTML."));}
