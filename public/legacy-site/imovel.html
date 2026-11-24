@@ -430,9 +430,17 @@ load();
 // A página do imóvel é servida em rota própria; todos os retornos Home devem
 // apontar para a rota raiz do tenant, nunca para o caminho do anúncio.
 document.querySelectorAll('a[href="/"]').forEach(a=>a.href=tenantHomeHref);
+// Esta página roda dentro de um iframe. Links internos precisam navegar a janela
+// principal para atualizar a URL exibida no navegador, não apenas o conteúdo do iframe.
+document.querySelectorAll('a[href]').forEach(a=>{
+  try {
+    const targetUrl=new URL(a.getAttribute('href'),location.href);
+    if(targetUrl.origin===location.origin) a.target='_top';
+  } catch {}
+});
 const tenantHomeLink=document.getElementById('siteBrand');
-if(tenantHomeLink)tenantHomeLink.href=tenantHomeHref;
-document.querySelectorAll('a.back').forEach(a=>a.href=tenantHomeHref);
+if(tenantHomeLink){tenantHomeLink.href=tenantHomeHref;tenantHomeLink.target='_top';}
+document.querySelectorAll('a.back').forEach(a=>{a.href=tenantHomeHref;a.target='_top';});
 
  (async function initTenantAuthHeader(){
    const host=document.querySelector('.header-actions');
