@@ -110,7 +110,9 @@ export async function POST(request: NextRequest) {
     auth: { persistSession: false, autoRefreshToken: false },
   })
   const { data: verifiedAuth, error: verificationError } = await verificationClient.auth.signInWithPassword({
-    email,
+    // Validate with the actual Auth login email. contact_email is the billing/contact
+    // address and may differ from the email attached to an existing Auth identity.
+    email: loginEmail,
     password,
   })
   if (verificationError || !verifiedAuth.user || verifiedAuth.user.id !== userId) {
