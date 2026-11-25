@@ -428,7 +428,11 @@ async function openUserAdmin(){
 function closeUserAdmin(){switchProfileTab('profile')}
 async function teamAdminAction(action,payload={}){
  const {data,error}=await S.functions.invoke('admin-actions',{body:{action,companyId:window.__VERSUS_CONFIG.companyId,redirectTo:location.origin+'/'+encodeURIComponent(window.__VERSUS_CONFIG.slug)+'/admin/painel-login.html',...payload}});
- if(error)throw new Error(error.message||'Falha ao comunicar com o serviço de equipe.');
+ if(error){
+  let detail='';
+  try{const response=error.context;if(response&&typeof response.clone==='function'){const body=await response.clone().json();detail=body?.error||body?.message||'';}}catch{}
+  throw new Error(detail||error.message||'Falha ao comunicar com o serviço de equipe.');
+ }
  if(data?.error)throw new Error(data.error);
  return data;
 }
