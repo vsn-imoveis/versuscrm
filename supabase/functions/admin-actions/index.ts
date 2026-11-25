@@ -29,6 +29,11 @@ Deno.serve(async req => {
    const {data:callerMembership,error:callerError}=await db.from("crm_memberships").select("role").eq("company_id",companyId).eq("user_id",u.user.id).maybeSingle();
    if(callerError||!callerMembership||!["owner","admin"].includes(callerMembership.role)) return out({error:"Somente o proprietário ou administrador desta imobiliária pode gerenciar a equipe."},403);
    const isOwner=callerMembership.role==="owner";
+   const {data:subscription,error:subscriptionError}=await db.from("crm_subscriptions").select("plan_code,plan_name,status").eq("company_id",companyId).order("created_at",{ascending:false}).limit(1).maybeSingle();
+   if(subscriptionError)return out({error:"Não foi possível consultar o plano da imobiliária."},500);
+   const planCode=String(subscription?.plan_code||"start").toLowerCase();
+   // Start = proprietário; Essencial/Pro = proprietário + 1 corretor; Imobiliária = proprietário + 5 corretores.
+   const userLimit=planCode==="imobiliaria"?6:(["essencial","pro"].includes(planCode)?2:1);
    if(action==="team-list") {
     const {data:members,error}=await db.from("crm_memberships").select("user_id,role,created_at").eq("company_id",companyId).order("created_at",{ascending:true});
     if(error) return out({error:"Não foi possível carregar a equipe."},500);
@@ -40,10 +45,13 @@ Deno.serve(async req => {
     const {data:leads,error:leadError}=await db.from("crm_leads").select("assigned_to").eq("company_id",companyId).not("assigned_to","is",null);
     if(leadError)return out({error:"Não foi possível consultar os leads atribuídos."},500);
     const rows=(members||[]).map(m=>{const profile=(profiles||[]).find(p=>p.id===m.user_id);const authUser=allUsers.find(x=>x.id===m.user_id);return {...m,...(profile||{}),email:authUser?.email||"",assigned_leads:(leads||[]).filter(x=>x.assigned_to===m.user_id).length};});
-    return out({ok:true,company:{id:company.id,name:company.name},members:rows,canManageAdmins:isOwner,currentUserId:u.user.id});
+    return out({ok:true,company:{id:company.id,name:company.name},subscription:{planCode,planName:subscription?.plan_name||planCode,userLimit,usedUsers:rows.length,availableUsers:Math.max(0,userLimit-rows.length)},members:rows,canManageAdmins:isOwner,currentUserId:u.user.id});
    }
    const targetId=String(b?.userId||"").trim();
    if(action==="team-invite") {
+    const {count:memberCount,error:memberCountError}=await db.from("crm_memberships").select("user_id",{count:"exact",head:true}).eq("company_id",companyId);
+    if(memberCountError)return out({error:"Não foi possível conferir o limite de usuários."},500);
+    if((memberCount||0)>=userLimit)return out({error:"O plano "+(subscription?.plan_name||planCode)+" permite até "+userLimit+" usuário(s). Remova um membro ou altere o plano para adicionar outro."},403);
     const email=String(b?.email||"").trim().toLowerCase(),name=String(b?.fullName||"").trim(),role=String(b?.role||"agent");
     if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||!name) return out({error:"Informe nome e e-mail válidos."},400);
     if(!["admin","manager","agent","member"].includes(role)||(!isOwner&&role==="admin")) return out({error:"Você não tem permissão para conceder essa função."},403);
