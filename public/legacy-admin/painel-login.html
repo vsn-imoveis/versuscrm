@@ -679,7 +679,7 @@ function openTeamUserEdit(userId){
 
   '<div><label>E-mail</label><input value="'+esc(user.email||'')+'" disabled></div>'+
   '</div>'+buildTeamTransferSection(user)+'<section class="crm-user-edit-permissions"><h3>Permissões deste usuário</h3><p>Defina quais áreas e funções este usuário pode acessar.</p><div class="crm-user-permission-grid">'+permissions+'</div></section>'+
-  '<div class="crm-user-edit-actions"><button type="button" class="crm-user-edit-save" id="saveTeamUserButton"">Salvar alterações e permissões</button><button type="button" class="crm-user-edit-cancel" onclick="closeTeamUserEdit()">Cancelar</button></div>';
+  '<div class="crm-user-edit-actions"><button type="button" class="crm-user-edit-save" id="saveTeamUserButton">Salvar alterações e permissões</button><button type="button" class="crm-user-edit-cancel" onclick="closeTeamUserEdit()">Cancelar</button></div>';
  const saveButton=document.getElementById('saveTeamUserButton');
  if(saveButton)saveButton.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();saveTeamUser(userId)});
  modal.classList.add('open');document.body.style.overflow='hidden';
