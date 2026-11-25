@@ -594,7 +594,7 @@ async function loadUserAdmin(){
   adminCanManageAdmins=!!result.canManageAdmins;
   const rows=adminUsers.map(u=>{
    const protectedMember=u.role==='owner'||u.user_id===result.currentUserId;
-   const actions=protectedMember?'<span class="muted">—</span>':'<div class="crm-user-row-actions"><button type="button" class="btn gray" onclick="openTeamUserEdit(\\''+esc(u.user_id)+'\\')">Editar</button><button type="button" class="btn gray" style="padding:7px 10px;font-size:11px" onclick="removeTeamMember(\\''+esc(u.user_id)+'\\')">Remover</button></div>';
+   const actions=protectedMember?'<span class="muted">—</span>':'<div class="crm-user-row-actions"><button type="button" class="btn gray" onclick="openTeamUserEdit(&quot;'+esc(u.user_id)+'&quot;)">Editar</button><button type="button" class="btn gray" style="padding:7px 10px;font-size:11px" onclick="removeTeamMember(&quot;'+esc(u.user_id)+'&quot;)">Remover</button></div>';
    return '<tr style="border-top:1px solid #edf0f2"><td style="padding:13px 12px"><strong>'+esc(u.full_name||'Usuário')+'</strong><div class="user-admin-email">'+esc(u.email||'')+'</div></td><td style="padding:13px 12px"><span class="profile-role">'+esc(teamRoleLabel(u.role))+'</span></td><td style="padding:13px 12px">'+esc(u.phone||'—')+'</td><td style="padding:13px 12px">'+Number(u.assigned_leads||0)+'</td><td style="padding:13px 12px">'+(u.created_at?new Date(u.created_at).toLocaleDateString('pt-BR'):'—')+'</td><td style="padding:13px 12px">'+actions+'</td></tr>';
   }).join('');
   const plan=result.subscription||{planName:"Plano atual",userLimit:adminUsers.length,usedUsers:adminUsers.length,availableUsers:0};
