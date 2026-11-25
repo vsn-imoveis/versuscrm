@@ -202,6 +202,10 @@ window.addEventListener('popstate',function(event){
    login(message);
    return;
   }
+  // "Sou corretor" must always show the credential form, even if this
+  // browser has a remembered session from a previous visit.
+  const forceLogin=new URLSearchParams(location.search).get('force_login')==='1';
+  if(forceLogin){login();return;}
   if(window.__VERSUS_CONFIG.accessToken&&window.__VERSUS_CONFIG.refreshToken){
    const synced=await S.auth.setSession({access_token:window.__VERSUS_CONFIG.accessToken,refresh_token:window.__VERSUS_CONFIG.refreshToken});
    if(synced.error)throw synced.error;
