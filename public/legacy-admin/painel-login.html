@@ -630,7 +630,7 @@ function openTeamUserEdit(userId){
   '<div><label for="teamEditPhone">Telefone</label><input id="teamEditPhone" value="'+esc(user.phone||'')+'"></div>'+
   '<div><label for="teamEditCpf">CPF / CNPJ</label><input id="teamEditCpf" value="'+esc(user.cpf_cnpj||'')+'"></div>'+
   '<div><label for="teamEditCreci">CRECI</label><input id="teamEditCreci" value="'+esc(user.creci||'')+'"></div>'+
-  '<div><label for="teamEditCompany">Empresa / Imobiliária</label><input id="teamEditCompany" value="'+esc(user.company||'')+'"></div>'+
+
   '<div><label>E-mail</label><input value="'+esc(user.email||'')+'" disabled></div>'+
   '</div><section class="crm-user-edit-permissions"><h3>Permissões deste usuário</h3><p>Defina quais áreas e funções este usuário pode acessar.</p><div class="crm-user-permission-grid">'+permissions+'</div></section>'+
   '<div class="crm-user-edit-actions"><button type="button" class="crm-user-edit-save" id="saveTeamUserButton" onclick="saveTeamUser(\''+esc(userId)+'\')">Salvar alterações e permissões</button><button type="button" class="crm-user-edit-cancel" onclick="closeTeamUserEdit()">Cancelar</button></div>';
@@ -647,7 +647,6 @@ async function saveTeamUser(userId){
    phone:document.getElementById('teamEditPhone')?.value.trim()||'',
    cpf_cnpj:document.getElementById('teamEditCpf')?.value.trim()||'',
    creci:document.getElementById('teamEditCreci')?.value.trim()||'',
-   company:document.getElementById('teamEditCompany')?.value.trim()||''
   };
   if(!profile.full_name){alert('Informe o nome completo do usuário.');if(button){button.disabled=false;button.textContent='Salvar alterações e permissões'}return}
   await teamAdminAction('team-update',{userId,role:document.getElementById('teamEditRole')?.value,profile,permissions});
