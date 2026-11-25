@@ -309,17 +309,30 @@ async function refreshUpdatesCount(){const badge=document.getElementById('update
 let currentProfile=null;
 async function loadProfileSummary(user){
   const nameEl=document.getElementById('profileFirstName');
-
-  const {data}=await S.from('profiles').select('full_name,avatar_url').eq('id',user.id).maybeSingle();
-  currentProfile=data||{role:'corretor',full_name:user.user_metadata?.full_name||'',avatar_url:''};const tenantRole=window.__VERSUS_CONFIG.membershipRole||'member';currentProfile.role=(tenantRole==='owner'||tenantRole==='admin')?'admin':(tenantRole==='manager'?'gerente':'corretor');
+  const tenantRole=String(window.__VERSUS_CONFIG.membershipRole||'member').toLowerCase();
+  const uiRole=(tenantRole==='owner'||tenantRole==='admin')?'admin':(tenantRole==='manager'?'gerente':'corretor');
+  // Render a safe fallback immediately; profile lookup must never block the
+  // entire admin application from mounting.
+  currentProfile={role:uiRole,full_name:user.user_metadata?.full_name||'',avatar_url:''};
+  try{
+    const profileQuery=S.from('profiles').select('full_name,avatar_url').eq('id',user.id).maybeSingle();
+    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Tempo esgotado ao consultar o perfil.')),5000));
+    const result=await Promise.race([profileQuery,timeout]);
+    if(result?.error)throw result.error;
+    if(result?.data)currentProfile={...currentProfile,...result.data,role:uiRole};
+  }catch(error){
+    console.warn('Perfil não carregado; painel continuará com os dados básicos da conta.',error);
+  }
   const fullName=(currentProfile.full_name||user.user_metadata?.full_name||user.email||'Usuário').trim();
-  document.getElementById('user').textContent=fullName;
-  if(nameEl) nameEl.textContent=fullName.split(/\s+/)[0]||'Usuário';
+  const userEl=document.getElementById('user');
+  if(userEl)userEl.textContent=fullName;
+  if(nameEl)nameEl.textContent=fullName.split(/\\s+/)[0]||'Usuário';
   const mini=document.getElementById('profileAvatarMini');
-  const adminBtn=document.getElementById('adminUsersBtn');if(adminBtn)adminBtn.classList.toggle('show',currentProfile.role==='admin');const settingsNav=document.getElementById('adminSettingsNav');if(settingsNav)settingsNav.classList.toggle('show',currentProfile.role==='admin');
+  const adminBtn=document.getElementById('adminUsersBtn');if(adminBtn)adminBtn.classList.toggle('show',currentProfile.role==='admin');
+  const settingsNav=document.getElementById('adminSettingsNav');if(settingsNav)settingsNav.classList.toggle('show',currentProfile.role==='admin');
   if(mini){
-    if(currentProfile.avatar_url) mini.innerHTML='<img src="'+esc(currentProfile.avatar_url)+'" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover">';
-    else mini.textContent=(currentProfile.full_name||user.email||'U').trim().charAt(0).toUpperCase();
+    if(currentProfile.avatar_url)mini.innerHTML='<img src="'+esc(currentProfile.avatar_url)+'" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover">';
+    else mini.textContent=(fullName||user.email||'U').trim().charAt(0).toUpperCase();
   }
 }
 async function openProfile(){
