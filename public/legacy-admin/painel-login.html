@@ -360,8 +360,8 @@ function renderProfileForm(user,p){
   const isAdmin=p.role==='admin';
   document.getElementById('profileContent').innerHTML=
     '<div class="profile-tabs">'+
-      '<button type="button" class="profile-tab active" data-profile-tab="profile" onclick="switchProfileTab(\'profile\')">Meu perfil</button>'+
-      '<button type="button" class="profile-tab" data-profile-tab="password" onclick="switchProfileTab(\'password\')">Alterar senha</button>'+
+      '<button type="button" class="profile-tab active" id="profileTabButton" data-profile-tab="profile" aria-controls="profileTab" aria-selected="true" onclick="switchProfileTab(\'profile\')">Meu perfil</button>'+
+      '<button type="button" class="profile-tab" id="passwordTabButton" data-profile-tab="password" aria-controls="passwordTab" aria-selected="false" onclick="switchProfileTab(\'password\')">Alterar senha</button>'+
     '</div>'+
     '<div id="profileTab" class="profile-tab-panel active">'+
       '<div class="profile-top">'+
