@@ -607,7 +607,7 @@ function showTeamInviteSuccess(email,invitationSent){
  desc.style.cssText='margin:0 auto 22px;max-width:350px;color:#64727d;font-size:14px;line-height:1.65;overflow-wrap:anywhere';
  const note=document.createElement('div');note.textContent=invitationSent?'Dica: peça para conferir também a caixa de spam ou lixo eletrônico.':'O usuário já pode acessar esta imobiliária com a senha atual.';
  note.style.cssText='padding:11px 13px;margin:0 0 22px;border-radius:10px;background:#f4f7f9;color:#536574;font-size:12px;line-height:1.5';
- const btn=document.createElement('button');btn.type='button';btn.textContent='Entendi';btn.style.cssText='width:100%;padding:13px 18px;border:0;border-radius:10px;background:#76539a;color:#fff;font:800 14px Manrope,Arial,sans-serif;cursor:pointer;box-shadow:0 5px 14px rgba(118,83,154,.2)';
+ const btn=document.createElement('button');btn.type='button';btn.textContent='Entendi';btn.style.cssText='width:100%;padding:13px 18px;border:0;border-radius:10px;background:#d3aa62;color:#061d2d;font:800 14px Manrope,Arial,sans-serif;cursor:pointer;box-shadow:0 5px 14px rgba(211,170,98,.25)';
  const close=()=>{overlay.remove()};btn.addEventListener('click',close);overlay.addEventListener('click',e=>{if(e.target===overlay)close()});overlay.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
  box.append(icon,title,desc,note,btn);overlay.appendChild(box);document.body.appendChild(overlay);btn.focus();
 }
