@@ -21,7 +21,7 @@ Deno.serve(async req => {
   const b=await req.json().catch(()=>null), action=String(b?.action||"");
 
   // Tenant team operations are authorized by the caller's membership, never by user_metadata.
-  if(["team-list","team-invite","team-role","team-remove"].includes(action)) {
+  if(["team-list","team-invite","team-role","team-remove","team-update"].includes(action)) {
    const companyId=String(b?.companyId||"").trim();
    if(!companyId) return out({error:"Imobiliária não informada."},400);
    const {data:company,error:companyError}=await db.from("crm_companies").select("id,name,status").eq("id",companyId).maybeSingle();
@@ -40,12 +40,18 @@ Deno.serve(async req => {
     const allUsers:any[]=[];
     for(let page=1;page<=10;page++){const {data,error}=await db.auth.admin.listUsers({page,perPage:1000});if(error)return out({error:"Não foi possível consultar os e-mails da equipe."},500);allUsers.push(...data.users);if(data.users.length<1000)break;}
     const ids=(members||[]).map(x=>x.user_id);
-    const {data:profiles,error:profileError}=await db.from("profiles").select("id,full_name,phone,avatar_url").in("id",ids.length?ids:["00000000-0000-0000-0000-000000000000"]);
+    const {data:profiles,error:profileError}=await db.from("profiles").select("id,full_name,phone,cpf_cnpj,creci,company,avatar_url").in("id",ids.length?ids:["00000000-0000-0000-0000-000000000000"]);
     if(profileError)return out({error:"Não foi possível carregar os perfis da equipe."},500);
     const {data:leads,error:leadError}=await db.from("crm_leads").select("assigned_to").eq("company_id",companyId).not("assigned_to","is",null);
     if(leadError)return out({error:"Não foi possível consultar os leads atribuídos."},500);
+    const {data:permissionCatalog,error:permissionError}=await db.from("permissions").select("key,label,description,category").order("category").order("label");
+    if(permissionError)return out({error:"Não foi possível carregar o catálogo de permissões."},500);
+    const {data:permissionRows,error:permissionRowsError}=await db.from("crm_membership_permissions").select("user_id,permission_key,allowed").eq("company_id",companyId);
+    if(permissionRowsError)return out({error:"Não foi possível carregar as permissões individuais."},500);
+    const permissionOverrides:Record<string,Record<string,boolean>>={};
+    (permissionRows||[]).forEach((row:any)=>{(permissionOverrides[row.user_id]||(permissionOverrides[row.user_id]={}))[row.permission_key]=row.allowed;});
     const rows=(members||[]).map(m=>{const profile=(profiles||[]).find(p=>p.id===m.user_id);const authUser=allUsers.find(x=>x.id===m.user_id);return {...m,...(profile||{}),email:authUser?.email||"",assigned_leads:(leads||[]).filter(x=>x.assigned_to===m.user_id).length};});
-    return out({ok:true,company:{id:company.id,name:company.name},subscription:{planCode,planName:subscription?.plan_name||planCode,userLimit,usedUsers:rows.length,availableUsers:Math.max(0,userLimit-rows.length)},members:rows,canManageAdmins:isOwner,currentUserId:u.user.id});
+    return out({ok:true,company:{id:company.id,name:company.name},subscription:{planCode,planName:subscription?.plan_name||planCode,userLimit,usedUsers:rows.length,availableUsers:Math.max(0,userLimit-rows.length)},members:rows,permissionCatalog:permissionCatalog||[],permissionOverrides,canManageAdmins:isOwner,currentUserId:u.user.id});
    }
    const targetId=String(b?.userId||"").trim();
    if(action==="team-invite") {
@@ -79,6 +85,38 @@ Deno.serve(async req => {
    if(targetError||!target)return out({error:"Membro não encontrado nesta imobiliária."},404);
    if(target.role==="owner")return out({error:"O proprietário principal não pode ser alterado ou removido por esta tela."},403);
    if(!isOwner&&target.role==="admin")return out({error:"Somente o proprietário pode gerenciar outro administrador."},403);
+   if(action==="team-update") {
+    const patch=b?.profile&&typeof b.profile==="object"?b.profile:{};
+    const allowedFields=["full_name","phone","cpf_cnpj","creci","company"];
+    const profilePatch:Record<string,string|null>={};
+    for(const field of allowedFields) if(Object.prototype.hasOwnProperty.call(patch,field)) profilePatch[field]=String(patch[field]??"").trim()||null;
+    if(Object.prototype.hasOwnProperty.call(profilePatch,"full_name")&&!profilePatch.full_name)return out({error:"Informe o nome completo."},400);
+    if(Object.keys(profilePatch).length){
+     const {error}=await db.from("profiles").update(profilePatch).eq("id",targetId);
+     if(error)return out({error:"Não foi possível atualizar os dados cadastrais: "+error.message},400);
+    }
+    const requestedRole=String(b?.role||target.role);
+    if(requestedRole!==target.role){
+     if(!["admin","manager","agent","member"].includes(requestedRole)||(!isOwner&&requestedRole==="admin"))return out({error:"Função inválida ou sem permissão."},403);
+     const {error}=await db.from("crm_memberships").update({role:requestedRole}).eq("company_id",companyId).eq("user_id",targetId);
+     if(error)return out({error:"Não foi possível alterar a função: "+error.message},400);
+    }
+    const overrides=b?.permissions&&typeof b.permissions==="object"?b.permissions:{};
+    const {data:catalog,error:catalogError}=await db.from("permissions").select("key");
+    if(catalogError)return out({error:"Não foi possível validar o catálogo de permissões."},500);
+    const validKeys=new Set((catalog||[]).map((item:any)=>item.key));
+    for(const [permissionKey,value] of Object.entries(overrides)){
+     if(!validKeys.has(permissionKey))return out({error:"Permissão não reconhecida: "+permissionKey},400);
+     if(value===null){
+      const {error}=await db.from("crm_membership_permissions").delete().eq("company_id",companyId).eq("user_id",targetId).eq("permission_key",permissionKey);
+      if(error)return out({error:"Não foi possível restaurar a permissão herdada: "+error.message},400);
+     }else if(typeof value==="boolean"){
+      const {error}=await db.from("crm_membership_permissions").upsert({company_id:companyId,user_id:targetId,permission_key:permissionKey,allowed:value,updated_at:new Date().toISOString()},{onConflict:"company_id,user_id,permission_key"});
+      if(error)return out({error:"Não foi possível salvar a permissão: "+error.message},400);
+     }else return out({error:"Valor de permissão inválido."},400);
+    }
+    return out({ok:true,role:requestedRole,profileUpdated:Object.keys(profilePatch).length>0,permissionsUpdated:Object.keys(overrides).length});
+   }
    if(action==="team-role") {
     const role=String(b?.role||"");
     if(!["admin","manager","agent","member"].includes(role)||(!isOwner&&role==="admin"))return out({error:"Função inválida ou sem permissão."},403);
