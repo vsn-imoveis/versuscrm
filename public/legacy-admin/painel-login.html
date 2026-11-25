@@ -716,7 +716,7 @@ async function saveTeamUser(userId){
   };
   if(!profile.full_name){alert('Informe o nome completo do usuário.');if(button){button.disabled=false;button.textContent='Salvar alterações e permissões'}return}
   await teamAdminAction('team-update',{userId,role:document.getElementById('teamEditRole')?.value,profile,permissions});
-  closeTeamUserEdit();toast('Usuário atualizado com sucesso.','ok');await loadUserAdmin();
+  closeTeamUserEdit();toast('Usuário atualizado com sucesso.','ok');
  }catch(e){alert('Não foi possível salvar as alterações: '+e.message);if(button){button.disabled=false;button.textContent='Salvar alterações e permissões'}}
 }
 function showTeamInviteSuccess(email,invitationSent){
