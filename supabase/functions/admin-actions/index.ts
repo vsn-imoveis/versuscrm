@@ -21,7 +21,7 @@ Deno.serve(async req => {
   const b=await req.json().catch(()=>null), action=String(b?.action||"");
 
   // Tenant team operations are authorized by the caller's membership, never by user_metadata.
-  if(["team-list","team-invite","team-role","team-remove","team-update"].includes(action)) {
+  if(["team-list","team-invite","team-role","team-remove","team-update","team-transfer-leads","team-transfer-properties"].includes(action)) {
    const companyId=String(b?.companyId||"").trim();
    if(!companyId) return out({error:"Imobiliária não informada."},400);
    const {data:company,error:companyError}=await db.from("crm_companies").select("id,name,status").eq("id",companyId).maybeSingle();
@@ -106,6 +106,21 @@ Deno.serve(async req => {
    if(targetError||!target)return out({error:"Membro não encontrado nesta imobiliária."},404);
    if(target.role==="owner")return out({error:"O proprietário principal não pode ser alterado ou removido por esta tela."},403);
    if(!isOwner&&target.role==="admin")return out({error:"Somente o proprietário pode gerenciar outro administrador."},403);
+   if(action==="team-transfer-leads"||action==="team-transfer-properties") {
+    const transferTo=String(b?.transferTo||"").trim();
+    if(!transferTo||transferTo===targetId)return out({error:"Selecione outro membro para receber os dados."},400);
+    const {data:recipient,error:recipientError}=await db.from("crm_memberships").select("user_id,role").eq("company_id",companyId).eq("user_id",transferTo).maybeSingle();
+    if(recipientError||!recipient)return out({error:"O usuário de destino não pertence a esta imobiliária."},400);
+    if(recipient.role==="owner")return out({error:"Selecione outro membro da equipe como destino."},400);
+    if(action==="team-transfer-leads"){
+     const {data:transferred,error:transferError}=await db.from("crm_leads").update({assigned_to:transferTo,updated_at:new Date().toISOString()}).eq("company_id",companyId).eq("assigned_to",targetId).select("id");
+     if(transferError)return out({error:"Não foi possível transferir os leads: "+transferError.message},500);
+     return out({ok:true,transferredCount:(transferred||[]).length});
+    }
+    const {data:transferred,error:transferError}=await db.from("properties").update({created_by:transferTo,updated_at:new Date().toISOString()}).eq("company_id",companyId).eq("created_by",targetId).select("id");
+    if(transferError)return out({error:"Não foi possível transferir os imóveis: "+transferError.message},500);
+    return out({ok:true,transferredCount:(transferred||[]).length});
+   }
    if(action==="team-update") {
     const patch=b?.profile&&typeof b.profile==="object"?b.profile:{};
     const allowedFields=["full_name","phone","cpf_cnpj","creci","company"];
