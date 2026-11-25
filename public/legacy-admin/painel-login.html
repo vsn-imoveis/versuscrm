@@ -210,8 +210,12 @@ window.addEventListener('popstate',function(event){
   const result=await Promise.race([S.auth.getSession(),timeout]);
   const session=result?.data?.session;
   if(session){
-   try{await panel(session)}
-   catch(err){console.error('Erro ao montar painel:',err);login('Erro ao carregar o painel: '+(err?.message||err))}
+   // Panel initialization includes tenant membership and profile requests.
+   // Bound the whole flow so a stalled Supabase request cannot leave the
+   // visitor on the initial "loading" card indefinitely.
+   const panelTimeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('A validação do acesso demorou mais que o esperado. Verifique a conexão e tente entrar novamente.')),15000));
+   try{await Promise.race([panel(session),panelTimeout])}
+   catch(err){console.error('Erro ao montar painel:',err);login('Não foi possível concluir o acesso: '+(err?.message||'Tente novamente.'))}
   }else login();
  }catch(err){
   console.error('Erro ao iniciar painel:',err);
@@ -760,7 +764,7 @@ async function openManualLead(){
   await openClientsSection();
 }
 
-S.auth.onAuthStateChange((event,s)=>{if(event==='SIGNED_OUT'){login();return;}if(event==='SIGNED_IN'&&s?.user?.id&&window.__panelUserId!==s.user.id){void panel(s);}});window.addEventListener('hashchange',async()=>{if(location.hash==='#clientes'&&window.__panelUserId){if(document.getElementById('clientsApp'))openClientsSection();else{const {data:{session}}=await S.auth.getSession();if(session)await panel(session)}}else if(!location.hash&&window.__panelUserId){if(document.getElementById('reportApp'))backToPropertyReport();else{const {data:{session}}=await S.auth.getSession();if(session)await panel(session)}}});boot();</script><script id="vsn-sidebar-controller">(function(){const b=document.getElementById('vsnSidebarToggle');if(!b)return;const key='vsnAdminSidebarCollapsed';function set(v){document.body.classList.toggle('vsn-sidebar-collapsed',v);b.setAttribute('aria-expanded',String(!v));b.setAttribute('aria-label',v?'Expandir menu lateral':'Recolher menu lateral');b.title=v?'Expandir menu':'Recolher menu';}let saved=false;try{saved=localStorage.getItem(key)==='1'}catch(e){}
+S.auth.onAuthStateChange((event,s)=>{if(event==='SIGNED_OUT'){login();return;}if(event==='SIGNED_IN'&&s?.user?.id&&window.__panelUserId!==s.user.id){void Promise.race([panel(s),new Promise((_,rej)=>setTimeout(()=>rej(new Error('A validação do acesso demorou mais que o esperado.')),15000))]).catch(err=>{console.error('Erro ao abrir painel após autenticação:',err);login('Não foi possível concluir o acesso: '+(err?.message||'Tente novamente.'));});}});window.addEventListener('hashchange',async()=>{if(location.hash==='#clientes'&&window.__panelUserId){if(document.getElementById('clientsApp'))openClientsSection();else{const {data:{session}}=await S.auth.getSession();if(session)await panel(session)}}else if(!location.hash&&window.__panelUserId){if(document.getElementById('reportApp'))backToPropertyReport();else{const {data:{session}}=await S.auth.getSession();if(session)await panel(session)}}});boot();</script><script id="vsn-sidebar-controller">(function(){const b=document.getElementById('vsnSidebarToggle');if(!b)return;const key='vsnAdminSidebarCollapsed';function set(v){document.body.classList.toggle('vsn-sidebar-collapsed',v);b.setAttribute('aria-expanded',String(!v));b.setAttribute('aria-label',v?'Expandir menu lateral':'Recolher menu lateral');b.title=v?'Expandir menu':'Recolher menu';}let saved=false;try{saved=localStorage.getItem(key)==='1'}catch(e){}
   // Em telas estreitas, iniciar recolhido para priorizar o conteúdo; o usuário pode expandir pelo botão.
   const mobile=window.matchMedia('(max-width: 760px)').matches;
   set(mobile?true:saved);
