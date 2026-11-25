@@ -361,7 +361,6 @@ function renderProfileForm(user,p){
   document.getElementById('profileContent').innerHTML=
     '<div class="profile-tabs">'+
       '<button type="button" class="profile-tab active" data-profile-tab="profile" onclick="switchProfileTab(\'profile\')">Meu perfil</button>'+
-      '<button type="button" class="profile-tab" data-profile-tab="password" onclick="switchProfileTab(\'password\')">Alterar senha</button>'+
     '</div>'+
     '<div id="profileTab" class="profile-tab-panel active">'+
       '<div class="profile-top">'+
@@ -378,17 +377,6 @@ function renderProfileForm(user,p){
         '<div class="full"><label>Sobre você</label><textarea id="profileBio" placeholder="Apresente-se para clientes...">'+esc(p.bio||'')+'</textarea></div>'+
       '</div>'+
       '<div class="profile-actions"><button class="btn gray" onclick="closeProfile()">Cancelar</button><button class="btn red" onclick="saveProfile()">Salvar perfil</button></div>'+
-    '</div>'+
-    '<div id="passwordTab" class="profile-tab-panel">'+
-      '<h3 class="admin-section-title">Alterar senha</h3>'+
-      '<p class="admin-section-subtitle">Crie uma nova senha para acessar sua conta. A senha deve ter pelo menos 8 caracteres.</p>'+
-      '<div style="max-width:560px">'+
-        '<div><label for="profileCurrentPassword">Senha atual</label><input id="profileCurrentPassword" type="password" autocomplete="current-password" placeholder="Digite sua senha atual"></div>'+
-        '<div><label for="profileNewPassword">Nova senha</label><input id="profileNewPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres"></div>'+
-        '<div><label for="profileConfirmPassword">Confirmar nova senha</label><input id="profileConfirmPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Digite novamente a nova senha"></div>'+
-        '<p id="profilePasswordMessage" class="muted" role="status" aria-live="polite"></p>'+
-      '</div>'+
-      '<div class="profile-actions"><button type="button" class="btn red" id="saveProfilePassword" onclick="changeOwnPassword()">Salvar nova senha</button></div>'+
     '</div>'+
     (isAdmin?
       '<div id="adminTab" class="profile-tab-panel">'+
@@ -419,14 +407,13 @@ function renderProfileForm(user,p){
 function switchProfileTab(tab){
   document.querySelectorAll('[data-profile-tab]').forEach(b=>b.classList.toggle('active',b.dataset.profileTab===tab));
   document.getElementById('profileTab')?.classList.toggle('active',tab==='profile');
-  document.getElementById('passwordTab')?.classList.toggle('active',tab==='password');
   document.getElementById('adminTab')?.classList.toggle('active',tab==='admin');
   document.getElementById('siteTab')?.classList.toggle('active',tab==='site');
   const modal=document.getElementById('profileModal');
   if(modal){
     modal.classList.toggle('settings-mode',tab==='admin'||tab==='site');
     const title=modal.querySelector('.profile-head h2');
-    if(title)title.textContent=tab==='admin'?'Usuários':(tab==='site'?'Perfil do site':(tab==='password'?'Alterar senha':'Meu perfil'));
+    if(title)title.textContent=tab==='admin'?'Usuários':(tab==='site'?'Perfil do site':'Meu perfil');
   }
   if(currentProfile?.role!=='admin' && tab!=='profile')return;
   if(tab==='admin') loadUserAdmin();
@@ -495,37 +482,7 @@ function previewProfilePhoto(e){
   const old=document.getElementById('profilePhotoPreview');
   if(old.tagName==='IMG'){old.src=url}else{const img=document.createElement('img');img.id='profilePhotoPreview';img.className='profile-photo';img.src=url;old.replaceWith(img)}
 }
-async function changeOwnPassword(){
-  const current=document.getElementById('profileCurrentPassword')?.value||'';
-  const next=document.getElementById('profileNewPassword')?.value||'';
-  const confirm=document.getElementById('profileConfirmPassword')?.value||'';
-  const msg=document.getElementById('profilePasswordMessage');
-  const btn=document.getElementById('saveProfilePassword');
-  const say=(text,type='muted')=>{if(msg){msg.className=type;msg.textContent=text}};
-  if(!current){say('Informe sua senha atual.','danger');return}
-  if(next.length<8){say('A nova senha deve ter pelo menos 8 caracteres.','danger');return}
-  if(next!==confirm){say('A confirmação não corresponde à nova senha.','danger');return}
-  if(current===next){say('A nova senha deve ser diferente da senha atual.','danger');return}
-  if(btn){btn.disabled=true;btn.textContent='Atualizando...'}
-  try{
-    const {data:{user},error:userError}=await S.auth.getUser();
-    if(userError)throw userError;
-    if(!user?.email)throw new Error('Não foi possível identificar o e-mail desta conta.');
-    const {error:verifyError}=await S.auth.signInWithPassword({email:user.email,password:current});
-    if(verifyError)throw new Error('A senha atual está incorreta.');
-    const {error:updateError}=await S.auth.updateUser({password:next});
-    if(updateError)throw updateError;
-    document.getElementById('profileCurrentPassword').value='';
-    document.getElementById('profileNewPassword').value='';
-    document.getElementById('profileConfirmPassword').value='';
-    say('Sua senha foi alterada com sucesso.','muted');
-    toast('Senha atualizada com sucesso.','ok');
-  }catch(error){
-    say('Não foi possível alterar a senha: '+(error?.message||'Tente novamente.'),'danger');
-  }finally{
-    if(btn){btn.disabled=false;btn.textContent='Salvar nova senha'}
-  }
-}
+
 
 async function saveProfile(){
   const {data:{user}}=await S.auth.getUser();if(!user)return;
