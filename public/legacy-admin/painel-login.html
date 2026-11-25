@@ -274,9 +274,11 @@ async function applySidebarPermissions(userId,companyId,role){
  (baseRows||[]).forEach(row=>{permissions[row.permission_key]=!!row.allowed});
  (overrides||[]).forEach(row=>{permissions[row.permission_key]=!!row.allowed});
  const allowed=key=>permissions[key]===true;
+ const styleId='versus-permission-menu-style';
+ if(!document.getElementById(styleId)){const style=document.createElement('style');style.id=styleId;style.textContent='.sidebar-menu .permission-hidden,.sidebar-menu .permission-group-hidden{display:none!important}';document.head.appendChild(style)}
  const setLink=(selector,visible)=>{
   const link=document.querySelector(selector);
-  if(link)link.style.display=visible?'':'none';
+  if(link){link.classList.toggle('permission-hidden',!visible);link.setAttribute('aria-hidden',visible?'false':'true')}
   return link;
  };
  setLink('.sidebar-menu a[href="painel-login.html"]',allowed('properties.view'));
@@ -287,14 +289,14 @@ async function applySidebarPermissions(userId,companyId,role){
  if(launchSub){
   const launchCreate=launchSub.querySelector('a[href="lancamentos.html"]');
   const builderCreate=launchSub.querySelector('a[href="construtoras.html"]');
-  if(launchCreate)launchCreate.style.display=allowed('launches.create')?'':'none';
-  if(builderCreate)builderCreate.style.display=allowed('builders.create')?'':'none';
-  if(!allowed('launches.create')&&!allowed('builders.create'))launchSub.style.display='none';
+  if(launchCreate)launchCreate.classList.toggle('permission-hidden',!allowed('launches.create'));
+  if(builderCreate)builderCreate.classList.toggle('permission-hidden',!allowed('builders.create'));
+  if(!allowed('launches.create')&&!allowed('builders.create'))launchSub.classList.add('permission-group-hidden');
  }
  setLink('.sidebar-menu a[href="condominios.html"]',allowed('condominiums.view'));
  const condoLink=document.querySelector('.sidebar-menu a[href="condominios.html"]');
  const condoSub=condoLink?.closest('.sidebar-group')?.querySelector('.sidebar-sub');
- if(condoSub){const create=condoSub.querySelector('a[href="cadastrar-condominio.html"]');if(create)create.style.display=allowed('condominiums.create')?'':'none';if(!allowed('condominiums.create'))condoSub.style.display='none';}
+ if(condoSub){const create=condoSub.querySelector('a[href="cadastrar-condominio.html"]');if(create)create.classList.toggle('permission-hidden',!allowed('condominiums.create'));if(!allowed('condominiums.create'))condoSub.classList.add('permission-group-hidden');}
  setLink('.sidebar-menu a[href="painel-login.html#clientes"]',allowed('leads.view')||allowed('owners.view'));
  setLink('.sidebar-menu a[href="painel-login.html#usuarios"]',allowed('users.view')||allowed('users.manage'));
  setLink('.sidebar-menu a[href="solicitacoes-proprietario.html"]',allowed('owner_requests.view')||allowed('owner_requests.manage'));
@@ -302,9 +304,9 @@ async function applySidebarPermissions(userId,companyId,role){
  document.querySelectorAll('.sidebar-group').forEach(group=>{
   const main=group.querySelector(':scope > .sidebar-link');
   const sub=group.querySelector(':scope > .sidebar-sub');
-  const mainVisible=main&&getComputedStyle(main).display!=='none';
-  const subVisible=sub&&Array.from(sub.querySelectorAll('a')).some(a=>getComputedStyle(a).display!=='none');
-  if(!mainVisible&&!subVisible)group.style.display='none';
+  const mainVisible=main&&!main.classList.contains('permission-hidden');
+  const subVisible=sub&&Array.from(sub.querySelectorAll('a')).some(a=>!a.classList.contains('permission-hidden'));
+  if(!mainVisible&&!subVisible)group.classList.add('permission-group-hidden');
  });
  const divider=document.querySelector('.sidebar-divider');
  if(divider)divider.style.display=allowed('leads.view')||allowed('owners.view')||allowed('users.view')||allowed('users.manage')||allowed('owner_requests.view')||allowed('owner_requests.manage')||allowed('site_settings.view')||allowed('site_settings.manage')?'':'none';
