@@ -37,23 +37,42 @@ Deno.serve(async req => {
    if(action==="team-list") {
     const {data:members,error}=await db.from("crm_memberships").select("user_id,role,created_at").eq("company_id",companyId).order("created_at",{ascending:true});
     if(error) return out({error:"Não foi possível carregar a equipe."},500);
-    const allUsers:any[]=[];
-    for(let page=1;page<=10;page++){const {data,error}=await db.auth.admin.listUsers({page,perPage:1000});if(error)return out({error:"Não foi possível consultar os e-mails da equipe."},500);allUsers.push(...data.users);if(data.users.length<1000)break;}
-    const ids=(members||[]).map(x=>x.user_id);
-    const {data:profiles,error:profileError}=await db.from("profiles").select("id,full_name,phone,cpf_cnpj,creci,company,avatar_url").in("id",ids.length?ids:["00000000-0000-0000-0000-000000000000"]);
-    if(profileError)return out({error:"Não foi possível carregar os perfis da equipe."},500);
-    const {data:leads,error:leadError}=await db.from("crm_leads").select("assigned_to").eq("company_id",companyId).not("assigned_to","is",null);
-    if(leadError)return out({error:"Não foi possível consultar os leads atribuídos."},500);
-    const {data:permissionCatalog,error:permissionError}=await db.from("permissions").select("key,label,description,category").order("category").order("label");
-    if(permissionError)return out({error:"Não foi possível carregar o catálogo de permissões."},500);
-    const {data:rolePermissionRows,error:rolePermissionError}=await db.from("role_permissions").select("role,permission_key,allowed");
-    if(rolePermissionError)return out({error:"Não foi possível carregar as permissões padrão das funções."},500);
-    const {data:permissionRows,error:permissionRowsError}=await db.from("crm_membership_permissions").select("user_id,permission_key,allowed").eq("company_id",companyId);
-    if(permissionRowsError)return out({error:"Não foi possível carregar as permissões individuais."},500);
+    const ids=(members||[]).map(x=>x.user_id).filter(Boolean);
+    // O painel só precisa consultar os usuários vinculados a esta imobiliária.
+    // Evita paginar toda a tabela global do Auth (até 10 mil contas) e buscar
+    // todos os leads para depois contar em memória.
+    const [
+     profilesResult,permissionResult,rolePermissionResult,permissionRowsResult,
+     ...memberResults
+    ]=await Promise.all([
+     db.from("profiles").select("id,full_name,phone,cpf_cnpj,creci,company,avatar_url").in("id",ids.length?ids:["00000000-0000-0000-0000-000000000000"]),
+     db.from("permissions").select("key,label,description,category").order("category").order("label"),
+     db.from("role_permissions").select("role,permission_key,allowed"),
+     db.from("crm_membership_permissions").select("user_id,permission_key,allowed").eq("company_id",companyId),
+     ...ids.map(async(userId:string)=>{
+      const [authResult,leadResult]=await Promise.all([
+       db.auth.admin.getUserById(userId),
+       db.from("crm_leads").select("id",{count:"exact",head:true}).eq("company_id",companyId).eq("assigned_to",userId)
+      ]);
+      return {userId,email:authResult.data?.user?.email||"",authError:authResult.error,assignedLeads:leadResult.count||0,leadError:leadResult.error};
+     })
+    ]);
+    if(profilesResult.error)return out({error:"Não foi possível carregar os perfis da equipe."},500);
+    if(permissionResult.error)return out({error:"Não foi possível carregar o catálogo de permissões."},500);
+    if(rolePermissionResult.error)return out({error:"Não foi possível carregar as permissões padrão das funções."},500);
+    if(permissionRowsResult.error)return out({error:"Não foi possível carregar as permissões individuais."},500);
+    if(memberResults.some(x=>x.authError))return out({error:"Não foi possível consultar os e-mails da equipe."},500);
+    if(memberResults.some(x=>x.leadError))return out({error:"Não foi possível consultar os leads atribuídos."},500);
+    const profiles=profilesResult.data||[];
+    const memberDetails=new Map(memberResults.map(x=>[x.userId,x]));
     const permissionOverrides:Record<string,Record<string,boolean>>={};
-    (permissionRows||[]).forEach((row:any)=>{(permissionOverrides[row.user_id]||(permissionOverrides[row.user_id]={}))[row.permission_key]=row.allowed;});
-    const rows=(members||[]).map(m=>{const profile=(profiles||[]).find(p=>p.id===m.user_id);const authUser=allUsers.find(x=>x.id===m.user_id);return {...m,...(profile||{}),email:authUser?.email||"",assigned_leads:(leads||[]).filter(x=>x.assigned_to===m.user_id).length};});
-    return out({ok:true,company:{id:company.id,name:company.name},subscription:{planCode,planName:subscription?.plan_name||planCode,userLimit,usedUsers:rows.length,availableUsers:Math.max(0,userLimit-rows.length)},members:rows,permissionCatalog:permissionCatalog||[],rolePermissions:rolePermissionRows||[],permissionOverrides,canManageAdmins:isOwner,currentUserId:u.user.id});
+    (permissionRowsResult.data||[]).forEach((row:any)=>{(permissionOverrides[row.user_id]||(permissionOverrides[row.user_id]={}))[row.permission_key]=row.allowed;});
+    const rows=(members||[]).map(m=>{
+     const profile=profiles.find(p=>p.id===m.user_id);
+     const detail=memberDetails.get(m.user_id);
+     return {...m,...(profile||{}),email:detail?.email||"",assigned_leads:detail?.assignedLeads||0};
+    });
+    return out({ok:true,company:{id:company.id,name:company.name},subscription:{planCode,planName:subscription?.plan_name||planCode,userLimit,usedUsers:rows.length,availableUsers:Math.max(0,userLimit-rows.length)},members:rows,permissionCatalog:permissionResult.data||[],rolePermissions:rolePermissionResult.data||[],permissionOverrides,canManageAdmins:isOwner,currentUserId:u.user.id});
    }
    const targetId=String(b?.userId||"").trim();
    if(action==="team-invite") {
