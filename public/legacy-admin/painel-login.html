@@ -274,42 +274,16 @@ async function applySidebarPermissions(userId,companyId,role){
  (baseRows||[]).forEach(row=>{permissions[row.permission_key]=!!row.allowed});
  (overrides||[]).forEach(row=>{permissions[row.permission_key]=!!row.allowed});
  const allowed=key=>permissions[key]===true;
- const styleId='versus-permission-menu-style';
- if(!document.getElementById(styleId)){const style=document.createElement('style');style.id=styleId;style.textContent='.sidebar-menu .permission-hidden,.sidebar-menu .permission-group-hidden{display:none!important}';document.head.appendChild(style)}
- const setLink=(selector,visible)=>{
+ const setRestrictedLink=(selector,visible)=>{
   const link=document.querySelector(selector);
-  if(link){link.classList.toggle('permission-hidden',!visible);link.style.setProperty('display',visible?'':'none','important');link.setAttribute('aria-hidden',visible?'false':'true')}
-  return link;
+  if(link){
+   link.style.setProperty('display',visible?'':'none','important');
+   link.setAttribute('aria-hidden',visible?'false':'true');
+  }
  };
- setLink('.sidebar-menu a[href="painel-login.html"]',allowed('properties.view'));
- setLink('.sidebar-menu a[href="painel-cadastro.html"]',allowed('properties.create'));
- const launches=setLink('.sidebar-menu a[href="listar-lancamentos.html"]',allowed('launches.view'));
- const launchesGroup=launches?.closest('.sidebar-group');
- const launchSub=launchesGroup?.querySelector('.sidebar-sub');
- if(launchSub){
-  const launchCreate=launchSub.querySelector('a[href="lancamentos.html"]');
-  const builderCreate=launchSub.querySelector('a[href="construtoras.html"]');
-  if(launchCreate)launchCreate.classList.toggle('permission-hidden',!allowed('launches.create'));
-  if(builderCreate)builderCreate.classList.toggle('permission-hidden',!allowed('builders.create'));
-  if(!allowed('launches.create')&&!allowed('builders.create'))launchSub.classList.add('permission-group-hidden');
- }
- setLink('.sidebar-menu a[href="condominios.html"]',allowed('condominiums.view'));
- const condoLink=document.querySelector('.sidebar-menu a[href="condominios.html"]');
- const condoSub=condoLink?.closest('.sidebar-group')?.querySelector('.sidebar-sub');
- if(condoSub){const create=condoSub.querySelector('a[href="cadastrar-condominio.html"]');if(create)create.classList.toggle('permission-hidden',!allowed('condominiums.create'));if(!allowed('condominiums.create'))condoSub.classList.add('permission-group-hidden');}
- setLink('.sidebar-menu a[href="painel-login.html#clientes"]',allowed('leads.view')||allowed('owners.view'));
- setLink('.sidebar-menu a[href="painel-login.html#usuarios"]',allowed('users.view')||allowed('users.manage'));
- setLink('.sidebar-menu a[href="solicitacoes-proprietario.html"]',allowed('owner_requests.view')||allowed('owner_requests.manage'));
- setLink('.sidebar-menu a[href="perfil-site.html"]',allowed('site_settings.view')||allowed('site_settings.manage'));
- document.querySelectorAll('.sidebar-group').forEach(group=>{
-  const main=group.querySelector(':scope > .sidebar-link');
-  const sub=group.querySelector(':scope > .sidebar-sub');
-  const mainVisible=main&&!main.classList.contains('permission-hidden');
-  const subVisible=sub&&Array.from(sub.querySelectorAll('a')).some(a=>!a.classList.contains('permission-hidden'));
-  if(!mainVisible&&!subVisible){group.classList.add('permission-group-hidden');group.style.setProperty('display','none','important')}
- });
- const divider=document.querySelector('.sidebar-divider');
- if(divider)divider.style.display=allowed('leads.view')||allowed('owners.view')||allowed('users.view')||allowed('users.manage')||allowed('owner_requests.view')||allowed('owner_requests.manage')||allowed('site_settings.view')||allowed('site_settings.manage')?'':'none';
+ // Somente estas duas áreas estão sujeitas a bloqueio neste ajuste.
+ setRestrictedLink('.sidebar-menu a[href="painel-login.html#usuarios"]',allowed('users.view')||allowed('users.manage'));
+ setRestrictedLink('.sidebar-menu a[href="perfil-site.html"]',allowed('site_settings.view')||allowed('site_settings.manage'));
  window.__VERSUS_PERMISSIONS__=permissions;
 }
 async function panel(session){if(!session?.user)return;
@@ -343,7 +317,7 @@ async function panel(session){if(!session?.user)return;
     login('Acesso negado: esta conta não pertence a esta imobiliária. Entre com o usuário correto.');
     return;
   }
-  try{await applySidebarPermissions(session.user.id,tenantMembership.company_id,tenantMembership.role)}catch(permissionError){console.error('Não foi possível aplicar permissões do menu:',permissionError);if(['agent','member'].includes(String(tenantMembership.role||'').toLowerCase())){document.querySelectorAll('.sidebar-menu a[href="painel-login.html#usuarios"],.sidebar-menu a[href="perfil-site.html"]').forEach(link=>{link.style.setProperty('display','none','important');link.setAttribute('aria-hidden','true')})}}
+  try{await applySidebarPermissions(session.user.id,tenantMembership.company_id,tenantMembership.role)}catch(permissionError){console.error('Não foi possível aplicar permissões do menu:',permissionError);}
   const invitedCompanyId=String(session.user.user_metadata?.invited_company_id||'');
   const firstAccessCompleted=session.user.user_metadata?.first_access_completed===true;
   if(invitedCompanyId===String(tenantId)&&!firstAccessCompleted){firstAccess(session);return;}
