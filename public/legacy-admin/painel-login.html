@@ -561,6 +561,9 @@ const ADMIN_PERMISSION_LABELS={
 };
 let adminUsers=[];
 let adminPermissions=[];
+let adminPermissionOverrides={};
+let adminRolePermissions=[];
+let adminCanManageAdmins=false;
 async function openUserAdmin(){
   if(currentProfile?.role!=='admin')return;
   switchProfileTab('admin');
@@ -576,22 +579,78 @@ async function teamAdminAction(action,payload={}){
  if(data?.error)throw new Error(data.error);
  return data;
 }
+function teamRoleLabel(role){return ({owner:'Proprietário',admin:'Administrador',manager:'Gerente',agent:'Corretor',member:'Membro'})[role]||role}
+function teamRoleOptions(selected,allowAdmin){return ['admin','manager','agent','member'].filter(role=>allowAdmin||role!=='admin').map(role=>'<option value="'+role+'" '+(selected===role?'selected':'')+'>'+teamRoleLabel(role)+'</option>').join('')}
+function teamPermissionBaseRole(role){return role==='owner'||role==='admin'?'admin':role==='member'?'proprietario':'corretor'}
 async function loadUserAdmin(){
  const el=document.getElementById('usersContent');if(!el)return;
  el.innerHTML='<p class="muted">Carregando usuários desta imobiliária...</p>';
  try{
-  const result=await teamAdminAction('team-list');adminUsers=result.members||[];
-  const roleLabels={owner:'Dono da imobiliária',admin:'Administrador',manager:'Gerente',agent:'Corretor',member:'Membro'};
-  const options=(selected,allowAdmin)=>['admin','manager','agent','member'].filter(role=>allowAdmin||role!=='admin').map(role=>'<option value="'+role+'" '+(selected===role?'selected':'')+'>'+roleLabels[role]+'</option>').join('');
+  const result=await teamAdminAction('team-list');
+  adminUsers=result.members||[];
+  adminPermissions=result.permissionCatalog||[];
+  adminRolePermissions=result.rolePermissions||[];
+  adminPermissionOverrides=result.permissionOverrides||{};
+  adminCanManageAdmins=!!result.canManageAdmins;
   const rows=adminUsers.map(u=>{
    const protectedMember=u.role==='owner'||u.user_id===result.currentUserId;
    const transferOptions=adminUsers.filter(x=>x.user_id!==u.user_id).map(x=>'<option value="'+esc(x.user_id)+'">'+esc(x.full_name||x.email||'Usuário')+'</option>').join('');
-   return '<tr style="border-top:1px solid #edf0f2"><td style="padding:13px 12px"><strong>'+esc(u.full_name||'Usuário')+'</strong><div class="user-admin-email">'+esc(u.email||'')+'</div></td><td style="padding:13px 12px">'+(protectedMember?'<span class="profile-role">'+esc(roleLabels[u.role]||u.role)+'</span>':'<select id="teamRole_'+esc(u.user_id)+'" style="margin:0;min-width:130px" onchange="changeTeamRole(\''+esc(u.user_id)+'\',this.value)">'+options(u.role,result.canManageAdmins)+'</select>')+'</td><td style="padding:13px 12px">'+esc(u.phone||'—')+'</td><td style="padding:13px 12px">'+Number(u.assigned_leads||0)+'</td><td style="padding:13px 12px">'+(u.created_at?new Date(u.created_at).toLocaleDateString('pt-BR'):'—')+'</td><td style="padding:13px 12px">'+(protectedMember?'<span class="muted">—</span>':'<div style="min-width:170px"><select id="teamTransfer_'+esc(u.user_id)+'" style="margin:0 0 6px;padding:7px;font-size:11px"><option value="">Transferir leads para...</option>'+transferOptions+'</select><button type="button" class="btn gray" style="padding:7px 10px;font-size:11px" onclick="removeTeamMember(\''+esc(u.user_id)+'\')">Remover</button></div>')+'</td></tr>';
+   const actions=protectedMember?'<span class="muted">—</span>':'<div class="crm-user-row-actions"><button type="button" class="btn gray" onclick="openTeamUserEdit(\''+esc(u.user_id)+'\')">Editar</button><select id="teamTransfer_'+esc(u.user_id)+'" aria-label="Transferir leads para" style="margin:0;padding:7px;font-size:11px"><option value="">Transferir leads para...</option>'+transferOptions+'</select><button type="button" class="btn gray" style="padding:7px 10px;font-size:11px" onclick="removeTeamMember(\''+esc(u.user_id)+'\')">Remover</button></div>';
+   return '<tr style="border-top:1px solid #edf0f2"><td style="padding:13px 12px"><strong>'+esc(u.full_name||'Usuário')+'</strong><div class="user-admin-email">'+esc(u.email||'')+'</div></td><td style="padding:13px 12px"><span class="profile-role">'+esc(teamRoleLabel(u.role))+'</span></td><td style="padding:13px 12px">'+esc(u.phone||'—')+'</td><td style="padding:13px 12px">'+Number(u.assigned_leads||0)+'</td><td style="padding:13px 12px">'+(u.created_at?new Date(u.created_at).toLocaleDateString('pt-BR'):'—')+'</td><td style="padding:13px 12px">'+actions+'</td></tr>';
   }).join('');
   const plan=result.subscription||{planName:"Plano atual",userLimit:adminUsers.length,usedUsers:adminUsers.length,availableUsers:0};
   const canAdd=Number(plan.usedUsers)<Number(plan.userLimit);
-  el.innerHTML='<div class="user-admin-card" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap"><div><h3 style="margin:0 0 5px">Usuários</h3><p class="muted" style="margin:0">'+esc(plan.planName)+' · '+Number(plan.usedUsers)+' de '+Number(plan.userLimit)+' usuários utilizados · '+Number(plan.availableUsers)+' vaga(s) disponível(is)</p></div><button type="button" class="btn" style="background:var(--gold);color:var(--navy)" onclick="toggleTeamInvite()" '+(canAdd?'':'disabled title="Limite do plano atingido"')+'>+ Novo usuário</button></div><section class="user-admin-card" style="padding:0;overflow:hidden"><div style="padding:18px 20px;border-bottom:1px solid var(--line)"><h3 style="margin:0">Equipe da imobiliária</h3><p class="muted" style="margin:5px 0 0">'+adminUsers.length+' membro(s) · dados isolados desta imobiliária</p></div><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:900px"><thead><tr style="background:#f3f5f6;text-align:left"><th style="padding:12px">Nome / e-mail</th><th style="padding:12px">Função</th><th style="padding:12px">Telefone</th><th style="padding:12px">Leads</th><th style="padding:12px">Desde</th><th style="padding:12px">Ações</th></tr></thead><tbody>'+rows+'</tbody></table></div></section><section id="teamInvitePanel" class="user-admin-card" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h3 style="margin:0 0 5px">Novo usuário</h3><button type="button" class="btn gray" onclick="toggleTeamInvite(false)">Fechar</button></div><p class="muted" style="font-size:12px;margin:0 0 14px">O convite será enviado por e-mail. Se a pessoa já possuir conta no Versus, ela será vinculada a esta imobiliária sem alterar a senha.</p><div class="grid"><div><label>Nome completo</label><input id="teamInviteName" placeholder="Nome do corretor"></div><div><label>E-mail</label><input id="teamInviteEmail" type="email" placeholder="corretor@exemplo.com"></div><div><label>Função</label><select id="teamInviteRole">'+options('agent',result.canManageAdmins)+'</select></div><div style="display:flex;align-items:end"><button type="button" class="btn red" style="width:100%" onclick="inviteTeamMember()">Enviar convite</button></div></div><p class="muted" style="font-size:11px;margin:5px 0 0">O proprietário pode conceder função de administrador. Administradores podem convidar gerentes e corretores.</p></section>';
+  el.innerHTML='<style id="crm-team-edit-styles">.crm-user-row-actions{display:flex;flex-direction:column;gap:6px;min-width:155px}.crm-user-row-actions .btn{padding:7px 10px;font-size:12px}.crm-user-edit-overlay{position:fixed;inset:0;z-index:2147482000;background:rgba(5,20,31,.66);display:none;align-items:center;justify-content:center;padding:14px}.crm-user-edit-overlay.open{display:flex}.crm-user-edit-box{width:min(1120px,100%);max-height:96vh;overflow:auto;background:#fff;border-radius:20px;padding:26px 30px;box-shadow:0 24px 70px rgba(0,0,0,.28);color:#102b3c}.crm-user-edit-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;border-bottom:1px solid #e3e8ec;padding-bottom:16px;margin-bottom:22px}.crm-user-edit-head h2{font-size:26px;margin:0 0 6px}.crm-user-edit-head p{margin:0;color:#71808d}.crm-user-edit-close{width:46px;height:46px;border:1px solid #dce2e7;border-radius:12px;background:#f0f2f4;color:#102b3c;font-size:23px;cursor:pointer;flex:0 0 auto}.crm-user-edit-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 16px}.crm-user-edit-fields label{display:block;font-size:14px;font-weight:700;margin-bottom:6px}.crm-user-edit-fields input,.crm-user-edit-fields select{width:100%;height:48px;border:1px solid #d4dce3;border-radius:12px;padding:0 14px;font:inherit;color:#102b3c;background:#fff}.crm-user-edit-permissions{margin-top:26px}.crm-user-edit-permissions h3{font-size:18px;margin:0 0 6px}.crm-user-edit-permissions>p{color:#71808d;font-size:13px;margin:0 0 14px}.crm-user-permission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.crm-user-permission-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #e8edf1;border-radius:11px;background:#fafbfc;min-width:0}.crm-user-permission-item strong{display:block;font-size:13px}.crm-user-permission-item small{display:block;color:#71808d;font-size:11px;margin-top:3px}.crm-user-permission-item select{width:145px;flex:0 0 145px;height:42px;border:1px solid #d4dce3;border-radius:10px;padding:0 9px;background:#fff;color:#102b3c;font:inherit;font-size:12px}.crm-user-edit-actions{display:flex;gap:10px;justify-content:flex-start;flex-wrap:wrap;margin-top:22px;padding-top:16px;border-top:1px solid #e3e8ec}.crm-user-edit-actions button{min-height:44px;padding:0 20px;border-radius:10px;cursor:pointer;font:700 13px Manrope,Arial,sans-serif}.crm-user-edit-save{background:var(--gold,#d3aa62);color:#061d2d;border:0}.crm-user-edit-cancel{background:#eef1f3;color:#102b3c;border:1px solid #dce2e7}@media(max-width:720px){.crm-user-edit-box{padding:18px 16px;max-height:98vh}.crm-user-edit-fields,.crm-user-permission-grid{grid-template-columns:1fr}.crm-user-edit-head h2{font-size:21px}.crm-user-permission-item{align-items:flex-start;flex-direction:column}.crm-user-permission-item select{width:100%;flex-basis:auto}}</style>'+
+   '<div class="user-admin-card" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap"><div><h3 style="margin:0 0 5px">Usuários</h3><p class="muted" style="margin:0">'+esc(plan.planName)+' · '+Number(plan.usedUsers)+' de '+Number(plan.userLimit)+' usuários utilizados · '+Number(plan.availableUsers)+' vaga(s) disponível(is)</p></div><button type="button" class="btn" style="background:var(--gold);color:var(--navy)" onclick="toggleTeamInvite()" '+(canAdd?'':'disabled title="Limite do plano atingido"')+'>+ Novo usuário</button></div>'+
+   '<section class="user-admin-card" style="padding:0;overflow:hidden"><div style="padding:18px 20px;border-bottom:1px solid var(--line)"><h3 style="margin:0">Equipe da imobiliária</h3><p class="muted" style="margin:5px 0 0">'+adminUsers.length+' membro(s) · dados isolados desta imobiliária</p></div><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:900px"><thead><tr style="background:#f3f5f6;text-align:left"><th style="padding:12px">Nome / e-mail</th><th style="padding:12px">Função</th><th style="padding:12px">Telefone</th><th style="padding:12px">Leads</th><th style="padding:12px">Desde</th><th style="padding:12px">Ações</th></tr></thead><tbody>'+rows+'</tbody></table></div></section>'+
+   '<section id="teamInvitePanel" class="user-admin-card" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h3 style="margin:0 0 5px">Novo usuário</h3><button type="button" class="btn gray" onclick="toggleTeamInvite(false)">Fechar</button></div><p class="muted" style="font-size:12px;margin:0 0 14px">O convite será enviado por e-mail. Se a pessoa já possuir conta no Versus, ela será vinculada a esta imobiliária sem alterar a senha.</p><div class="grid"><div><label>Nome completo</label><input id="teamInviteName" placeholder="Nome do corretor"></div><div><label>E-mail</label><input id="teamInviteEmail" type="email" placeholder="corretor@exemplo.com"></div><div><label>Função</label><select id="teamInviteRole">'+teamRoleOptions('agent',result.canManageAdmins)+'</select></div><div style="display:flex;align-items:end"><button type="button" class="btn red" style="width:100%" onclick="inviteTeamMember()">Enviar convite</button></div></div><p class="muted" style="font-size:11px;margin:5px 0 0">O proprietário pode conceder função de administrador. Administradores podem convidar gerentes e corretores.</p></section>'+
+   '<div id="teamUserEditModal" class="crm-user-edit-overlay" role="dialog" aria-modal="true" aria-labelledby="teamUserEditTitle" onclick="if(event.target===this)closeTeamUserEdit()"><div class="crm-user-edit-box"><div class="crm-user-edit-head"><div><h2 id="teamUserEditTitle">Editar usuário</h2><p>Dados cadastrais, função e permissões de acesso.</p></div><button type="button" class="crm-user-edit-close" onclick="closeTeamUserEdit()" aria-label="Fechar">×</button></div><div id="teamUserEditContent"></div></div></div>';
  }catch(e){el.innerHTML='<p class="danger">Não foi possível carregar a equipe: '+esc(e.message)+'</p>';}
+}
+function openTeamUserEdit(userId){
+ const user=adminUsers.find(x=>x.user_id===userId);
+ if(!user||user.role==='owner'||!userId)return;
+ const modal=document.getElementById('teamUserEditModal'),content=document.getElementById('teamUserEditContent');
+ if(!modal||!content)return;
+ const roleOptions=teamRoleOptions(user.role,adminCanManageAdmins);
+ const overrides=adminPermissionOverrides[userId]||{};
+ const baseRole=teamPermissionBaseRole(user.role);
+ const permissions=adminPermissions.map(p=>{
+  const hasOverride=Object.prototype.hasOwnProperty.call(overrides,p.key);
+  const value=hasOverride?(overrides[p.key]?'allow':'deny'):'inherit';
+  const base=adminRolePermissions.find(x=>x.role===baseRole&&x.permission_key===p.key);
+  const inherited=base?base.allowed?'Permitido':'Bloqueado':'Sem regra padrão';
+  return '<div class="crm-user-permission-item"><div><strong>'+esc(p.label)+'</strong><small>'+esc(p.description||'')+' · Função: '+inherited+'</small></div><select data-team-permission="'+esc(p.key)+'"><option value="inherit" '+(value==='inherit'?'selected':'')+'>Herdar função</option><option value="allow" '+(value==='allow'?'selected':'')+'>Permitir</option><option value="deny" '+(value==='deny'?'selected':'')+'>Bloquear</option></select></div>';
+ }).join('');
+ content.innerHTML='<div class="crm-user-edit-fields">'+
+  '<div><label for="teamEditRole">Função</label><select id="teamEditRole">'+roleOptions+'</select></div>'+
+  '<div><label for="teamEditName">Nome completo</label><input id="teamEditName" value="'+esc(user.full_name||'')+'"></div>'+
+  '<div><label for="teamEditPhone">Telefone</label><input id="teamEditPhone" value="'+esc(user.phone||'')+'"></div>'+
+  '<div><label for="teamEditCpf">CPF / CNPJ</label><input id="teamEditCpf" value="'+esc(user.cpf_cnpj||'')+'"></div>'+
+  '<div><label for="teamEditCreci">CRECI</label><input id="teamEditCreci" value="'+esc(user.creci||'')+'"></div>'+
+  '<div><label for="teamEditCompany">Empresa / Imobiliária</label><input id="teamEditCompany" value="'+esc(user.company||'')+'"></div>'+
+  '<div><label>E-mail</label><input value="'+esc(user.email||'')+'" disabled></div>'+
+  '</div><section class="crm-user-edit-permissions"><h3>Permissões deste usuário</h3><p>Defina quais áreas e funções este usuário pode acessar.</p><div class="crm-user-permission-grid">'+permissions+'</div></section>'+
+  '<div class="crm-user-edit-actions"><button type="button" class="crm-user-edit-save" id="saveTeamUserButton" onclick="saveTeamUser(\''+esc(userId)+'\')">Salvar alterações e permissões</button><button type="button" class="crm-user-edit-cancel" onclick="closeTeamUserEdit()">Cancelar</button></div>';
+ modal.classList.add('open');document.body.style.overflow='hidden';
+}
+function closeTeamUserEdit(){const modal=document.getElementById('teamUserEditModal');if(modal)modal.classList.remove('open');document.body.style.overflow=''}
+async function saveTeamUser(userId){
+ const button=document.getElementById('saveTeamUserButton');if(button){button.disabled=true;button.textContent='Salvando...'}
+ try{
+  const permissions={};
+  document.querySelectorAll('#teamUserEditContent [data-team-permission]').forEach(select=>{permissions[select.dataset.teamPermission]=select.value==='inherit'?null:select.value==='allow'});
+  const profile={
+   full_name:document.getElementById('teamEditName')?.value.trim()||'',
+   phone:document.getElementById('teamEditPhone')?.value.trim()||'',
+   cpf_cnpj:document.getElementById('teamEditCpf')?.value.trim()||'',
+   creci:document.getElementById('teamEditCreci')?.value.trim()||'',
+   company:document.getElementById('teamEditCompany')?.value.trim()||''
+  };
+  if(!profile.full_name){alert('Informe o nome completo do usuário.');if(button){button.disabled=false;button.textContent='Salvar alterações e permissões'}return}
+  await teamAdminAction('team-update',{userId,role:document.getElementById('teamEditRole')?.value,profile,permissions});
+  closeTeamUserEdit();toast('Usuário atualizado com sucesso.','ok');await loadUserAdmin();
+ }catch(e){alert('Não foi possível salvar as alterações: '+e.message);if(button){button.disabled=false;button.textContent='Salvar alterações e permissões'}}
 }
 function showTeamInviteSuccess(email,invitationSent){
  const old=document.getElementById('teamInviteSuccessModal');if(old)old.remove();
