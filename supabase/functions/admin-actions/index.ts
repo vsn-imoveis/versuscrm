@@ -46,12 +46,14 @@ Deno.serve(async req => {
     if(leadError)return out({error:"Não foi possível consultar os leads atribuídos."},500);
     const {data:permissionCatalog,error:permissionError}=await db.from("permissions").select("key,label,description,category").order("category").order("label");
     if(permissionError)return out({error:"Não foi possível carregar o catálogo de permissões."},500);
+    const {data:rolePermissionRows,error:rolePermissionError}=await db.from("role_permissions").select("role,permission_key,allowed");
+    if(rolePermissionError)return out({error:"Não foi possível carregar as permissões padrão das funções."},500);
     const {data:permissionRows,error:permissionRowsError}=await db.from("crm_membership_permissions").select("user_id,permission_key,allowed").eq("company_id",companyId);
     if(permissionRowsError)return out({error:"Não foi possível carregar as permissões individuais."},500);
     const permissionOverrides:Record<string,Record<string,boolean>>={};
     (permissionRows||[]).forEach((row:any)=>{(permissionOverrides[row.user_id]||(permissionOverrides[row.user_id]={}))[row.permission_key]=row.allowed;});
     const rows=(members||[]).map(m=>{const profile=(profiles||[]).find(p=>p.id===m.user_id);const authUser=allUsers.find(x=>x.id===m.user_id);return {...m,...(profile||{}),email:authUser?.email||"",assigned_leads:(leads||[]).filter(x=>x.assigned_to===m.user_id).length};});
-    return out({ok:true,company:{id:company.id,name:company.name},subscription:{planCode,planName:subscription?.plan_name||planCode,userLimit,usedUsers:rows.length,availableUsers:Math.max(0,userLimit-rows.length)},members:rows,permissionCatalog:permissionCatalog||[],permissionOverrides,canManageAdmins:isOwner,currentUserId:u.user.id});
+    return out({ok:true,company:{id:company.id,name:company.name},subscription:{planCode,planName:subscription?.plan_name||planCode,userLimit,usedUsers:rows.length,availableUsers:Math.max(0,userLimit-rows.length)},members:rows,permissionCatalog:permissionCatalog||[],rolePermissions:rolePermissionRows||[],permissionOverrides,canManageAdmins:isOwner,currentUserId:u.user.id});
    }
    const targetId=String(b?.userId||"").trim();
    if(action==="team-invite") {
