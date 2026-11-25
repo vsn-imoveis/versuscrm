@@ -111,7 +111,6 @@ Deno.serve(async req => {
     if(!transferTo||transferTo===targetId)return out({error:"Selecione outro membro para receber os dados."},400);
     const {data:recipient,error:recipientError}=await db.from("crm_memberships").select("user_id,role").eq("company_id",companyId).eq("user_id",transferTo).maybeSingle();
     if(recipientError||!recipient)return out({error:"O usuário de destino não pertence a esta imobiliária."},400);
-    if(recipient.role==="owner")return out({error:"Selecione outro membro da equipe como destino."},400);
     if(action==="team-transfer-leads"){
      const {data:transferred,error:transferError}=await db.from("crm_leads").update({assigned_to:transferTo,updated_at:new Date().toISOString()}).eq("company_id",companyId).eq("assigned_to",targetId).select("id");
      if(transferError)return out({error:"Não foi possível transferir os leads: "+transferError.message},500);
