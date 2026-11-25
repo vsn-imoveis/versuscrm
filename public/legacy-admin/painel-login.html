@@ -417,7 +417,7 @@ function renderProfileForm(user,p){
   if(isAdmin) loadUserAdmin();
 }
 function switchProfileTab(tab){
-  document.querySelectorAll('[data-profile-tab]').forEach(b=>b.classList.toggle('active',b.dataset.profileTab===tab));
+  document.querySelectorAll('[data-profile-tab]').forEach(b=>{const active=b.dataset.profileTab===tab;b.classList.toggle('active',active);b.setAttribute('aria-selected',active?'true':'false')});
   document.getElementById('profileTab')?.classList.toggle('active',tab==='profile');
   document.getElementById('passwordTab')?.classList.toggle('active',tab==='password');
   document.getElementById('adminTab')?.classList.toggle('active',tab==='admin');
