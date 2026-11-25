@@ -267,9 +267,9 @@ async function completeFirstAccess(){
 async function applySidebarPermissions(userId,companyId,role){
  const baseRole=role==='owner'||role==='admin'||role==='manager'?'admin':role==='member'?'proprietario':'corretor';
  const {data:baseRows,error:baseError}=await S.from('role_permissions').select('permission_key,allowed').eq('role',baseRole);
- if(baseError)throw baseError;
+ if(baseError)console.error('Falha ao carregar permissões padrão:',baseError);
  const {data:overrides,error:overrideError}=await S.from('crm_membership_permissions').select('permission_key,allowed').eq('company_id',companyId).eq('user_id',userId);
- if(overrideError)throw overrideError;
+ if(overrideError)console.error('Falha ao carregar permissões individuais:',overrideError);
  const permissions={};
  (baseRows||[]).forEach(row=>{permissions[row.permission_key]=!!row.allowed});
  (overrides||[]).forEach(row=>{permissions[row.permission_key]=!!row.allowed});
@@ -278,7 +278,7 @@ async function applySidebarPermissions(userId,companyId,role){
  if(!document.getElementById(styleId)){const style=document.createElement('style');style.id=styleId;style.textContent='.sidebar-menu .permission-hidden,.sidebar-menu .permission-group-hidden{display:none!important}';document.head.appendChild(style)}
  const setLink=(selector,visible)=>{
   const link=document.querySelector(selector);
-  if(link){link.classList.toggle('permission-hidden',!visible);link.setAttribute('aria-hidden',visible?'false':'true')}
+  if(link){link.classList.toggle('permission-hidden',!visible);link.style.setProperty('display',visible?'':'none','important');link.setAttribute('aria-hidden',visible?'false':'true')}
   return link;
  };
  setLink('.sidebar-menu a[href="painel-login.html"]',allowed('properties.view'));
@@ -306,7 +306,7 @@ async function applySidebarPermissions(userId,companyId,role){
   const sub=group.querySelector(':scope > .sidebar-sub');
   const mainVisible=main&&!main.classList.contains('permission-hidden');
   const subVisible=sub&&Array.from(sub.querySelectorAll('a')).some(a=>!a.classList.contains('permission-hidden'));
-  if(!mainVisible&&!subVisible)group.classList.add('permission-group-hidden');
+  if(!mainVisible&&!subVisible){group.classList.add('permission-group-hidden');group.style.setProperty('display','none','important')}
  });
  const divider=document.querySelector('.sidebar-divider');
  if(divider)divider.style.display=allowed('leads.view')||allowed('owners.view')||allowed('users.view')||allowed('users.manage')||allowed('owner_requests.view')||allowed('owner_requests.manage')||allowed('site_settings.view')||allowed('site_settings.manage')?'':'none';
@@ -343,7 +343,7 @@ async function panel(session){if(!session?.user)return;
     login('Acesso negado: esta conta não pertence a esta imobiliária. Entre com o usuário correto.');
     return;
   }
-  try{await applySidebarPermissions(session.user.id,tenantMembership.company_id,tenantMembership.role)}catch(permissionError){console.error('Não foi possível aplicar permissões do menu:',permissionError)}
+  try{await applySidebarPermissions(session.user.id,tenantMembership.company_id,tenantMembership.role)}catch(permissionError){console.error('Não foi possível aplicar permissões do menu:',permissionError);if(['agent','member'].includes(String(tenantMembership.role||'').toLowerCase())){document.querySelectorAll('.sidebar-menu a[href="painel-login.html#usuarios"],.sidebar-menu a[href="perfil-site.html"]').forEach(link=>{link.style.setProperty('display','none','important');link.setAttribute('aria-hidden','true')})}}
   const invitedCompanyId=String(session.user.user_metadata?.invited_company_id||'');
   const firstAccessCompleted=session.user.user_metadata?.first_access_completed===true;
   if(invitedCompanyId===String(tenantId)&&!firstAccessCompleted){firstAccess(session);return;}
