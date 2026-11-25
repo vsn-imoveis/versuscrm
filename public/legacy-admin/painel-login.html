@@ -594,8 +594,7 @@ async function loadUserAdmin(){
   adminCanManageAdmins=!!result.canManageAdmins;
   const rows=adminUsers.map(u=>{
    const protectedMember=u.role==='owner'||u.user_id===result.currentUserId;
-   const transferOptions=adminUsers.filter(x=>x.user_id!==u.user_id).map(x=>'<option value="'+esc(x.user_id)+'">'+esc(x.full_name||x.email||'Usuário')+'</option>').join('');
-   const actions=protectedMember?'<span class="muted">—</span>':'<div class="crm-user-row-actions"><button type="button" class="btn gray" onclick="openTeamUserEdit(\''+esc(u.user_id)+'\')">Editar</button><select id="teamTransfer_'+esc(u.user_id)+'" aria-label="Transferir leads para" style="margin:0;padding:7px;font-size:11px"><option value="">Transferir leads para...</option>'+transferOptions+'</select><button type="button" class="btn gray" style="padding:7px 10px;font-size:11px" onclick="removeTeamMember(\''+esc(u.user_id)+'\')">Remover</button></div>';
+   const actions=protectedMember?'<span class="muted">—</span>':'<div class="crm-user-row-actions"><button type="button" class="btn gray" onclick="openTeamUserEdit(\\''+esc(u.user_id)+'\\')">Editar</button><button type="button" class="btn gray" style="padding:7px 10px;font-size:11px" onclick="removeTeamMember(\\''+esc(u.user_id)+'\\')">Remover</button></div>';
    return '<tr style="border-top:1px solid #edf0f2"><td style="padding:13px 12px"><strong>'+esc(u.full_name||'Usuário')+'</strong><div class="user-admin-email">'+esc(u.email||'')+'</div></td><td style="padding:13px 12px"><span class="profile-role">'+esc(teamRoleLabel(u.role))+'</span></td><td style="padding:13px 12px">'+esc(u.phone||'—')+'</td><td style="padding:13px 12px">'+Number(u.assigned_leads||0)+'</td><td style="padding:13px 12px">'+(u.created_at?new Date(u.created_at).toLocaleDateString('pt-BR'):'—')+'</td><td style="padding:13px 12px">'+actions+'</td></tr>';
   }).join('');
   const plan=result.subscription||{planName:"Plano atual",userLimit:adminUsers.length,usedUsers:adminUsers.length,availableUsers:0};
@@ -632,9 +631,27 @@ function openTeamUserEdit(userId){
   '<div><label for="teamEditCreci">CRECI</label><input id="teamEditCreci" value="'+esc(user.creci||'')+'"></div>'+
 
   '<div><label>E-mail</label><input value="'+esc(user.email||'')+'" disabled></div>'+
-  '</div><section class="crm-user-edit-permissions"><h3>Permissões deste usuário</h3><p>Defina quais áreas e funções este usuário pode acessar.</p><div class="crm-user-permission-grid">'+permissions+'</div></section>'+
+  '</div>'+buildTeamTransferSection(user)+'<section class="crm-user-edit-permissions"><h3>Permissões deste usuário</h3><p>Defina quais áreas e funções este usuário pode acessar.</p><div class="crm-user-permission-grid">'+permissions+'</div></section>'+
   '<div class="crm-user-edit-actions"><button type="button" class="crm-user-edit-save" id="saveTeamUserButton" onclick="saveTeamUser(\''+esc(userId)+'\')">Salvar alterações e permissões</button><button type="button" class="crm-user-edit-cancel" onclick="closeTeamUserEdit()">Cancelar</button></div>';
  modal.classList.add('open');document.body.style.overflow='hidden';
+}
+function buildTeamTransferSection(user){
+ const options=adminUsers.filter(x=>x.user_id!==user.user_id).map(x=>'<option value="'+esc(x.user_id)+'">'+esc(x.full_name||x.email||'Usuário')+'</option>').join('');
+ return '<section class="crm-user-edit-permissions" style="margin-top:22px"><h3>Transferir dados deste usuário</h3><p>Transfira leads e imóveis para outro membro da imobiliária. Cada transferência é independente.</p><div class="crm-user-edit-fields" style="margin-top:14px"><div><label for="teamTransferLeadsTo">Transferir leads</label><select id="teamTransferLeadsTo"><option value="">Selecione o novo responsável</option>'+options+'</select><button type="button" class="crm-user-edit-cancel" style="margin-top:8px;width:100%" onclick="transferTeamData('leads',''+esc(user.user_id)+'')">Transferir leads</button><small style="display:block;color:#71808d;margin-top:5px">'+Number(user.assigned_leads||0)+' lead(s) atribuído(s)</small></div><div><label for="teamTransferPropertiesTo">Transferir imóveis</label><select id="teamTransferPropertiesTo"><option value="">Selecione o novo responsável</option>'+options+'</select><button type="button" class="crm-user-edit-cancel" style="margin-top:8px;width:100%" onclick="transferTeamData('properties',''+esc(user.user_id)+'')">Transferir imóveis</button><small style="display:block;color:#71808d;margin-top:5px">Transfere os imóveis cadastrados por este usuário</small></div></div></section>';
+}
+async function transferTeamData(type,userId){
+ const select=document.getElementById(type==='leads'?'teamTransferLeadsTo':'teamTransferPropertiesTo');
+ const recipientId=select?.value;
+ if(!recipientId){alert('Selecione o usuário que receberá os '+(type==='leads'?'leads':'imóveis')+'.');return;}
+ const recipient=adminUsers.find(x=>x.user_id===recipientId);
+ if(!recipient)return;
+ const label=type==='leads'?'leads':'imóveis';
+ if(!confirm('Confirma transferir os '+label+' deste usuário para '+(recipient.full_name||recipient.email)+'?'))return;
+ try{
+  const result=await teamAdminAction(type==='leads'?'team-transfer-leads':'team-transfer-properties',{userId,transferTo:recipientId});
+  alert('Transferência concluída: '+Number(result.transferredCount||0)+' '+(type==='leads'?'lead(s)':'imóvel(is)')+'.');
+  await loadUserAdmin();
+ }catch(error){alert('Não foi possível transferir: '+(error?.message||error));}
 }
 function closeTeamUserEdit(){const modal=document.getElementById('teamUserEditModal');if(modal)modal.classList.remove('open');document.body.style.overflow=''}
 async function saveTeamUser(userId){
