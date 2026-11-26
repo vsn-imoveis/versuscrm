@@ -9,6 +9,7 @@ type SiteLead = {
   interesse: string;
   mensagem: string;
   origem_url: string | null;
+  campanha: string | null;
   status: "novo" | "contatado" | "qualificado" | "convertido" | "perdido";
   observacoes_internas: string | null;
   created_at: string;
@@ -26,7 +27,7 @@ export default async function SiteLeadsPage() {
   const { supabase, user } = await requirePlatformAdmin();
   const { data: leads, error } = await supabase
     .from("leads_site")
-    .select("id,nome,telefone,email,interesse,mensagem,origem_url,status,observacoes_internas,created_at")
+    .select("id,nome,telefone,email,interesse,mensagem,origem_url,campanha,status,observacoes_internas,created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -62,19 +63,20 @@ export default async function SiteLeadsPage() {
 
         <div style={{ overflowX: "auto", background: "#fff", border: "1px solid #e3e6e8", borderRadius: 12 }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1050 }}>
-            <thead><tr>{["Interessado","Contato","Plano / interesse","Mensagem","Data","Status"].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
+            <thead><tr>{["Interessado","Contato","Plano / interesse","Campanha","Mensagem","Data","Status"].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
             <tbody>
               {rows.map((lead) => (
                 <tr key={lead.id}>
                   <td style={td}><strong>{lead.nome}</strong><div style={muted}>{lead.email}</div></td>
                   <td style={td}><a href={"https://wa.me/" + lead.telefone.replace(/\\D/g, "")} target="_blank" rel="noreferrer" style={{ color: "#187344", textDecoration: "none" }}>{lead.telefone}</a></td>
                   <td style={td}>{lead.interesse}</td>
+                  <td style={td}>{lead.campanha || "Orgânico / direto"}</td>
                   <td style={{ ...td, maxWidth: 340, whiteSpace: "pre-wrap" }}>{lead.mensagem}</td>
                   <td style={td}>{new Date(lead.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })}</td>
                   <td style={td}><span style={{ ...statusStyle, background: lead.status === "convertido" ? "#e8f5ed" : lead.status === "perdido" ? "#fcebea" : "#fff4df", color: lead.status === "convertido" ? "#187344" : lead.status === "perdido" ? "#a33b32" : "#9a6412" }}>{statusLabels[lead.status]}</span></td>
                 </tr>
               ))}
-              {!rows.length && <tr><td style={td} colSpan={6}>Ainda não há interessados cadastrados pelo site.</td></tr>}
+              {!rows.length && <tr><td style={td} colSpan={7}>Ainda não há interessados cadastrados pelo site.</td></tr>}
             </tbody>
           </table>
         </div>
