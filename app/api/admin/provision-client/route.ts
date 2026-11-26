@@ -134,7 +134,18 @@ export async function POST(request: NextRequest) {
   const existingUser = existingAuthUsers.users.find(u => String(u.email || '').trim().toLowerCase() === email)
   let userId = existingUser?.id
   let createdUser = false
-  const initialPassword = `${slugBase}admin`
+  // A senha inicial usa o primeiro nome do contato responsável, não o slug do site.
+  // Remove acentos e caracteres especiais para manter uma senha simples de digitar.
+  const firstName = contactName.trim().split(/\\s+/)[0]
+    .normalize('NFD')
+    .replace(/[\\u0300-\\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+  if (!firstName) {
+    await rollbackCompany()
+    return NextResponse.json({ error: 'Não foi possível gerar a senha inicial: informe o nome do responsável.' }, { status: 400 })
+  }
+  const initialPassword = `${firstName}admin`
 
   if (existingUser) {
     const { data: memberships, error: membershipError } = await admin.from('crm_memberships').select('company_id').eq('user_id', existingUser.id)
