@@ -54,3 +54,6 @@ on public.leads_site
 for delete
 to authenticated
 using ((select public.is_crm_admin()));
+
+-- Registra a campanha de aquisição (UTM) do lead.
+alter table public.leads_site add column if not exists campanha text;
