@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
   const message = String(body.message || "").trim();
   const sourceUrl = String(body.sourceUrl || "").trim();
 
-  if (!name || !phone || !email || !message || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+  if (!name || !phone || !email || !message || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json({ success: false, error: "Preencha nome, telefone, e-mail e mensagem com dados válidos." }, 400, origin);
   }
   if (name.length > 160 || phone.length > 50 || email.length > 254 || interest.length > 200 || message.length > 5000 || sourceUrl.length > 2000) {
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     "Mensagem: " + message,
     "Origem: " + (sourceUrl || "https://versuscrm.com.br"),
     "Lead ID: " + lead.id,
-  ].join("\\n");
+  ].join("\n");
 
   try {
     const emailResponse = await fetch("https://api.resend.com/emails", {
