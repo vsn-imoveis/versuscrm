@@ -125,10 +125,68 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!resendKey) {
+    console.error("[public-lead] RESEND_API_KEY is not configured in CRM deployment");
+    return json({
+      success: false,
+      leadSaved: true,
+      leadId: lead.id,
+      error: "O lead foi salvo no CRM, mas a notificação por e-mail está indisponível no momento.",
+    }, 503, origin);
+  }
+
+  const emailText = [
+    "Novo interessado nos planos do Versus CRM",
+    "",
+    "Nome: " + name,
+    "Telefone: " + phone,
+    "E-mail: " + email,
+    "Plano/interesse: " + interest,
+    "Mensagem: " + message,
+    "Origem: " + (sourceUrl || "https://versuscrm.com.br"),
+    "Lead ID: " + lead.id,
+  ].join("\\n");
+
+  try {
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + resendKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: process.env.RESEND_FROM_EMAIL || "Versus CRM <nao-responda@versuscrm.com.br>",
+        to: ["contato@versuscrm.com.br"],
+        reply_to: email,
+        subject: "Novo interessado — " + interest,
+        text: emailText,
+      }),
+    });
+
+    if (!emailResponse.ok) {
+      const detail = await emailResponse.text();
+      console.error("[public-lead] Resend failed", { status: emailResponse.status, detail });
+      return json({
+        success: false,
+        leadSaved: true,
+        leadId: lead.id,
+        error: "O lead foi salvo no CRM, mas o envio do e-mail falhou. Nossa equipe poderá consultar o painel.",
+      }, 502, origin);
+    }
+  } catch (error) {
+    console.error("[public-lead] Resend request failed", error);
+    return json({
+      success: false,
+      leadSaved: true,
+      leadId: lead.id,
+      error: "O lead foi salvo no CRM, mas não foi possível enviar o e-mail.",
+    }, 502, origin);
+  }
+
   return json({
-    success: false,
-    leadSaved: true,
+    success: true,
     leadId: lead.id,
-    error: "O lead foi registrado no CRM e a notificação interna foi criada, mas o envio de e-mail ainda não está configurado neste fluxo.",
-  }, 503, origin);
+    message: "Lead registrado no CRM e e-mail enviado.",
+  }, 200, origin);
 }
