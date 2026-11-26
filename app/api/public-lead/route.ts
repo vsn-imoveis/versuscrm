@@ -14,7 +14,7 @@ function corsHeaders(origin: string | null) {
     "Access-Control-Allow-Origin": allowed,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
-    "Vary": "Origin",
+    Vary: "Origin",
   };
 }
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   const message = String(body.message || "").trim();
   const sourceUrl = String(body.sourceUrl || "").trim();
 
-  if (!name || !phone || !email || !message || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!name || !phone || !email || !message || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
     return json({ success: false, error: "Preencha nome, telefone, e-mail e mensagem com dados válidos." }, 400, origin);
   }
   if (name.length > 160 || phone.length > 50 || email.length > 254 || interest.length > 200 || message.length > 5000 || sourceUrl.length > 2000) {
@@ -65,27 +65,27 @@ export async function POST(request: NextRequest) {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  // Leads comerciais do site institucional ficam isolados dos leads dos clientes.
   const { data: lead, error: insertError } = await supabase
-    .from("crm_leads")
+    .from("leads_site")
     .insert({
-      company_id: null,
-      contact_name: name,
+      nome: name,
+      telefone: phone,
       email,
-      phone,
-      interest,
-      message,
-      status: "new",
-      source: "site_institucional",
-      source_url: sourceUrl || "https://versuscrm.com.br",
+      interesse: interest,
+      mensagem: message,
+      origem_url: sourceUrl || "https://versuscrm.com.br",
+      status: "novo",
     })
     .select("id")
     .single();
 
   if (insertError || !lead) {
-    console.error("[public-lead] CRM insert failed", insertError?.message);
-    return json({ success: false, error: "Não foi possível registrar o contato no CRM." }, 500, origin);
+    console.error("[public-lead] leads_site insert failed", insertError?.message);
+    return json({ success: false, error: "Não foi possível registrar o contato. Tente novamente." }, 500, origin);
   }
 
+  // Notificações são complementares: falhas nelas não anulam o cadastro já salvo.
   const { data: admins, error: adminsError } = await supabase
     .from("profiles")
     .select("id")
@@ -93,100 +93,67 @@ export async function POST(request: NextRequest) {
 
   if (adminsError) {
     console.error("[public-lead] Could not load platform admins", adminsError.message);
-    return json({
-      success: false,
-      leadSaved: true,
-      leadId: lead.id,
-      error: "O lead foi salvo no CRM, mas não foi possível gerar a notificação interna.",
-    }, 500, origin);
-  }
-
-  if (admins?.length) {
+  } else if (admins?.length) {
     const { error: notificationError } = await supabase
       .from("crm_user_notifications")
       .insert(admins.map((admin: { id: string }) => ({
         user_id: admin.id,
         company_id: null,
-        title: "Novo interessado nos planos Versus CRM",
+        title: "Novo interessado no Versus CRM",
         message: name + " demonstrou interesse em " + interest + ". E-mail: " + email + " · Telefone: " + phone,
-        entity_type: "crm_lead",
-        action: "view_lead:" + lead.id,
+        entity_type: "leads_site",
+        action: "view_site_lead:" + lead.id,
         status: "new",
       })));
 
     if (notificationError) {
       console.error("[public-lead] Admin notification insert failed", notificationError.message);
-      return json({
-        success: false,
-        leadSaved: true,
-        leadId: lead.id,
-        error: "O lead foi salvo no CRM, mas não foi possível gerar a notificação interna.",
-      }, 500, origin);
     }
   }
 
   const resendKey = process.env.RESEND_API_KEY;
-  if (!resendKey) {
-    console.error("[public-lead] RESEND_API_KEY is not configured in CRM deployment");
-    return json({
-      success: false,
-      leadSaved: true,
-      leadId: lead.id,
-      error: "O lead foi salvo no CRM, mas a notificação por e-mail está indisponível no momento.",
-    }, 503, origin);
-  }
+  if (resendKey) {
+    const emailText = [
+      "Novo interessado nos planos do Versus CRM",
+      "",
+      "Nome: " + name,
+      "Telefone: " + phone,
+      "E-mail: " + email,
+      "Plano/interesse: " + interest,
+      "Mensagem: " + message,
+      "Origem: " + (sourceUrl || "https://versuscrm.com.br"),
+      "Lead ID: " + lead.id,
+    ].join("\n");
 
-  const emailText = [
-    "Novo interessado nos planos do Versus CRM",
-    "",
-    "Nome: " + name,
-    "Telefone: " + phone,
-    "E-mail: " + email,
-    "Plano/interesse: " + interest,
-    "Mensagem: " + message,
-    "Origem: " + (sourceUrl || "https://versuscrm.com.br"),
-    "Lead ID: " + lead.id,
-  ].join("\\n");
+    try {
+      const emailResponse = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + resendKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: process.env.RESEND_FROM_EMAIL || "Versus CRM <nao-responda@versuscrm.com.br>",
+          to: ["contato@versuscrm.com.br"],
+          reply_to: email,
+          subject: "Novo interessado — " + interest,
+          text: emailText,
+        }),
+      });
 
-  try {
-    const emailResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + resendKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: process.env.RESEND_FROM_EMAIL || "Versus CRM <nao-responda@versuscrm.com.br>",
-        to: ["contato@versuscrm.com.br"],
-        reply_to: email,
-        subject: "Novo interessado — " + interest,
-        text: emailText,
-      }),
-    });
-
-    if (!emailResponse.ok) {
-      const detail = await emailResponse.text();
-      console.error("[public-lead] Resend failed", { status: emailResponse.status, detail });
-      return json({
-        success: false,
-        leadSaved: true,
-        leadId: lead.id,
-        error: "O lead foi salvo no CRM, mas o envio do e-mail falhou. Nossa equipe poderá consultar o painel.",
-      }, 502, origin);
+      if (!emailResponse.ok) {
+        console.error("[public-lead] Resend failed", { status: emailResponse.status, detail: await emailResponse.text() });
+      }
+    } catch (error) {
+      console.error("[public-lead] Resend request failed", error);
     }
-  } catch (error) {
-    console.error("[public-lead] Resend request failed", error);
-    return json({
-      success: false,
-      leadSaved: true,
-      leadId: lead.id,
-      error: "O lead foi salvo no CRM, mas não foi possível enviar o e-mail.",
-    }, 502, origin);
+  } else {
+    console.warn("[public-lead] RESEND_API_KEY is not configured; lead saved without email notification");
   }
 
   return json({
     success: true,
     leadId: lead.id,
-    message: "Lead registrado no CRM e e-mail enviado.",
+    message: "Solicitação registrada com sucesso.",
   }, 200, origin);
 }
