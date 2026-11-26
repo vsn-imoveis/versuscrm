@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requirePlatformAdmin } from "@/lib/platform-admin";
 
 export default async function CompaniesManagementPage() {
@@ -13,7 +14,7 @@ export default async function CompaniesManagementPage() {
     <main style={{ minHeight: "100vh", background: "#f5f6f8", color: "#202a33" }}>
       <header style={{ background: "#171d24", color: "#fff", padding: "18px 5%", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <strong style={{ color: "#d3aa62", font: "30px Georgia,serif" }}>Versus · Gestão</strong>
-        <span style={{ fontSize: 13 }}>{user.email}</span>
+        <nav style={{ display: "flex", alignItems: "center", gap: 18 }}><Link href="/gestao/leads" style={{ color: "#f3cf7a", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>Leads do site</Link><span style={{ fontSize: 13 }}>{user.email}</span></nav>
       </header>
       <section style={{ maxWidth: 1280, margin: "auto", padding: "38px 24px" }}>
         <p style={{ color: "#b78d48", fontSize: 11, letterSpacing: 2 }}>ADMINISTRAÇÃO DA PLATAFORMA</p>
