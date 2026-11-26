@@ -57,6 +57,15 @@ export async function POST(request: NextRequest) {
   const interest = String(body.interest || "Interesse comercial").trim();
   const message = String(body.message || "").trim();
   const sourceUrl = String(body.sourceUrl || "").trim();
+  let campanha: string | null = null;
+  try {
+    const landingUrl = new URL(sourceUrl);
+    campanha = landingUrl.searchParams.get("utm_campaign") || landingUrl.searchParams.get("campaign");
+    if (!campanha && landingUrl.searchParams.has("gclid")) campanha = "Google Ads (sem utm_campaign)";
+    if (!campanha && (landingUrl.searchParams.has("fbclid") || landingUrl.searchParams.has("igshid"))) campanha = "Meta Ads (sem utm_campaign)";
+  } catch {
+    campanha = null;
+  }
 
   const validPhone = /^\d{10,11}$/.test(phone);
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -81,6 +90,7 @@ export async function POST(request: NextRequest) {
       interesse: interest,
       mensagem: message,
       origem_url: sourceUrl || "https://versuscrm.com.br",
+      campanha,
       status: "novo",
     })
     .select("id")
@@ -128,6 +138,7 @@ export async function POST(request: NextRequest) {
       "Plano/interesse: " + interest,
       "Mensagem: " + message,
       "Origem: " + (sourceUrl || "https://versuscrm.com.br"),
+      "Campanha: " + (campanha || "Não identificada / acesso direto"),
       "Lead ID: " + lead.id,
     ].join("\n");
 
