@@ -48,14 +48,20 @@ export async function POST(request: NextRequest) {
   }
 
   const name = String(body.name || "").trim();
-  const phone = String(body.phone || "").trim();
+  const phoneInput = String(body.phone || "").trim();
+  const phoneDigits = phoneInput.replace(/\D/g, "");
+  const phone = phoneDigits.startsWith("55") && (phoneDigits.length === 12 || phoneDigits.length === 13)
+    ? phoneDigits.slice(2)
+    : phoneDigits;
   const email = String(body.email || "").trim().toLowerCase();
   const interest = String(body.interest || "Interesse comercial").trim();
   const message = String(body.message || "").trim();
   const sourceUrl = String(body.sourceUrl || "").trim();
 
-  if (!name || !phone || !email || !message || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
-    return json({ success: false, error: "Preencha nome, telefone, e-mail e mensagem com dados válidos." }, 400, origin);
+  const validPhone = /^\d{10,11}$/.test(phone);
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!name || !validPhone || !validEmail || !message) {
+    return json({ success: false, error: "Confira o nome, o WhatsApp com DDD, o e-mail e a mensagem." }, 400, origin);
   }
   if (name.length > 160 || phone.length > 50 || email.length > 254 || interest.length > 200 || message.length > 5000 || sourceUrl.length > 2000) {
     return json({ success: false, error: "Um ou mais campos excedem o tamanho permitido." }, 400, origin);
