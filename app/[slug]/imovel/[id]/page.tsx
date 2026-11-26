@@ -117,7 +117,7 @@ export async function generateMetadata({ params }: Props) {
     p.price ? `Venda: ${money(p.price)}` : "",
     p.rent_price ? `Aluguel: ${money(p.rent_price)}/mês` : "",
   ].filter(Boolean).join(" · ").slice(0, 160);
-  const canonical = `https://versuscrm.vercel.app/${encodeURIComponent(p.company_slug || slug)}/imovel/${propertySeoSlug(p)}.html`;
+  const canonical = `https://versuscrm.com.br/${encodeURIComponent(p.company_slug || slug)}/imovel/${propertySeoSlug(p)}.html`;
   const image = Array.isArray(p.photos) ? p.photos[0] : undefined;
 
   return {
