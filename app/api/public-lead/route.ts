@@ -126,9 +126,9 @@ export async function POST(request: NextRequest) {
   }
 
   return json({
-    success: true,
+    success: false,
+    leadSaved: true,
     leadId: lead.id,
-    emailNotification: "not_configured",
-    message: "Lead registrado no CRM e notificação interna criada.",
-  }, 200, origin);
+    error: "O lead foi registrado no CRM e a notificação interna foi criada, mas o envio de e-mail ainda não está configurado neste fluxo.",
+  }, 503, origin);
 }
