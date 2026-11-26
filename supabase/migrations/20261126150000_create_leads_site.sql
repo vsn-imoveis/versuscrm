@@ -31,3 +31,26 @@ on public.leads_site
 for select
 to authenticated
 using ((select public.is_crm_admin()));
+
+-- Permite acompanhar a conversão do interessado em cliente.
+alter table public.leads_site
+  add column if not exists converted_company_id uuid
+  references public.crm_companies(id) on delete set null;
+
+-- O administrador da plataforma pode alterar status/conversão e excluir leads do site.
+grant update, delete on table public.leads_site to authenticated;
+
+drop policy if exists leads_site_platform_admin_update on public.leads_site;
+create policy leads_site_platform_admin_update
+on public.leads_site
+for update
+to authenticated
+using ((select public.is_crm_admin()))
+with check ((select public.is_crm_admin()));
+
+drop policy if exists leads_site_platform_admin_delete on public.leads_site;
+create policy leads_site_platform_admin_delete
+on public.leads_site
+for delete
+to authenticated
+using ((select public.is_crm_admin()));
