@@ -23,6 +23,14 @@ export async function getPublicTenant(slug: string) {
   }
 
   const tenant = Array.isArray(data) ? data[0] : data;
+  if (!tenant) {
+    const { data: alias } = await supabase.from("crm_company_slug_aliases").select("company_id").eq("alias_slug", normalizedSlug).maybeSingle();
+    if (alias?.company_id) {
+      const { data: currentTenant, error: currentTenantError } = await supabase.from("crm_companies").select("slug,status").eq("id", alias.company_id).maybeSingle();
+      if (currentTenantError) throw new Error("Falha ao resolver o endereço atualizado da imobiliária.");
+      if (currentTenant?.slug && currentTenant.status === "active") redirect("/" + encodeURIComponent(currentTenant.slug));
+    }
+  }
   if (!tenant || tenant.status !== "active") {
     console.warn("[tenant] active tenant not found", { slug: normalizedSlug, returned: Boolean(tenant) });
     return null;
