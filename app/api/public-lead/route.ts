@@ -34,15 +34,9 @@ export async function POST(request: NextRequest) {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const resendKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "Versus CRM <contato@versuscrm.com.br>";
 
-  if (!supabaseUrl || !serviceKey || !resendKey) {
-    console.error("[public-lead] missing server configuration", {
-      supabaseUrl: Boolean(supabaseUrl),
-      serviceKey: Boolean(serviceKey),
-      resendKey: Boolean(resendKey),
-    });
+  if (!supabaseUrl || !serviceKey) {
+    console.error("[public-lead] Supabase server configuration is missing");
     return json({ success: false, error: "Serviço temporariamente indisponível. Tente novamente mais tarde." }, 503, origin);
   }
 
@@ -92,51 +86,49 @@ export async function POST(request: NextRequest) {
     return json({ success: false, error: "Não foi possível registrar o contato no CRM." }, 500, origin);
   }
 
-  const emailText = [
-    "Novo interessado nos planos do Versus CRM",
-    "",
-    "Nome: " + name,
-    "Telefone: " + phone,
-    "E-mail: " + email,
-    "Plano/interesse: " + interest,
-    "Mensagem: " + message,
-    "Origem: " + (sourceUrl || "https://versuscrm.com.br"),
-    "Lead ID: " + lead.id,
-  ].join("\n");
+  const { data: admins, error: adminsError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("role", "admin");
 
-  try {
-    const emailResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + resendKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: ["contato@versuscrm.com.br"],
-        reply_to: email,
-        subject: "Novo interessado — " + interest,
-        text: emailText,
-      }),
-    });
-
-    if (!emailResponse.ok) {
-      const detail = await emailResponse.text();
-      console.error("[public-lead] Resend delivery failed", { status: emailResponse.status, detail });
-      return json({
-        success: false,
-        leadSaved: true,
-        error: "Seu contato foi registrado no CRM, mas o e-mail de notificação falhou. Nossa equipe poderá consultar o lead no painel.",
-      }, 502, origin);
-    }
-  } catch (error) {
-    console.error("[public-lead] Resend request failed", error);
+  if (adminsError) {
+    console.error("[public-lead] Could not load platform admins", adminsError.message);
     return json({
       success: false,
       leadSaved: true,
-      error: "Seu contato foi registrado no CRM, mas não foi possível enviar a notificação por e-mail.",
-    }, 502, origin);
+      leadId: lead.id,
+      error: "O lead foi salvo no CRM, mas não foi possível gerar a notificação interna.",
+    }, 500, origin);
   }
 
-  return json({ success: true, leadId: lead.id }, 200, origin);
+  if (admins?.length) {
+    const { error: notificationError } = await supabase
+      .from("crm_user_notifications")
+      .insert(admins.map((admin: { id: string }) => ({
+        user_id: admin.id,
+        company_id: null,
+        title: "Novo interessado nos planos Versus CRM",
+        message: name + " demonstrou interesse em " + interest + ". E-mail: " + email + " · Telefone: " + phone,
+        entity_type: "crm_lead",
+        action: "view_lead:" + lead.id,
+        status: "new",
+      })));
+
+    if (notificationError) {
+      console.error("[public-lead] Admin notification insert failed", notificationError.message);
+      return json({
+        success: false,
+        leadSaved: true,
+        leadId: lead.id,
+        error: "O lead foi salvo no CRM, mas não foi possível gerar a notificação interna.",
+      }, 500, origin);
+    }
+  }
+
+  return json({
+    success: true,
+    leadId: lead.id,
+    emailNotification: "not_configured",
+    message: "Lead registrado no CRM e notificação interna criada.",
+  }, 200, origin);
 }
