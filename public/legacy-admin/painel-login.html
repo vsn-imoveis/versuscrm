@@ -975,4 +975,23 @@ body:has(#email) #app>.card{
   body:has(#email) #app>.card{padding:22px 20px!important}
 }
 </style>
+
+<style id="versus-content-alignment-fix">
+/* Corrige o deslocamento duplo do conteúdo: o shell já reserva a coluna da sidebar no inset. */
+body>#app.wrap{
+  left:var(--vsn-sidebar-width)!important;
+  right:0!important;
+  width:auto!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:22px 28px!important;
+  box-sizing:border-box!important;
+}
+@media(max-width:760px){
+  body>#app.wrap{
+    left:var(--vsn-sidebar-width)!important;
+    padding:14px!important;
+  }
+}
+</style>
 </body></html>
