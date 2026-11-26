@@ -7,7 +7,7 @@ export const revalidate = 0
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xmwkakimyifmspzoziji.supabase.co'
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_bDiXCzTT1gXO_xbVGhnAXg_Muy4lx03'
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://versuscrm.vercel.app').replace(/\/$/, '')
+const SITE_URL = 'https://versuscrm.com.br'
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 function seoSlugPart(value: unknown) {
