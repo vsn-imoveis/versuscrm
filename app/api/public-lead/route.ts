@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           from: process.env.RESEND_FROM_EMAIL || "Versus CRM <nao-responda@versuscrm.com.br>",
-          to: ["contato@versuscrm.com.br"],
+          to: ["contato@versuscrm.com.br", "contatoversuscrm@gmail.com"],
           reply_to: email,
           subject: "Novo interessado — " + interest,
           text: emailText,
