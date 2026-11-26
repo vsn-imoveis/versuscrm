@@ -22,3 +22,12 @@ create index if not exists leads_site_status_idx
 alter table public.leads_site enable row level security;
 revoke all on table public.leads_site from anon, authenticated;
 grant all on table public.leads_site to service_role;
+
+-- Apenas o administrador da plataforma pode consultar os leads pelo painel.
+grant select on table public.leads_site to authenticated;
+drop policy if exists leads_site_platform_admin_select on public.leads_site;
+create policy leads_site_platform_admin_select
+on public.leads_site
+for select
+to authenticated
+using ((select public.is_crm_admin()));
